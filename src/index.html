@@ -21,11 +21,12 @@
             <!-- Dropdown that can load any existing file in web server side subdirectory /example/instance into the textarea that has id="inputInstance"  -->
             <select id="exampleSelect">
               <option value="">--Select an example--</option>
+              <option value="MDK_Rek_demo1.json">MDK_Rek_demo1.json</option>
               <option value="mdk_lunga_1.json">mdk_lunga_1.json</option>
               <option value="non_existing_example.json">non_existing_example.json</option>
             </select><br>
             or just paste input into the box below<br>
-            <textarea id="inputInstance" rows="3">Input example goes here</textarea>
+            <textarea id="inputInstance">Input example goes here</textarea>
             <hr>
             <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
         </div>
@@ -38,6 +39,8 @@
   You can use data from the input JSON on the left.
   Example: {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
 --}}
+{{ctx.language}}-{{ctx.territory}} 
+
 <h1>MDK Summary for {{granskning.context.0.['vårdenhet'].0.namn.0.['|value']}}</h1>
 
 <h2>Background</h2>
@@ -54,122 +57,189 @@
         </div>
       </div>
       <footer>
-        <p><strong>K!ntegrate</strong> rudimentary integration tool example. Settings: <!-- Checkbox that turns line numbering on/off inall CodeMirror editors -->  </p>
+        <p>
+          <strong>K!ntegrate</strong> rudimentary integration tool example. Settings:
+          <label style="cursor: pointer;">
+            <input type="checkbox" id="toggle-line-numbers" checked> Show line numbers
+          </label>
+        </p>
       </footer>
     </main>
-
+ 
     <!-- CodeMirror 5 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
-
+ 
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+    
+    <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
-    <script src="https://unpkg.com/svelte-json-tree@1.0.0/dist/standalone/umd/index.js"></script>
+    <script src="https://unpkg.com/svelte-json-tree@2.2.0/dist/standalone/umd/index.js"></script>
     <script>
-      //Main script
+      // --- Helper function to build a Handlebars-compatible path ---
+      function buildHandlebarsPath(pathArray) {
+        if (!pathArray || pathArray.length === 0) {
+          return '';
+        }
+        // The first segment is the root.
+        let pathStr = pathArray[0];
 
-      // --- Initialize CodeMirror Handlebars Editor ---
-      const templateTextArea = document.getElementById('template-editor');
-      const editor = CodeMirror.fromTextArea(templateTextArea, {
+        // For subsequent segments, decide whether to use dot or bracket notation.
+        for (let i = 1; i < pathArray.length; i++) {
+          const segment = pathArray[i];
+          if (typeof segment === 'number') {
+            // Use dot notation for array indices, which Handlebars supports.
+            pathStr += `.${segment}`;
+          } else {
+            // For string keys, check if they are simple identifiers.
+            if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(segment)) {
+              pathStr += `.${segment}`;
+            } else {
+              // Use bracket notation for complex keys (e.g., with '|', '-', etc.).
+              pathStr += `['${segment}']`;
+            }
+          }
+        }
+        return pathStr;
+      }
+
+      // --- Helper function to update the JSON tree view ---
+      const jsonTreeContainer = document.getElementById('json-tree-container');
+      // The UMD script exposes the component on the window object.
+      const JSONTree = window.SvelteJsonTree;
+      let jsonTree; // Keep a reference to the tree instance to manage its lifecycle
+
+      function updateJsonTree(jsonString) {
+        // Destroy the previous tree instance if it exists to prevent memory leaks
+        if (jsonTree) {
+          jsonTree.$destroy();
+        }
+        jsonTreeContainer.innerHTML = ''; // Clear container
+
+        try {
+            const jsonData = JSON.parse(jsonString);
+            // Create a new tree instance
+            jsonTree = new JSONTree({
+                target: jsonTreeContainer,
+                props: { value: jsonData },
+            });
+            console.log("JSON Tree updated.", jsonTree);
+
+            // Add event listener for node selection to insert path into template editor
+            jsonTree.$on('select', (event) => {
+                const pathArray = event.detail.path;
+                const handlebarsPath = buildHandlebarsPath(pathArray);
+                
+                // Insert the path wrapped in {{...}} at the current cursor position
+                if (handlebarsPath) {
+                    templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
+                    templateEditor.focus(); // Return focus to the editor
+                }
+            });
+
+        } catch (e) {
+            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
+        }
+      }
+
+      // --- Initialize CodeMirror Editors ---
+      const templateEditor = CodeMirror.fromTextArea(document.getElementById('template-editor'), {
         lineNumbers: true,
         mode: { name: 'handlebars', base: 'text/html' },
       });
 
+      const inputEditor = CodeMirror.fromTextArea(document.getElementById('inputInstance'), {
+        lineNumbers: true,
+        mode: { name: 'javascript', json: true },
+      });
+
+      const outputEditor = CodeMirror.fromTextArea(document.getElementById('out'), {
+        lineNumbers: true,
+        mode: 'htmlmixed',
+        readOnly: true
+      });
+
+      // Set initial content
+      const initialJson = '{\n  "message": "Paste JSON here or select an example.",\n  "tip": "Click a node below to copy its path to the cursor/selection in the conversion template."\n}';
+      inputEditor.setValue(initialJson);
+      outputEditor.setValue('Output goes here after conversion is run.');
+
+      // --- Event Handlers ---
+      document.getElementById('run-conversion').addEventListener('click', () => {
+        try {
+          // 1. Get template and input from editors
+          const templateString = templateEditor.getValue();
+          const jsonString = inputEditor.getValue();
+
+          if (!jsonString.trim()) {
+            outputEditor.setValue('Input JSON is empty.');
+            return;
+          }
+          const data = JSON.parse(jsonString);
+
+          // 2. Compile the template
+          const template = Handlebars.compile(templateString);
+
+          // 3. Execute the template with the data
+          const resultHtml = template(data);
+
+          // 4. Display the resulting HTML in the output editor
+          outputEditor.setValue(resultHtml);
+        } catch (e) {
+          outputEditor.setValue(`Error during conversion:\n\n${e.message}`);
+          console.error("Conversion Error:", e);
+        }
+      });
+
       document.getElementById('fileInput').addEventListener('change', function() {
         const file = this.files[0];
-        const inputInstance = document.getElementById('inputInstance');
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const content = e.target.result;
-                inputInstance.value = content;
-                // Manually trigger the input event so the JSON tree updates
-                inputInstance.dispatchEvent(new Event('input'));
+                inputEditor.setValue(content);
+                updateJsonTree(content); // Manually update tree
             };
             reader.readAsText(file);
-        } else {
-            inputInstance.value = 'No file selected';
         }
       });
 
       document.getElementById('exampleSelect').addEventListener('change', function() {
         const selectedFile = this.value;
-        const inputInstance = document.getElementById('inputInstance');
         if (selectedFile) {
             fetch(`example/instance/${selectedFile}`)
                 .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
                 .then(data => {
-                    inputInstance.value = data;
-                    inputInstance.dispatchEvent(new Event('input'));
+                    inputEditor.setValue(data);
+                    updateJsonTree(data); // Manually update tree
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
-                    inputInstance.value = 'Error loading file: ' + selectedFile;
+                    const msg = 'Error loading file: ' + selectedFile;
+                    inputEditor.setValue(`{"error": "${msg}"}`);
                 });
-        } else {
-            inputInstance.value = '';
         }
       });
 
-      //  When content of inputInstance changes, parse the content as JSON and provide as value to JsonTree component
-
-      inputInstance = document.getElementById('inputInstance');
-      const jsonTreeContainer = document.getElementById('json-tree-container');  
-
-      inputInstance.addEventListener('input', () => {
-        const content = inputInstance.value;
-        let jsonData;
-        try {
-            jsonData = JSON.parse(content);
-            console.log("Parsed JSON:", jsonData);
-            jsonTreeContainer.innerHTML = ''; // Clear previous tree
-            new SvelteJsonTree({
-                target: jsonTreeContainer,
-                props: { value: jsonData },
-            });
-        } catch (e) {
-            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error mesage:<br>'+e.message+'</p>';
-        }
+      document.getElementById('toggle-line-numbers').addEventListener('change', function() {
+        const showLineNumbers = this.checked;
+        const editors = [inputEditor, templateEditor, outputEditor];
+        editors.forEach(editor => {
+          editor.setOption('lineNumbers', showLineNumbers);
+        });
       });
 
-      document.getElementById('run-conversion').addEventListener('click', () => {
-        const outputContainer = document.getElementById('out');
-        try {
-          // 1. Get the template from the CodeMirror editor
-          const templateString = editor.getValue();
-
-          // 2. Get the JSON data from the input textarea
-          const jsonString = document.getElementById('inputInstance').value;
-          if (!jsonString.trim()) {
-            outputContainer.innerHTML = '<p style="color:orange;">Input JSON is empty.</p>';
-            return;
-          }
-          const data = JSON.parse(jsonString);
-
-          // 3. Compile the template using the Handlebars runtime
-          const template = Handlebars.compile(templateString);
-
-          // 4. Execute the template with the data
-          const resultHtml = template(data);
-
-          console.log("data", data);
-          console.log("templateString", templateString);
-          console.log("template", template);
-          console.log ("Conversion Result:", resultHtml);
-          
-          // 5. Display the resulting HTML in the output column
-          outputContainer.innerHTML = resultHtml;
-        } catch (e) {
-          outputContainer.innerHTML = `<p style="color:red;"><strong>Error during conversion:</strong><br><pre>${e.message}</pre></p>`;
-          console.error("Conversion Error:", e);
-        }
+      // Update tree when user types in the input editor
+      inputEditor.on('change', (editor) => {
+        updateJsonTree(editor.getValue());
       });
 
+      // Trigger initial render of the JSON tree
+      updateJsonTree(initialJson);
     </script>
-
-  
   </body>
 </html>

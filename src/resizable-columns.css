@@ -78,13 +78,23 @@ main {
     display: flex;
     flex-direction: column; /* Arrange items vertically */
 }
-.column-right { background-color: #eef2f3; }
+.column-right {
+    background-color: #eef2f3;
+    display: flex;
+    flex-direction: column; /* Arrange items vertically */
+}
 
 /* Make CodeMirror editor fill its container */
-.column-center .CodeMirror {
+.column-center .CodeMirror, .column-right .CodeMirror {
   border: 1px solid #ddd;
   flex-grow: 1; /* Make the editor fill the remaining vertical space */
   font-size: 14px;
+}
+
+.column-left .CodeMirror {
+    border: 1px solid #ddd;
+    font-size: 14px;
+    height: 150px; /* Give the input editor a fixed height */
 }
 
 /* Style for the conversion button */
