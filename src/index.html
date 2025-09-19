@@ -4,19 +4,172 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
-    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="resizable-columns.css">
+    <!-- CodeMirror 5 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   </head>
   <body>
-    <header>
-      <h1>Kintegrate</h1>
-      <p>Vanilla JavaScript + HTML starter for Kintegrate.</p>
-    </header>
-
+    <!--header>
+      <p>K!ntegrate</p>
+    </header -->
     <main>
-      <button id="greet">Say Hello</button>
-      <div id="out"></div>
+      <div class="fullheight-container" id="main-container">
+        <div class="column column-left">
+            <!-- file picker that can pick files from user upload -->
+            Pick example file <input type="file" id="fileInput" accept=".json,.xml,.txt"><br>
+            or select example:
+            <!-- Dropdown that can load any existing file in web server side subdirectory /example/instance into the textarea that has id="inputInstance"  -->
+            <select id="exampleSelect">
+              <option value="">--Select an example--</option>
+              <option value="mdk_lunga_1.json">mdk_lunga_1.json</option>
+              <option value="non_existing_example.json">non_existing_example.json</option>
+            </select><br>
+            or just paste input into the box below<br>
+            <textarea id="inputInstance" rows="3">Input example goes here</textarea>
+            <hr>
+            <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
+        </div>
+        <div class="resizer"></div>
+        <div class="column column-center">
+            <h2>Conversion Template (Handlebars)</h2>
+            <textarea id="template-editor">
+{{!-- 
+  This is a Handlebars template.
+  You can use data from the input JSON on the left.
+  Example: {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
+--}}
+<h1>MDK Summary for {{granskning.context.0.['vårdenhet'].0.namn.0.['|value']}}</h1>
+
+<h2>Background</h2>
+<p>
+  <strong>Anamnesis:</strong>
+  {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
+</p>
+            </textarea>
+            <button id="run-conversion">Run Conversion</button>
+        </div>
+        <div class="resizer"></div>
+        <div class="column column-right">
+            <textarea id="out">Output goes here after conversion is run</textarea>
+        </div>
+      </div>
+      <footer>
+        <p><strong>K!ntegrate</strong> rudimentary integration tool example. Settings: <!-- Checkbox that turns line numbering on/off inall CodeMirror editors -->  </p>
+      </footer>
     </main>
 
-    <script src="src/app.js"></script>
+    <!-- CodeMirror 5 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
+
+    <!-- Handlebars Runtime -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+    <script src="resizable-columns.js"></script>
+    <script src="https://unpkg.com/svelte-json-tree@1.0.0/dist/standalone/umd/index.js"></script>
+    <script>
+      //Main script
+
+      // --- Initialize CodeMirror Handlebars Editor ---
+      const templateTextArea = document.getElementById('template-editor');
+      const editor = CodeMirror.fromTextArea(templateTextArea, {
+        lineNumbers: true,
+        mode: { name: 'handlebars', base: 'text/html' },
+      });
+
+      document.getElementById('fileInput').addEventListener('change', function() {
+        const file = this.files[0];
+        const inputInstance = document.getElementById('inputInstance');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                inputInstance.value = content;
+                // Manually trigger the input event so the JSON tree updates
+                inputInstance.dispatchEvent(new Event('input'));
+            };
+            reader.readAsText(file);
+        } else {
+            inputInstance.value = 'No file selected';
+        }
+      });
+
+      document.getElementById('exampleSelect').addEventListener('change', function() {
+        const selectedFile = this.value;
+        const inputInstance = document.getElementById('inputInstance');
+        if (selectedFile) {
+            fetch(`example/instance/${selectedFile}`)
+                .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
+                .then(data => {
+                    inputInstance.value = data;
+                    inputInstance.dispatchEvent(new Event('input'));
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    inputInstance.value = 'Error loading file: ' + selectedFile;
+                });
+        } else {
+            inputInstance.value = '';
+        }
+      });
+
+      //  When content of inputInstance changes, parse the content as JSON and provide as value to JsonTree component
+
+      inputInstance = document.getElementById('inputInstance');
+      const jsonTreeContainer = document.getElementById('json-tree-container');  
+
+      inputInstance.addEventListener('input', () => {
+        const content = inputInstance.value;
+        let jsonData;
+        try {
+            jsonData = JSON.parse(content);
+            console.log("Parsed JSON:", jsonData);
+            jsonTreeContainer.innerHTML = ''; // Clear previous tree
+            new SvelteJsonTree({
+                target: jsonTreeContainer,
+                props: { value: jsonData },
+            });
+        } catch (e) {
+            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error mesage:<br>'+e.message+'</p>';
+        }
+      });
+
+      document.getElementById('run-conversion').addEventListener('click', () => {
+        const outputContainer = document.getElementById('out');
+        try {
+          // 1. Get the template from the CodeMirror editor
+          const templateString = editor.getValue();
+
+          // 2. Get the JSON data from the input textarea
+          const jsonString = document.getElementById('inputInstance').value;
+          if (!jsonString.trim()) {
+            outputContainer.innerHTML = '<p style="color:orange;">Input JSON is empty.</p>';
+            return;
+          }
+          const data = JSON.parse(jsonString);
+
+          // 3. Compile the template using the Handlebars runtime
+          const template = Handlebars.compile(templateString);
+
+          // 4. Execute the template with the data
+          const resultHtml = template(data);
+
+          console.log("data", data);
+          console.log("templateString", templateString);
+          console.log("template", template);
+          console.log ("Conversion Result:", resultHtml);
+          
+          // 5. Display the resulting HTML in the output column
+          outputContainer.innerHTML = resultHtml;
+        } catch (e) {
+          outputContainer.innerHTML = `<p style="color:red;"><strong>Error during conversion:</strong><br><pre>${e.message}</pre></p>`;
+          console.error("Conversion Error:", e);
+        }
+      });
+
+    </script>
+
+  
   </body>
 </html>
