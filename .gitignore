@@ -1,0 +1,11 @@
+# Node / web
+node_modules/
+dist/
+
+# Python venvs that might be left behind
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
