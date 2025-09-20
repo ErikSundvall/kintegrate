@@ -1,49 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Handlebarstest</title>
-  </head>
-  <body>
-    <h1>Handlebars Test for environments that can only have inline Javaccript</h1>
-    <textarea id="template" rows="9" cols="50">
-      {{!-- This is a comment in Handlebars --}}
-      <h2>{{title}}</h2>
-      <p>{{description}}</p>
-      <ul>
-        {{#each items}}
-          <li>{{this}}</li>
-        {{/each}}
-      </ul>
-    </textarea><br>
-    The above has previously been compiled to:<br>
-    <pre id="precompiled"></pre>
-    <button id="renderPrecompiledBtn">Render from Precompiled</button>
-    <div id="output"></div>
-
-    <script>
- const precompiledTemplateAsString = {"1":function(container,depth0,helpers,partials,data) {
-    return "          <li>"
-    + container.escapeExpression(container.lambda(depth0, depth0))
-    + "</li>\\n";
-},"compiler":[8,">= 4.3.0"],"main":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, lookupProperty = container.lookupProperty || function(parent, propertyName) {
-        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {
-          return parent[propertyName];
-        }
-        return undefined
-    };
-
-  return "      <h2>"
-    + container.escapeExpression(((helper = (helper = lookupProperty(helpers,"title") || (depth0 != null ? lookupProperty(depth0,"title") : depth0)) != null ? helper : container.hooks.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"title","hash":{},"data":data,"loc":{"start":{"line":2,"column":10},"end":{"line":2,"column":19}}}) : helper)))
-    + "</h2>\\n      <p>"
-    + container.escapeExpression(((helper = (helper = lookupProperty(helpers,"description") || (depth0 != null ? lookupProperty(depth0,"description") : depth0)) != null ? helper : container.hooks.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"description","hash":{},"data":data,"loc":{"start":{"line":3,"column":9},"end":{"line":3,"column":24}}}) : helper)))
-    + "</p>\\n      <ul>\\n"
-    + ((stack1 = lookupProperty(helpers,"each").call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? lookupProperty(depth0,"items") : depth0),{"name":"each","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data,"loc":{"start":{"line":5,"column":8},"end":{"line":7,"column":17}}})) != null ? stack1 : "")
-    + "      </ul>\\n    ";
-},"useData":true};
-//end of precompiled template as string
-
 // Simulating a module system for getting access to Handlebars runtime
     // stash away any existing module system (if any)
     var __module = typeof module !== 'undefined' ? module : undefined;
@@ -78,37 +32,38 @@
     }
 // end of module system simulation
 
-// include precompiled template as string within backticks ``
-// const precompiledTemplateAsString = `...`;
-// end of precompiled template as string
+const templateSpec = 
+// include precompiled template below ---------------------------------------------------------------------------------------
+{"compiler":[8,">= 4.3.0"],"main":function(container,depth0,helpers,partials,data) {
+    var stack1, lookupProperty = container.lookupProperty || function(parent, propertyName) {
+        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {
+          return parent[propertyName];
+        }
+        return undefined
+    };
 
-      // when document is loaded       
-      document.addEventListener('DOMContentLoaded', () => {
-        //inject precompiled template string intor pre tag
-        document.getElementById('precompiled').textContent = precompiledTemplateAsString;
-        });
+  return "Språk: "
+    + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? lookupProperty(depth0,"ctx") : depth0)) != null ? lookupProperty(stack1,"language") : stack1), depth0))
+    + "\nLand: "
+    + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? lookupProperty(depth0,"ctx") : depth0)) != null ? lookupProperty(stack1,"territory") : stack1), depth0))
+    + " \n\n            ";
+},"useData":true};
+// end of precompiled template ---------------------------------------------------------------------------------------
+console.log("templateSpec defined OK")
 
-      document.getElementById('renderPrecompiledBtn').addEventListener('click', () => {
-       
-        // Sample input data    
-        const input = {
-          title: "My Precompiled Template",
-          description: "This was rendered from a precompiled string.",
-          items: ["Precompiled A", "Precompiled B", "Precompiled CCC"]
-        };
+// 2. Use Handlebars.template() to create the executable function.
+const executableTemplate = Handlebars.template(templateSpec);
+console.log("executableTemplate defined OK")
 
-        // 1. Evaluate the string to get the template specification object.
-        //const templateSpec = eval('(' + precompiledTemplateAsString + ')');
-        const templateSpec = precompiledTemplateAsString
+api.addListener('generic-button-7214684', 'CLICK', function(model) {
+  var simpleValue = api.getFieldValue('generic-input_text-6400058');
+  //var simpleValue = api.getFieldValue('generic-button-7214684');
+  var inputComp = api.getComposition();
+  console.log("inputComp", inputComp);
 
-        // 2. Use Handlebars.template() to create the executable function.
-        const executableTemplate = Handlebars.template(templateSpec);
+  // 3. Render output by calling the function with the context.
+  var output = executableTemplate(inputComp);
+  console.log(output);
+  api.setFieldValue("generic-rich_text-9855219", output)
 
-        // 3. Render output by calling the function with the context.
-        const output = executableTemplate(input);
-        //console.log(output);
-        document.getElementById('output').innerHTML = output;
-      });
-    </script>
-  </body>
-</html>
+}, {onInitialValueSet: true})

@@ -39,15 +39,9 @@
   You can use data from the input JSON on the left.
   Example: {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
 --}}
-{{ctx.language}}-{{ctx.territory}} 
+Språk: {{ctx.language}}
+Land: {{ctx.territory}} 
 
-<h1>MDK Summary for {{granskning.context.0.['vårdenhet'].0.namn.0.['|value']}}</h1>
-
-<h2>Background</h2>
-<p>
-  <strong>Anamnesis:</strong>
-  {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
-</p>
             </textarea>
         <button id="run-conversion">Run Conversion --- > Output</button>
         <button id="show-compiled">Show precompiled template</button>
@@ -236,6 +230,7 @@
           // insert a textarea in the conversion-container under the show-conmpiled button, 
           const conversionContainer = document.getElementById('conversion-container');
           const compiledTextarea = document.createElement('textarea');
+          compiledTextarea.id = 'precompiled-textarea';
           compiledTextarea.style.width = '100%';
           compiledTextarea.style.height = '50%';
           compiledTextarea.readOnly = true;
@@ -245,6 +240,7 @@
           // add a copy to clipboard button to the alert that copies the template to clipboard
           const copyButton = document.createElement('button');
           copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
+          copyButton.id = 'copy-precompiled-button';
           conversionContainer.appendChild(copyButton);
           copyButton.style.cursor = 'pointer';
           copyButton.onclick = () => {
@@ -261,6 +257,21 @@
         } catch (e) {
           alert('Error during precompilation:\n\n' + e.message);
           console.error("Precompilation Error:", e);
+        }
+      });
+
+      // When content of template-editor changes: If compiled-textarea exists, remove it + copy buttonand show the show-compiled button again
+
+      templateEditor.on('change', () => {
+        console.log("Template editor changed, removing precompiled view if exists.");
+        const conversionContainer = document.getElementById('conversion-container');
+        const compiledTextarea = document.getElementById('precompiled-textarea');
+        const copyButton = document.getElementById('copy-precompiled-button');
+        console.log("Compiled textarea:", compiledTextarea);
+        if (compiledTextarea && copyButton) {
+          conversionContainer.removeChild(compiledTextarea);
+          conversionContainer.removeChild(copyButton);
+          showCompiledButton.style.display = 'inline'; // show the show-compiled button again
         }
       });
 
