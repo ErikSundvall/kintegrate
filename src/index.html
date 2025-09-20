@@ -31,7 +31,7 @@
             <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
         </div>
         <div class="resizer"></div>
-        <div class="column column-center">
+        <div id="conversion-container" class="column column-center">
             <h2>Conversion Template (Handlebars)</h2>
             <textarea id="template-editor">
 {{!-- 
@@ -49,8 +49,9 @@
   {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
 </p>
             </textarea>
-            <button id="run-conversion">Run Conversion</button>
-        </div>
+        <button id="run-conversion">Run Conversion --- > Output</button>
+        <button id="show-compiled">Show precompiled template</button>
+      </div>
         <div class="resizer"></div>
         <div class="column column-right">
             <textarea id="out">Output goes here after conversion is run</textarea>
@@ -224,6 +225,45 @@
                 });
         }
       });
+
+      // when show-compiled button is clicked, show the compiled template
+      var showCompiledButton = document.getElementById('show-compiled');
+      showCompiledButton.addEventListener('click', () => {
+        const templateString = templateEditor.getValue();
+        try {
+          var precompiledTemplate = Handlebars.precompile(templateString);
+          console.log("Precompiled template string:", precompiledTemplate);
+          // insert a textarea in the conversion-container under the show-conmpiled button, 
+          const conversionContainer = document.getElementById('conversion-container');
+          const compiledTextarea = document.createElement('textarea');
+          compiledTextarea.style.width = '100%';
+          compiledTextarea.style.height = '50%';
+          compiledTextarea.readOnly = true;
+          compiledTextarea.value = precompiledTemplate;
+          conversionContainer.insertBefore(compiledTextarea, showCompiledButton);
+          showCompiledButton.style.display = 'none'; // hide the button after click
+          // add a copy to clipboard button to the alert that copies the template to clipboard
+          const copyButton = document.createElement('button');
+          copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
+          conversionContainer.appendChild(copyButton);
+          copyButton.style.cursor = 'pointer';
+          copyButton.onclick = () => {
+            navigator.clipboard.writeText(precompiledTemplate).then(() => {
+              // show text "Copied!" on the button for 1 second then remove the textarea and copy button;
+              copyButton.textContent = 'Copied!';
+              setTimeout(() => {
+                conversionContainer.removeChild(compiledTextarea);
+                conversionContainer.removeChild(copyButton);
+                showCompiledButton.style.display = 'inline'; // show the show-compiled button again
+              }, 1000);
+            });
+          };
+        } catch (e) {
+          alert('Error during precompilation:\n\n' + e.message);
+          console.error("Precompilation Error:", e);
+        }
+      });
+
 
       document.getElementById('toggle-line-numbers').addEventListener('change', function() {
         const showLineNumbers = this.checked;
