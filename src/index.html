@@ -35,8 +35,11 @@
             <h2>Conversion Template (Handlebars)</h2>
             <textarea id="template-editor">
 {{!-- 
-  This is a Handlebars template.
-  You can use data from the input JSON on the left.
+  This is the column where you author (and possibly compile) your conversion script.
+  Currently you see a simple Handlebars template.
+  After importing instance data and/or schema (or other structure defitnitions) they can help you author the conversion script.
+  Select nodes in the tree on the left to insert paths to data elements at the current cursor position in this template.
+  
   Example: {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
 --}}
 Språk: {{ctx.language}}

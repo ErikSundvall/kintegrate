@@ -8,7 +8,7 @@ See `docs/` for GitHub Pages documentation.
 
 ## version 0.1 test setup - done!
 * user interface with three rezisable columns
-* The left "input-container" column is for input of instace data and/or schema (or other structure defitnitions). It contains the following:
+* The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:
 ** a textarea for stored instance examples as input from either
 *** /example/instance folder on web server or
 *** user's local files (upload button) or
