@@ -136,3 +136,31 @@ textarea {
 #selected-paths ul { margin: 6px 0 0 0; padding-left: 1rem }
 #selected-paths li { margin: 2px 0 }
 #selected-paths button { background: #fff; border:1px solid #ddd; padding: 2px 6px; border-radius: 3px; cursor: pointer }
+
+/* Widget and selected paths polish */
+.tree-root {
+    margin-top: 8px;
+}
+.tree-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+#selected-paths ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+#selected-paths button {
+    background: #f8f9fb;
+    border: 1px solid #e1e6eb;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.tree-root .widget-tree {
+    max-height: 50vh;
+    overflow: auto;
+}

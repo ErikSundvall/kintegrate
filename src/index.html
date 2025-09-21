@@ -68,17 +68,13 @@ Land: {{ctx.territory}}
  
     <!-- CodeMirror 5 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
 
-    <!-- Tree library (if we want to try it) -->
+    <!-- Tree widget and Handlebars runtime (local) -->
     <script src="tree.min.js"></script>
-
-    <!-- script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script -->
-    <!-- script src="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.js"></script -->
-   
 
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
@@ -86,124 +82,76 @@ Land: {{ctx.territory}}
     <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
     <script>
-      // --- Helper function to build a Handlebars-compatible path ---
+      // --- Editor initialization ---
+      const inputTextarea = document.getElementById('inputInstance');
+      const templateTextarea = document.getElementById('template-editor');
+      const outputTextarea = document.getElementById('out');
+
+      const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
+      const templateEditor = CodeMirror.fromTextArea(templateTextarea, { mode: 'text/x-handlebars-template', lineNumbers: true, tabSize: 2 });
+      const outputEditor = CodeMirror.fromTextArea(outputTextarea, { mode: 'application/json', lineNumbers: true, readOnly: true });
+
+      // small helper used by tree integration
       function buildHandlebarsPath(pathArray) {
-        if (!pathArray || pathArray.length === 0) return '';
-        let pathStr = pathArray[0];
-        for (let i = 1; i < pathArray.length; i++) {
-          const segment = pathArray[i];
-          if (typeof segment === 'number') {
-            pathStr += `.${segment}`;
-          } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(segment)) {
-            pathStr += `.${segment}`;
-          } else {
-            pathStr += `['${segment}']`;
-          }
-        }
-        return pathStr;
+        if (!Array.isArray(pathArray)) return '';
+        return pathArray.map(p => {
+          if (typeof p === 'number') return p;
+          if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
+          return `[\'${String(p).replace(/\\/g,'\\\\').replace(/'/g, "\\'")}\']`;
+        }).join('.');
       }
 
-      // --- Simple multi-select JSON tree viewer (replaces external tree lib) ---
+      // Use the provided Tree widget (tree.min.js) for rendering and selection.
       const jsonTreeContainer = document.getElementById('json-tree-container');
-      let selectedPaths = [];
+      let treeInstance = null;
 
-      // Utility to create a DOM-safe label for a key
-      function escapeHtml(str) {
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      }
+      // Convert arbitrary JSON into the tree widget's expected node format.
+      let _idCounter = 1;
+      function nextId() { return 'n' + (_idCounter++); }
 
-      function renderJsonTree(value, container, path = []) {
+      function jsonToTreeNodes(value, path = []) {
         const type = Object.prototype.toString.call(value);
         if (type === '[object Object]') {
-          const ul = document.createElement('ul');
-          ul.className = 'json-tree';
-          for (const key of Object.keys(value)) {
-            const li = document.createElement('li');
+          return Object.keys(value).map(key => {
             const nodePath = path.concat(key);
-            const span = document.createElement('span');
-            span.className = 'tree-node';
-            span.dataset.path = JSON.stringify(nodePath);
-            span.innerHTML = `<strong>${escapeHtml(key)}</strong>`;
-            span.addEventListener('click', treeNodeClick);
-            li.appendChild(span);
-            // recursively render children
-            const child = document.createElement('div');
-            child.className = 'child-container';
-            renderJsonTree(value[key], child, nodePath);
-            li.appendChild(child);
-            ul.appendChild(li);
-          }
-          container.appendChild(ul);
-        } else if (type === '[object Array]') {
-          const ul = document.createElement('ul');
-          ul.className = 'json-tree';
-          for (let i = 0; i < value.length; i++) {
-            const li = document.createElement('li');
-            const nodePath = path.concat(i);
-            const span = document.createElement('span');
-            span.className = 'tree-node';
-            span.dataset.path = JSON.stringify(nodePath);
-            span.textContent = `[${i}]`;
-            span.addEventListener('click', treeNodeClick);
-            li.appendChild(span);
-            const child = document.createElement('div');
-            child.className = 'child-container';
-            renderJsonTree(value[i], child, nodePath);
-            li.appendChild(child);
-            ul.appendChild(li);
-          }
-          container.appendChild(ul);
-        } else {
-          // primitive
-          const span = document.createElement('span');
-          span.className = 'tree-node leaf';
-          span.dataset.path = JSON.stringify(path);
-          span.textContent = String(value);
-          span.addEventListener('click', treeNodeClick);
-          container.appendChild(span);
+            const children = jsonToTreeNodes(value[key], nodePath);
+            return { id: nextId(), text: String(key), path: nodePath, children: children.length ? children : undefined };
+          });
         }
+        if (type === '[object Array]') {
+          return value.map((item, i) => {
+            const nodePath = path.concat(i);
+            const children = jsonToTreeNodes(item, nodePath);
+            return { id: nextId(), text: '[' + i + ']', path: nodePath, children: children.length ? children : undefined };
+          });
+        }
+        // primitive
+        return [{ id: nextId(), text: String(value), path: path }];
       }
 
-      function tryUseTreeJS(jsonData) {
-        // Assume the tree library and widget core are loaded and available globally.
-        const target = document.createElement('div');
-        target.className = 'tree-root';
-
-        // Handler that inserts into the template editor when a node is selected
-        const insertHandler = (node) => {
-          const pathArray = node && (node.path || (node.parentPath ? node.parentPath.concat(node.key) : null));
-          if (pathArray) {
-            const handlebarsPath = buildHandlebarsPath(pathArray);
-            templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
-            templateEditor.focus();
-          }
-        };
-
-        // Directly initialize via the widget core 'create' API (assumed present)
-        // This mirrors the @widgetjs/tree usage pattern when loaded via UMD.
-        window.widget.create('tree', target, { data: jsonData, multiSelect: true, onSelect: insertHandler });
-
-        return target;
+      function insertPathsFromNodes(nodes) {
+        if (!nodes || nodes.length === 0) return;
+        const inserts = nodes.map(n => `{{${buildHandlebarsPath(n.path)}}}`);
+        templateEditor.replaceSelection(inserts.join('\n'));
+        templateEditor.focus();
       }
 
-      async function updateJsonTree(jsonString) {
-        clearJsonTree();
-        selectedPaths = [];
+      function updateJsonTree(jsonString) {
+        jsonTreeContainer.innerHTML = '';
         try {
           const jsonData = JSON.parse(jsonString);
+          _idCounter = 1;
+          const treeData = jsonToTreeNodes(jsonData, []);
 
-          // Initialize treejs (assumed available) and attach actions area
+          // Actions UI
           const actions = document.createElement('div');
           actions.className = 'tree-actions';
           const insertButton = document.createElement('button');
           insertButton.textContent = 'Insert Selected Paths';
           insertButton.id = 'insert-selected-paths';
-          insertButton.addEventListener('click', insertSelectedPathsAtCursor);
+          insertButton.addEventListener('click', () => {
+            if (treeInstance) insertPathsFromNodes(treeInstance.selectedNodes);
+          });
           const selectedList = document.createElement('div');
           selectedList.id = 'selected-paths';
           selectedList.style.marginTop = '8px';
@@ -211,64 +159,36 @@ Land: {{ctx.territory}}
           actions.appendChild(selectedList);
           jsonTreeContainer.appendChild(actions);
 
-          const treeRoot = tryUseTreeJS(jsonData);
-          jsonTreeContainer.appendChild(treeRoot);
-
-        } catch (e) {
-          jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
-        }
-        refreshSelectedPathsUI();
-      }
-
-      function treeNodeClick(ev) {
-        ev.stopPropagation();
-        const el = ev.currentTarget;
-        const path = JSON.parse(el.dataset.path || '[]');
-        const pathStr = JSON.stringify(path);
-
-        if (ev.ctrlKey || ev.metaKey) {
-          // toggle selection
-          const idx = selectedPaths.findIndex(p => JSON.stringify(p) === pathStr);
-          if (idx === -1) selectedPaths.push(path);
-          else selectedPaths.splice(idx, 1);
-          el.classList.toggle('selected');
-          refreshSelectedPathsUI();
-          return;
-        }
-
-        // No modifier: single selection, insert immediately
-        const handlebarsPath = buildHandlebarsPath(path);
-        if (handlebarsPath) {
-          templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
-          templateEditor.focus();
-        }
-      }
-
-      function refreshSelectedPathsUI() {
-        const selectedList = document.getElementById('selected-paths');
-        if (!selectedList) return;
-        selectedList.innerHTML = '';
-        if (selectedPaths.length === 0) {
-          selectedList.textContent = 'No nodes selected. (Ctrl/Cmd + click to multi-select)';
-          return;
-        }
-        const ul = document.createElement('ul');
-        for (const p of selectedPaths) {
-          const li = document.createElement('li');
-          const btn = document.createElement('button');
-          btn.textContent = buildHandlebarsPath(p);
-          btn.style.cursor = 'pointer';
-          btn.addEventListener('click', () => {
-            templateEditor.replaceSelection(`{{${buildHandlebarsPath(p)}}}`);
-            templateEditor.focus();
+          // Initialize Tree widget into our container
+          const selector = '#json-tree-container';
+          treeInstance = new Tree(selector, {
+            data: treeData,
+            onChange: function() {
+              const selected = this.selectedNodes || [];
+              const selectedListEl = document.getElementById('selected-paths');
+              selectedListEl.innerHTML = '';
+              if (!selected || selected.length === 0) {
+                selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+                return;
+              }
+              const ul = document.createElement('ul');
+              for (const n of selected) {
+                const li = document.createElement('li');
+                const btn = document.createElement('button');
+                btn.textContent = buildHandlebarsPath(n.path);
+                btn.style.cursor = 'pointer';
+                btn.addEventListener('click', () => {
+                  templateEditor.replaceSelection(`{{${buildHandlebarsPath(n.path)}}}`);
+                  templateEditor.focus();
+                });
+                li.appendChild(btn);
+                ul.appendChild(li);
+              }
+              selectedListEl.appendChild(ul);
+            }
           });
-          li.appendChild(btn);
-          ul.appendChild(li);
-        }
-        selectedList.appendChild(ul);
-      }
 
-      function insertSelectedPathsAtCursor() {
+function insertSelectedPathsAtCursor() {
         if (!selectedPaths || selectedPaths.length === 0) return;
         const inserts = selectedPaths.map(p => `{{${buildHandlebarsPath(p)}}}`);
         templateEditor.replaceSelection(inserts.join('\n'));
@@ -319,38 +239,66 @@ Land: {{ctx.territory}}
           // 4. Display the resulting HTML in the output editor
           outputEditor.setValue(resultHtml);
         } catch (e) {
-          outputEditor.setValue(`Error during conversion:\n\n${e.message}`);
-          console.error("Conversion Error:", e);
+          jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
         }
-      });
+      }
 
-      document.getElementById('fileInput').addEventListener('change', function() {
-        const file = this.files[0];
+      // File input handling
+      document.getElementById('fileInput').addEventListener('change', function(ev) {
+        const file = ev.target.files && ev.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                inputEditor.setValue(content);
-                updateJsonTree(content); // Manually update tree
-            };
-            reader.readAsText(file);
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const content = e.target.result;
+            inputEditor.setValue(content);
+            updateJsonTree(content);
+          };
+          reader.readAsText(file);
         }
       });
 
+      // Example selection
       document.getElementById('exampleSelect').addEventListener('change', function() {
         const selectedFile = this.value;
         if (selectedFile) {
-            fetch(`example/instance/${selectedFile}`)
-                .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
-                .then(data => {
-                    inputEditor.setValue(data);
-                    updateJsonTree(data); // Manually update tree
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    const msg = 'Error loading file: ' + selectedFile;
-                    inputEditor.setValue(`{"error": "${msg}"}`);
-                });
+          fetch(`example/instance/${selectedFile}`)
+            .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
+            .then(data => {
+              inputEditor.setValue(data);
+              updateJsonTree(data);
+            })
+            .catch(error => {
+              console.error('There was a problem with the fetch operation:', error);
+              const msg = 'Error loading file: ' + selectedFile;
+              inputEditor.setValue(JSON.stringify({ error: msg }, null, 2));
+            });
+        }
+      });
+
+      // Run conversion button
+      document.getElementById('run-conversion').addEventListener('click', () => {
+        const templateString = templateEditor.getValue();
+        let inputData;
+        try {
+          inputData = JSON.parse(inputEditor.getValue());
+        } catch (e) {
+          alert('Invalid input JSON: ' + e.message);
+          return;
+        }
+        try {
+          if (window.Handlebars && typeof Handlebars.compile === 'function') {
+            const fn = Handlebars.compile(templateString);
+            const result = fn(inputData);
+            outputEditor.setValue(result);
+          } else if (window.Handlebars && typeof Handlebars.template === 'function' && typeof Handlebars.precompile === 'function') {
+            // As a fallback, try precompilation (may not be available in runtime-only builds)
+            const pre = Handlebars.precompile(templateString);
+            outputEditor.setValue(pre);
+          } else {
+            outputEditor.setValue('Handlebars not available in this environment.');
+          }
+        } catch (e) {
+          alert('Conversion error: ' + e.message);
         }
       });
 
@@ -359,9 +307,7 @@ Land: {{ctx.territory}}
       showCompiledButton.addEventListener('click', () => {
         const templateString = templateEditor.getValue();
         try {
-          var precompiledTemplate = Handlebars.precompile(templateString);
-          console.log("Precompiled template string:", precompiledTemplate);
-          // insert a textarea in the conversion-container under the show-conmpiled button, 
+          var precompiledTemplate = Handlebars.precompile ? Handlebars.precompile(templateString) : 'Precompile not available';
           const conversionContainer = document.getElementById('conversion-container');
           const compiledTextarea = document.createElement('textarea');
           compiledTextarea.id = 'precompiled-textarea';
@@ -390,18 +336,16 @@ Land: {{ctx.territory}}
           };
         } catch (e) {
           alert('Error during precompilation:\n\n' + e.message);
-          console.error("Precompilation Error:", e);
+          console.error('Precompilation Error:', e);
         }
       });
 
-      // When content of template-editor changes: If compiled-textarea exists, remove it + copy buttonand show the show-compiled button again
-
+      // When content of template-editor changes: If compiled-textarea exists, remove it + copy button and show the show-compiled button again
       templateEditor.on('change', () => {
         console.log("Template editor changed, removing precompiled view if exists.");
         const conversionContainer = document.getElementById('conversion-container');
         const compiledTextarea = document.getElementById('precompiled-textarea');
         const copyButton = document.getElementById('copy-precompiled-button');
-        console.log("Compiled textarea:", compiledTextarea);
         if (compiledTextarea && copyButton) {
           conversionContainer.removeChild(compiledTextarea);
           conversionContainer.removeChild(copyButton);
@@ -409,13 +353,10 @@ Land: {{ctx.territory}}
         }
       });
 
-
       document.getElementById('toggle-line-numbers').addEventListener('change', function() {
         const showLineNumbers = this.checked;
         const editors = [inputEditor, templateEditor, outputEditor];
-        editors.forEach(editor => {
-          editor.setOption('lineNumbers', showLineNumbers);
-        });
+        editors.forEach(editor => editor.setOption('lineNumbers', showLineNumbers));
       });
 
       // Update tree when user types in the input editor
@@ -423,8 +364,9 @@ Land: {{ctx.territory}}
         updateJsonTree(editor.getValue());
       });
 
-      // Trigger initial render of the JSON tree
-      updateJsonTree(initialJson);
+      //   Trigger initial render of the JSON tree
+      // const initialJson = inputEditor.getValue();
+      // updateJsonTree(initialJson);
     </script>
   </body>
 </html>
