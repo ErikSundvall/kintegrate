@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <link rel="stylesheet" href="resizable-columns.css">
+    <!--  css for tree widget -->
+    <link rel="stylesheet" href="tree.min.css">
     <!-- CodeMirror 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.css">
+
 
   </head>
   <body>
@@ -167,76 +169,26 @@ Land: {{ctx.territory}}
         }
       }
 
-      function clearJsonTree() {
-        jsonTreeContainer.innerHTML = '';
-      }
+      function tryUseTreeJS(jsonData) {
+        // Assume the tree library and widget core are loaded and available globally.
+        const target = document.createElement('div');
+        target.className = 'tree-root';
 
-      async function tryUseTreeJS(jsonData) {
-        // Try to use the globally-loaded UMD bundle(s) included earlier via <script> tags.
-        // This tries several common global export shapes that @widgetjs/tree may expose
-        // when loaded as a UMD bundle.
-        try {
-          const target = document.createElement('div');
-          target.className = 'tree-root';
-
-          // Normalize handler that inserts into the template editor
-          const insertHandler = (pathArray) => {
+        // Handler that inserts into the template editor when a node is selected
+        const insertHandler = (node) => {
+          const pathArray = node && (node.path || (node.parentPath ? node.parentPath.concat(node.key) : null));
+          if (pathArray) {
             const handlebarsPath = buildHandlebarsPath(pathArray);
-            if (handlebarsPath) {
-              templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
-              templateEditor.focus();
-            }
-          };
-
-          // Common global candidates
-          const globals = [window.Tree, window.Treejs, window.TreeLib, window.WidgetTree, window.widget, window.Widget, window['@widgetjs/tree'], window['widgetjs_tree']];
-          // Also check for tree export on widget core: window.widget && window.widget.tree
-          if (window.widget && window.widget.tree) globals.push(window.widget.tree);
-
-          for (const G of globals) {
-            if (!G) continue;
-            try {
-              // If it's a constructor function
-              if (typeof G === 'function') {
-                // Try 'new G(container, options)'
-                try {
-                  const inst = new G(target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) });
-                  return target;
-                } catch (e) {
-                  // Try alternative signature 'G(container, data)'
-                  try { G(target, jsonData); return target; } catch (e2) {}
-                }
-              }
-
-              // If object with create/render API
-              if (G && typeof G.create === 'function') {
-                try { G.create(target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) }); return target; } catch (e) {}
-              }
-              if (G && typeof G.render === 'function') {
-                try { G.render(target, jsonData); return target; } catch (e) {}
-              }
-            } catch (e) {
-              console.warn('attempt to use tree global failed', e);
-            }
+            templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
+            templateEditor.focus();
           }
+        };
 
-          // Last resort: check for a global 'widget' factory that can create components via a tag
-          if (window.widget && typeof window.widget.create === 'function') {
-            try {
-              // Some widget cores expose a declarative creation API
-              window.widget.create('tree', target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) });
-              return target;
-            } catch (e) {
-              console.warn('widget.create("tree") failed', e);
-            }
-          }
+        // Directly initialize via the widget core 'create' API (assumed present)
+        // This mirrors the @widgetjs/tree usage pattern when loaded via UMD.
+        window.widget.create('tree', target, { data: jsonData, multiSelect: true, onSelect: insertHandler });
 
-          // Could not mount the external tree lib
-          return false;
-        } catch (err) {
-          console.warn('Error while attempting to initialize treejs', err);
-          return false;
-        }
+        return target;
       }
 
       async function updateJsonTree(jsonString) {
@@ -245,47 +197,7 @@ Land: {{ctx.territory}}
         try {
           const jsonData = JSON.parse(jsonString);
 
-          // First try to render using the external treejs library from CDN.
-          const treeEl = await tryUseTreeJS(jsonData);
-          if (treeEl) {
-            // If treejs returned a DOM element, attach actions area and mount it.
-            const actions = document.createElement('div');
-            actions.className = 'tree-actions';
-            const insertButton = document.createElement('button');
-            insertButton.textContent = 'Insert Selected Paths';
-            insertButton.id = 'insert-selected-paths';
-            insertButton.addEventListener('click', insertSelectedPathsAtCursor);
-            const selectedList = document.createElement('div');
-            selectedList.id = 'selected-paths';
-            selectedList.style.marginTop = '8px';
-            actions.appendChild(insertButton);
-            actions.appendChild(selectedList);
-            jsonTreeContainer.appendChild(actions);
-
-            jsonTreeContainer.appendChild(treeEl);
-            // Best-effort: attempt to wire up click delegation for nodes that expose data-path attributes
-            jsonTreeContainer.addEventListener('click', function delegatedClick(e) {
-              const el = e.target.closest('[data-path]');
-              if (el) {
-                try {
-                  const path = JSON.parse(el.getAttribute('data-path'));
-                  const handlebarsPath = buildHandlebarsPath(path);
-                  if (handlebarsPath) {
-                    templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
-                    templateEditor.focus();
-                  }
-                } catch (ex) {
-                  // ignore
-                }
-              }
-            });
-
-            // done
-            refreshSelectedPathsUI();
-            return;
-          }
-
-          // Fallback to built-in renderer
+          // Initialize treejs (assumed available) and attach actions area
           const actions = document.createElement('div');
           actions.className = 'tree-actions';
           const insertButton = document.createElement('button');
@@ -299,9 +211,7 @@ Land: {{ctx.territory}}
           actions.appendChild(selectedList);
           jsonTreeContainer.appendChild(actions);
 
-          const treeRoot = document.createElement('div');
-          treeRoot.className = 'tree-root';
-          renderJsonTree(jsonData, treeRoot, []);
+          const treeRoot = tryUseTreeJS(jsonData);
           jsonTreeContainer.appendChild(treeRoot);
 
         } catch (e) {
