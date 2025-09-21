@@ -70,9 +70,13 @@ Land: {{ctx.territory}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script>
+
+    <!-- Tree library (if we want to try it) -->
+    <script src="tree.min.js"></script>
+
+    <!-- script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script -->
+    <!-- script src="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.js"></script -->
+   
 
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
@@ -168,68 +172,69 @@ Land: {{ctx.territory}}
       }
 
       async function tryUseTreeJS(jsonData) {
-        // Try to dynamically import treejs from unpkg (ESM). If successful, attempt several common
-        // initialization patterns used by UMD/ESM libraries. If anything fails, return false so caller
-        // can fall back to the local renderer.
+        // Try to use the globally-loaded UMD bundle(s) included earlier via <script> tags.
+        // This tries several common global export shapes that @widgetjs/tree may expose
+        // when loaded as a UMD bundle.
         try {
-          const moduleUrl = 'https://unpkg.com/@widgetjs/tree?module';
-          const mod = await import(moduleUrl);
-          const TreeLib = mod.default || mod.Tree || mod.createTree || mod.tree || mod;
-
-          // If we have a constructor-like export, try several ways of creating a tree.
           const target = document.createElement('div');
           target.className = 'tree-root';
 
-          // Provide a small API adapter so TreeLib can call our onSelect callback.
-          const adapterOnSelect = (node) => {
-            // Depending on the tree lib, node may contain a path or key; try to normalize.
-            if (node && node.path) {
-              const path = node.path;
-              templateEditor.replaceSelection(`{{${buildHandlebarsPath(path)}}}`);
-              templateEditor.focus();
-            } else if (node && node.key && node.parentPath) {
-              const path = node.parentPath.concat(node.key);
-              templateEditor.replaceSelection(`{{${buildHandlebarsPath(path)}}}`);
+          // Normalize handler that inserts into the template editor
+          const insertHandler = (pathArray) => {
+            const handlebarsPath = buildHandlebarsPath(pathArray);
+            if (handlebarsPath) {
+              templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
               templateEditor.focus();
             }
           };
 
-          // Try constructor(new TreeLib(target, {data, ...}))
-          try {
-            if (typeof TreeLib === 'function') {
-              // Try a couple of common signatures
-              try {
-                new TreeLib(target, { data: jsonData, multiSelect: true, onSelect: adapterOnSelect });
-                return target;
-              } catch (e) {
-                // Try alternative signature
+          // Common global candidates
+          const globals = [window.Tree, window.Treejs, window.TreeLib, window.WidgetTree, window.widget, window.Widget, window['@widgetjs/tree'], window['widgetjs_tree']];
+          // Also check for tree export on widget core: window.widget && window.widget.tree
+          if (window.widget && window.widget.tree) globals.push(window.widget.tree);
+
+          for (const G of globals) {
+            if (!G) continue;
+            try {
+              // If it's a constructor function
+              if (typeof G === 'function') {
+                // Try 'new G(container, options)'
                 try {
-                  TreeLib(target, jsonData);
+                  const inst = new G(target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) });
                   return target;
-                } catch (e2) {
-                  // continue to other attempts
+                } catch (e) {
+                  // Try alternative signature 'G(container, data)'
+                  try { G(target, jsonData); return target; } catch (e2) {}
                 }
               }
-            }
 
-            // Try if module exposes a render/create function
-            if (TreeLib && typeof TreeLib.create === 'function') {
-              TreeLib.create(target, { data: jsonData, multiSelect: true, onSelect: adapterOnSelect });
-              return target;
+              // If object with create/render API
+              if (G && typeof G.create === 'function') {
+                try { G.create(target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) }); return target; } catch (e) {}
+              }
+              if (G && typeof G.render === 'function') {
+                try { G.render(target, jsonData); return target; } catch (e) {}
+              }
+            } catch (e) {
+              console.warn('attempt to use tree global failed', e);
             }
-
-            if (TreeLib && typeof TreeLib.render === 'function') {
-              TreeLib.render(target, jsonData);
-              return target;
-            }
-
-          } catch (e) {
-            console.warn('treejs integration attempts failed:', e);
           }
 
+          // Last resort: check for a global 'widget' factory that can create components via a tag
+          if (window.widget && typeof window.widget.create === 'function') {
+            try {
+              // Some widget cores expose a declarative creation API
+              window.widget.create('tree', target, { data: jsonData, multiSelect: true, onSelect: (n) => insertHandler(n.path || n) });
+              return target;
+            } catch (e) {
+              console.warn('widget.create("tree") failed', e);
+            }
+          }
+
+          // Could not mount the external tree lib
           return false;
         } catch (err) {
-          console.warn('Could not import @widgetjs/tree from CDN, falling back to built-in renderer.', err);
+          console.warn('Error while attempting to initialize treejs', err);
           return false;
         }
       }
