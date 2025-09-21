@@ -123,3 +123,16 @@ textarea {
     box-sizing: border-box; /* Ensures padding doesn't add to the width */
     resize: vertical; /* Allow user to resize textarea vertically */
 }
+
+/* JSON tree viewer styles */
+.json-tree { list-style: none; padding-left: 1rem; margin: 0; }
+.json-tree li { margin: 2px 0; }
+.tree-node { display: inline-block; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+.tree-node:hover { background: rgba(0,0,0,0.03); }
+.tree-node.selected { background: #cfe3ff; }
+.child-container { margin-left: 1rem; }
+.tree-actions { margin-bottom: 8px; display:flex; gap:8px; align-items:center }
+.tree-actions button { padding:4px 8px; cursor:pointer }
+#selected-paths ul { margin: 6px 0 0 0; padding-left: 1rem }
+#selected-paths li { margin: 2px 0 }
+#selected-paths button { background: #fff; border:1px solid #ddd; padding: 2px 6px; border-radius: 3px; cursor: pointer }

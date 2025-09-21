@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="resizable-columns.css">
     <!-- CodeMirror 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.css">
+
   </head>
   <body>
     <!--header>
@@ -68,78 +70,294 @@ Land: {{ctx.territory}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
- 
+    <script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@widget-js/core@24.1.1-beta.72/dist/widget.min.js"></script>
+
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
     
     <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
-    <script src="https://unpkg.com/svelte-json-tree@2.2.0/dist/standalone/umd/index.js"></script>
     <script>
       // --- Helper function to build a Handlebars-compatible path ---
       function buildHandlebarsPath(pathArray) {
-        if (!pathArray || pathArray.length === 0) {
-          return '';
-        }
-        // The first segment is the root.
+        if (!pathArray || pathArray.length === 0) return '';
         let pathStr = pathArray[0];
-
-        // For subsequent segments, decide whether to use dot or bracket notation.
         for (let i = 1; i < pathArray.length; i++) {
           const segment = pathArray[i];
           if (typeof segment === 'number') {
-            // Use dot notation for array indices, which Handlebars supports.
+            pathStr += `.${segment}`;
+          } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(segment)) {
             pathStr += `.${segment}`;
           } else {
-            // For string keys, check if they are simple identifiers.
-            if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(segment)) {
-              pathStr += `.${segment}`;
-            } else {
-              // Use bracket notation for complex keys (e.g., with '|', '-', etc.).
-              pathStr += `['${segment}']`;
-            }
+            pathStr += `['${segment}']`;
           }
         }
         return pathStr;
       }
 
-      // --- Helper function to update the JSON tree view ---
+      // --- Simple multi-select JSON tree viewer (replaces external tree lib) ---
       const jsonTreeContainer = document.getElementById('json-tree-container');
-      // The UMD script exposes the component on the window object.
-      const JSONTree = window.SvelteJsonTree;
-      let jsonTree; // Keep a reference to the tree instance to manage its lifecycle
+      let selectedPaths = [];
 
-      function updateJsonTree(jsonString) {
-        // Destroy the previous tree instance if it exists to prevent memory leaks
-        if (jsonTree) {
-          jsonTree.$destroy();
+      // Utility to create a DOM-safe label for a key
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function renderJsonTree(value, container, path = []) {
+        const type = Object.prototype.toString.call(value);
+        if (type === '[object Object]') {
+          const ul = document.createElement('ul');
+          ul.className = 'json-tree';
+          for (const key of Object.keys(value)) {
+            const li = document.createElement('li');
+            const nodePath = path.concat(key);
+            const span = document.createElement('span');
+            span.className = 'tree-node';
+            span.dataset.path = JSON.stringify(nodePath);
+            span.innerHTML = `<strong>${escapeHtml(key)}</strong>`;
+            span.addEventListener('click', treeNodeClick);
+            li.appendChild(span);
+            // recursively render children
+            const child = document.createElement('div');
+            child.className = 'child-container';
+            renderJsonTree(value[key], child, nodePath);
+            li.appendChild(child);
+            ul.appendChild(li);
+          }
+          container.appendChild(ul);
+        } else if (type === '[object Array]') {
+          const ul = document.createElement('ul');
+          ul.className = 'json-tree';
+          for (let i = 0; i < value.length; i++) {
+            const li = document.createElement('li');
+            const nodePath = path.concat(i);
+            const span = document.createElement('span');
+            span.className = 'tree-node';
+            span.dataset.path = JSON.stringify(nodePath);
+            span.textContent = `[${i}]`;
+            span.addEventListener('click', treeNodeClick);
+            li.appendChild(span);
+            const child = document.createElement('div');
+            child.className = 'child-container';
+            renderJsonTree(value[i], child, nodePath);
+            li.appendChild(child);
+            ul.appendChild(li);
+          }
+          container.appendChild(ul);
+        } else {
+          // primitive
+          const span = document.createElement('span');
+          span.className = 'tree-node leaf';
+          span.dataset.path = JSON.stringify(path);
+          span.textContent = String(value);
+          span.addEventListener('click', treeNodeClick);
+          container.appendChild(span);
         }
-        jsonTreeContainer.innerHTML = ''; // Clear container
+      }
 
+      function clearJsonTree() {
+        jsonTreeContainer.innerHTML = '';
+      }
+
+      async function tryUseTreeJS(jsonData) {
+        // Try to dynamically import treejs from unpkg (ESM). If successful, attempt several common
+        // initialization patterns used by UMD/ESM libraries. If anything fails, return false so caller
+        // can fall back to the local renderer.
         try {
-            const jsonData = JSON.parse(jsonString);
-            // Create a new tree instance
-            jsonTree = new JSONTree({
-                target: jsonTreeContainer,
-                props: { value: jsonData },
-            });
-            console.log("JSON Tree updated.", jsonTree);
+          const moduleUrl = 'https://unpkg.com/@widgetjs/tree?module';
+          const mod = await import(moduleUrl);
+          const TreeLib = mod.default || mod.Tree || mod.createTree || mod.tree || mod;
 
-            // Add event listener for node selection to insert path into template editor
-            jsonTree.$on('select', (event) => {
-                const pathArray = event.detail.path;
-                const handlebarsPath = buildHandlebarsPath(pathArray);
-                
-                // Insert the path wrapped in {{...}} at the current cursor position
-                if (handlebarsPath) {
-                    templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
-                    templateEditor.focus(); // Return focus to the editor
+          // If we have a constructor-like export, try several ways of creating a tree.
+          const target = document.createElement('div');
+          target.className = 'tree-root';
+
+          // Provide a small API adapter so TreeLib can call our onSelect callback.
+          const adapterOnSelect = (node) => {
+            // Depending on the tree lib, node may contain a path or key; try to normalize.
+            if (node && node.path) {
+              const path = node.path;
+              templateEditor.replaceSelection(`{{${buildHandlebarsPath(path)}}}`);
+              templateEditor.focus();
+            } else if (node && node.key && node.parentPath) {
+              const path = node.parentPath.concat(node.key);
+              templateEditor.replaceSelection(`{{${buildHandlebarsPath(path)}}}`);
+              templateEditor.focus();
+            }
+          };
+
+          // Try constructor(new TreeLib(target, {data, ...}))
+          try {
+            if (typeof TreeLib === 'function') {
+              // Try a couple of common signatures
+              try {
+                new TreeLib(target, { data: jsonData, multiSelect: true, onSelect: adapterOnSelect });
+                return target;
+              } catch (e) {
+                // Try alternative signature
+                try {
+                  TreeLib(target, jsonData);
+                  return target;
+                } catch (e2) {
+                  // continue to other attempts
                 }
+              }
+            }
+
+            // Try if module exposes a render/create function
+            if (TreeLib && typeof TreeLib.create === 'function') {
+              TreeLib.create(target, { data: jsonData, multiSelect: true, onSelect: adapterOnSelect });
+              return target;
+            }
+
+            if (TreeLib && typeof TreeLib.render === 'function') {
+              TreeLib.render(target, jsonData);
+              return target;
+            }
+
+          } catch (e) {
+            console.warn('treejs integration attempts failed:', e);
+          }
+
+          return false;
+        } catch (err) {
+          console.warn('Could not import @widgetjs/tree from CDN, falling back to built-in renderer.', err);
+          return false;
+        }
+      }
+
+      async function updateJsonTree(jsonString) {
+        clearJsonTree();
+        selectedPaths = [];
+        try {
+          const jsonData = JSON.parse(jsonString);
+
+          // First try to render using the external treejs library from CDN.
+          const treeEl = await tryUseTreeJS(jsonData);
+          if (treeEl) {
+            // If treejs returned a DOM element, attach actions area and mount it.
+            const actions = document.createElement('div');
+            actions.className = 'tree-actions';
+            const insertButton = document.createElement('button');
+            insertButton.textContent = 'Insert Selected Paths';
+            insertButton.id = 'insert-selected-paths';
+            insertButton.addEventListener('click', insertSelectedPathsAtCursor);
+            const selectedList = document.createElement('div');
+            selectedList.id = 'selected-paths';
+            selectedList.style.marginTop = '8px';
+            actions.appendChild(insertButton);
+            actions.appendChild(selectedList);
+            jsonTreeContainer.appendChild(actions);
+
+            jsonTreeContainer.appendChild(treeEl);
+            // Best-effort: attempt to wire up click delegation for nodes that expose data-path attributes
+            jsonTreeContainer.addEventListener('click', function delegatedClick(e) {
+              const el = e.target.closest('[data-path]');
+              if (el) {
+                try {
+                  const path = JSON.parse(el.getAttribute('data-path'));
+                  const handlebarsPath = buildHandlebarsPath(path);
+                  if (handlebarsPath) {
+                    templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
+                    templateEditor.focus();
+                  }
+                } catch (ex) {
+                  // ignore
+                }
+              }
             });
+
+            // done
+            refreshSelectedPathsUI();
+            return;
+          }
+
+          // Fallback to built-in renderer
+          const actions = document.createElement('div');
+          actions.className = 'tree-actions';
+          const insertButton = document.createElement('button');
+          insertButton.textContent = 'Insert Selected Paths';
+          insertButton.id = 'insert-selected-paths';
+          insertButton.addEventListener('click', insertSelectedPathsAtCursor);
+          const selectedList = document.createElement('div');
+          selectedList.id = 'selected-paths';
+          selectedList.style.marginTop = '8px';
+          actions.appendChild(insertButton);
+          actions.appendChild(selectedList);
+          jsonTreeContainer.appendChild(actions);
+
+          const treeRoot = document.createElement('div');
+          treeRoot.className = 'tree-root';
+          renderJsonTree(jsonData, treeRoot, []);
+          jsonTreeContainer.appendChild(treeRoot);
 
         } catch (e) {
-            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
+          jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
         }
+        refreshSelectedPathsUI();
+      }
+
+      function treeNodeClick(ev) {
+        ev.stopPropagation();
+        const el = ev.currentTarget;
+        const path = JSON.parse(el.dataset.path || '[]');
+        const pathStr = JSON.stringify(path);
+
+        if (ev.ctrlKey || ev.metaKey) {
+          // toggle selection
+          const idx = selectedPaths.findIndex(p => JSON.stringify(p) === pathStr);
+          if (idx === -1) selectedPaths.push(path);
+          else selectedPaths.splice(idx, 1);
+          el.classList.toggle('selected');
+          refreshSelectedPathsUI();
+          return;
+        }
+
+        // No modifier: single selection, insert immediately
+        const handlebarsPath = buildHandlebarsPath(path);
+        if (handlebarsPath) {
+          templateEditor.replaceSelection(`{{${handlebarsPath}}}`);
+          templateEditor.focus();
+        }
+      }
+
+      function refreshSelectedPathsUI() {
+        const selectedList = document.getElementById('selected-paths');
+        if (!selectedList) return;
+        selectedList.innerHTML = '';
+        if (selectedPaths.length === 0) {
+          selectedList.textContent = 'No nodes selected. (Ctrl/Cmd + click to multi-select)';
+          return;
+        }
+        const ul = document.createElement('ul');
+        for (const p of selectedPaths) {
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.textContent = buildHandlebarsPath(p);
+          btn.style.cursor = 'pointer';
+          btn.addEventListener('click', () => {
+            templateEditor.replaceSelection(`{{${buildHandlebarsPath(p)}}}`);
+            templateEditor.focus();
+          });
+          li.appendChild(btn);
+          ul.appendChild(li);
+        }
+        selectedList.appendChild(ul);
+      }
+
+      function insertSelectedPathsAtCursor() {
+        if (!selectedPaths || selectedPaths.length === 0) return;
+        const inserts = selectedPaths.map(p => `{{${buildHandlebarsPath(p)}}}`);
+        templateEditor.replaceSelection(inserts.join('\n'));
+        templateEditor.focus();
       }
 
       // --- Initialize CodeMirror Editors ---
