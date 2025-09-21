@@ -138,6 +138,7 @@ Land: {{ctx.territory}}
 
       function updateJsonTree(jsonString) {
         jsonTreeContainer.innerHTML = '';
+
         try {
           const jsonData = JSON.parse(jsonString);
           _idCounter = 1;
@@ -188,30 +189,21 @@ Land: {{ctx.territory}}
             }
           });
 
-function insertSelectedPathsAtCursor() {
+          } catch (e) {
+            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
+          }
+      }
+
+      function insertSelectedPathsAtCursor() {
         if (!selectedPaths || selectedPaths.length === 0) return;
         const inserts = selectedPaths.map(p => `{{${buildHandlebarsPath(p)}}}`);
         templateEditor.replaceSelection(inserts.join('\n'));
         templateEditor.focus();
-      }
+      };
 
-      // --- Initialize CodeMirror Editors ---
-      const templateEditor = CodeMirror.fromTextArea(document.getElementById('template-editor'), {
-        lineNumbers: true,
-        mode: { name: 'handlebars', base: 'text/html' },
-      });
 
-      const inputEditor = CodeMirror.fromTextArea(document.getElementById('inputInstance'), {
-        lineNumbers: true,
-        mode: { name: 'javascript', json: true },
-      });
 
-      const outputEditor = CodeMirror.fromTextArea(document.getElementById('out'), {
-        lineNumbers: true,
-        mode: 'htmlmixed',
-        readOnly: true
-      });
-
+      
       // Set initial content
       const initialJson = '{\n  "message": "Paste JSON here or select an example.",\n  "tip": "Click a node below to copy its path to the cursor/selection in the conversion template."\n}';
       inputEditor.setValue(initialJson);
@@ -241,7 +233,7 @@ function insertSelectedPathsAtCursor() {
         } catch (e) {
           jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
         }
-      }
+      });
 
       // File input handling
       document.getElementById('fileInput').addEventListener('change', function(ev) {
@@ -365,8 +357,9 @@ function insertSelectedPathsAtCursor() {
       });
 
       //   Trigger initial render of the JSON tree
-      // const initialJson = inputEditor.getValue();
-      // updateJsonTree(initialJson);
+       initialJson = inputEditor.getValue();
+       updateJsonTree(initialJson);
+
     </script>
   </body>
 </html>
