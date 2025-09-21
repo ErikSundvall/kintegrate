@@ -14,7 +14,7 @@
     </header -->
     <main>
       <div class="fullheight-container" id="main-container">
-        <div class="column column-left">
+        <div id="input-container" class="column column-left">
             <!-- file picker that can pick files from user upload -->
             Pick example file <input type="file" id="fileInput" accept=".json,.xml,.txt"><br>
             or select example:
@@ -47,7 +47,7 @@ Land: {{ctx.territory}}
         <button id="show-compiled">Show precompiled template</button>
       </div>
         <div class="resizer"></div>
-        <div class="column column-right">
+        <div id="output-container" class="column column-right">
             <textarea id="out">Output goes here after conversion is run</textarea>
         </div>
       </div>
