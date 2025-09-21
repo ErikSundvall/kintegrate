@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Kintegrate</title>
+    <title>index3 - treetest</title>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
     <link rel="stylesheet" href="tree.min.css">
@@ -45,6 +45,7 @@ const treeData = [
   {
     id: '0',
     text: 'node-0',
+    data: {foo: 'bar'},
     children: [
       {
         id: '0-0',
@@ -67,7 +68,15 @@ const treeData = [
 
 const myTree = new Tree('#json-tree-container', {
   data: treeData,
+    
+  onChange: function() {
+    console.log("values", this.values);
+    console.log("selected", myTree.selectedNodes);
+
+  },
 });
+
+
 
 
 
