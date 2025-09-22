@@ -1,0 +1,576 @@
+{
+ "granskning": {
+  "context": [
+   {
+    "vårdenhet": [
+     {
+      "namn": [
+       {
+        "|value": "MBA Bäckencancer Solna"
+       }
+      ],
+      "identifierare": [
+       {
+        "|id": "SE2321000016-C4DV",
+        "|type": "",
+        "|issuer": "",
+        "|assigner": ""
+       }
+      ],
+      "roll": [
+       {
+        "|code": "43741000",
+        "|value": "vårdenhet"
+       }
+      ],
+      "vårdgivare": [
+       {
+        "namn": [
+         {
+          "|value": "PDL-vårdgivare SLL IdP QA"
+         }
+        ],
+        "identifierare": [
+         {
+          "|id": "SE2321000016-I1MN",
+          "|type": "",
+          "|issuer": "",
+          "|assigner": ""
+         }
+        ],
+        "organisationsnummer": [
+         {
+          "|id": "2321000016",
+          "|type": "",
+          "|issuer": "",
+          "|assigner": ""
+         }
+        ],
+        "roll": [
+         {
+          "|code": "143591000052106",
+          "|value": "vårdgivare"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "rubrik": [
+   {
+    "behållare": [
+     {
+      "deltagare": [
+       {
+        "deltagare": [
+         {
+          "namn": [],
+          "vårdgivarroll": [
+           {
+            "specialitet": []
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "tillfällig_deltaglista": [
+       {
+        "deltagare": []
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "bakgrund": [
+   {
+    "sjukdomshistoria": [
+     {
+      "ospecificerad_händelse": [
+       {
+        "anamnes": [
+         {
+          "|value": "Erik S testar att mata in vi a form builders preview-funktion"
+         }
+        ],
+        "komorbiditet": [],
+        "aktuellt": []
+       }
+      ]
+     }
+    ],
+    "sammanfattning_av_rökvanor_för_tobak": [
+     {
+      "per_typ": [
+       {
+        "status": [
+         {
+          "|code": "at0059",
+          "|value": "Former smoker"
+         }
+        ],
+        "typ": [
+         {
+          "|code": "at0054",
+          "|value": "Cigarettes"
+         }
+        ],
+        "per_episod": [
+         {
+          "typisk_användning_enheter": [
+           {
+            "|magnitude": 1,
+            "|unit": "1/d"
+           }
+          ]
+         }
+        ],
+        "paketår_pack_years": [
+         {
+          "|value": 22
+         }
+        ],
+        "slutdatum": [
+         {
+          "|value": "2025-06-01"
+         }
+        ],
+        "kommentar": [
+         {
+          "|value": "Rök-kommentar?"
+         }
+        ]
+       }
+      ],
+      "definition_av_rökare": [
+       {
+        "|value": "Använder nu eller har slutat för mindre än 6 månader sedan"
+       }
+      ],
+      "definition_av_före_detta_rökare": [
+       {
+        "|value": "Slutade för mer än 6 månader sedan"
+       }
+      ],
+      "definition_av_paket": [
+       {
+        "quantity_value": [
+         {
+          "|unit": "st",
+          "|magnitude": 20
+         }
+        ],
+        "count_value": []
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "utredning_undersökning": [
+   {
+    "bilddiagnostik": [
+     {
+      "bilddiagnostiskt_resultat": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "typ_av_undersökning2": [],
+          "datum": [],
+          "imaging_examination_of_an_anomaly_en": [
+           {
+            "physical_dimensions_en": [
+             {
+              "diameter_största_tumör": [
+               {
+                "quantity_value": [
+                 {
+                  "|unit": "mm"
+                 }
+                ]
+               }
+              ]
+             }
+            ],
+            "multifokalitet": [],
+            "anatomisk_lokalisation_primärtumör": [
+             {
+              "namn_på_kroppsställe": [],
+              "beskrivning": []
+             }
+            ],
+            "anatomisk_lokalisation_lymfkörtelmetastaser": [
+             {
+              "namn_på_kroppsställe": [],
+              "beskrivning": []
+             }
+            ],
+            "anatomisk_lokalisation_fjärrmetastaser": [
+             {
+              "namn_på_kroppsställe": [],
+              "beskrivning": []
+             }
+            ]
+           }
+          ],
+          "kommentar": []
+         }
+        ]
+       }
+      ],
+      "kompletterande_mr_hjärna": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "typ_av_undersökning": [],
+          "anatomiskt_målområde": [],
+          "datum": [],
+          "antal_förekomster_av_ett_observerat_fynd": [
+           {
+            "antal_metastaser_i_hjärnan": []
+           }
+          ],
+          "kommentar": []
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "pad": [
+     {
+      "pad_resultat": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "undersökningsnamn": [],
+          "anatomisk_lokalisation": [
+           {
+            "anatomisk_lokalisation_för_provtagning": []
+           }
+          ],
+          "laboratoriedisciplin": [],
+          "molekylärpatologisk_analys": [
+           {
+            "analysnamn": [],
+            "analysresultat": [],
+            "analysresultat_2": [
+             {
+              "|magnitude": null,
+              "|unit": "%"
+             }
+            ]
+           }
+          ],
+          "kommentar": []
+         }
+        ]
+       }
+      ],
+      "ingreppsmetod": [
+       {
+        "namn_på_procedur": []
+       }
+      ],
+      "problem_diagnos": [
+       {
+        "patologisk_diagnos": []
+       }
+      ]
+     }
+    ],
+    "funktionsutredning": [
+     {
+      "funktionsstatus_enligt_ecog": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "funktionsstatus_enligt_ecog": [],
+          "kommentar": []
+         }
+        ]
+       }
+      ],
+      "trapptest": [
+       {
+        "any_event": [
+         {
+          "resultat": [],
+          "distans": [
+           {
+            "|magnitude": null,
+            "|unit": "m"
+           }
+          ],
+          "orsak_ej_godkänt": [],
+          "orsak_ej_genomfört": [],
+          "saturation": [
+           {
+            "|magnitude": null,
+            "|unit": "%"
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "spirometriresultat": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "fev1": [
+           {
+            "resultat": [
+             {
+              "|unit": "L"
+             }
+            ]
+           }
+          ],
+          "kvot_fev1_fvc": [
+           {
+            "resultat": [
+             {
+              "|denominator": 100
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "dlco": [
+       {
+        "any_event": [
+         {
+          "dlco": [
+           {
+            "|denominator": 100
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "ergospirometri": [
+       {
+        "any_event": [
+         {
+          "vo2max": [
+           {
+            "|magnitude": null,
+            "|unit": "ml/kg/min"
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "lungscintigrafi": [
+       {
+        "ospecificerad_händelse": [
+         {
+          "typ_av_undersökning": [
+           {
+            "|code": "303904005",
+            "|value": "Radionuclide study of respiratory function (procedure)"
+           }
+          ],
+          "namn_på_kroppsställe": [
+           {
+            "|code": "39607008",
+            "|value": "Lung"
+           }
+          ],
+          "datum": [],
+          "lungscintigrafi": [
+           {
+            "höger_lunga": [
+             {
+              "|magnitude": null,
+              "|unit": "%"
+             }
+            ],
+            "vänster_lunga": [
+             {
+              "|magnitude": null,
+              "|unit": "%"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "bedömning": [
+   {
+    "behållare": [
+     {
+      "klinisk_tnm-klassificering": [
+       {
+        "tnm-version": [
+         {
+          "|code": "1",
+          "|value": "9:de utgåvan av TNM enligt International Association for the Study of Lung Cancer"
+         }
+        ],
+        "primärtumör_t": [],
+        "regional_lymfkörtlar_n": [],
+        "fjärrmetastaser_m": [],
+        "stadieindelning": []
+       }
+      ]
+     }
+    ],
+    "huvuddiagnos": [
+     {
+      "icd-10": [],
+      "datum_och_tid_för_kliniskt_erkänd": [],
+      "problem_diagnoskvalificering": [
+       {
+        "diagnostisk_kategori": []
+       }
+      ]
+     }
+    ],
+    "bidiagnos": [
+     {
+      "icd-10": [],
+      "datum_och_tid_för_kliniskt_erkänd": [],
+      "problem_diagnoskvalificering": [
+       {
+        "diagnostisk_kategori": []
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "gemensamt_beslut": [
+   {
+    "multidisciplinär_rekommendation_för_handläggning_av_cancer": [
+     {
+      "rekommenderad_behandlingsstrategi": [
+       {
+        "behandlingsalternativ": [
+         {
+          "klinisk_studie": [],
+          "bästa_understödjande_vård_bsc": [
+           {
+            "bästa_understödjande_vård_bsc": [],
+            "skäl_till_val_av_bästa_understödjande_vård": []
+           }
+          ],
+          "huvudbehandling": [
+           {
+            "regim": [],
+            "intention": [],
+            "typ_av_behandling": [],
+            "antal_kurer": [],
+            "fraktionsdos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "totaldos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "form_av_kemoradioterpi": [],
+            "fritext": [
+             {
+              "detaljer_om_huvudbehandling": []
+             }
+            ]
+           }
+          ],
+          "tilläggsbehandling": [
+           {
+            "regim": [],
+            "intention": [],
+            "typ_av_behandling": [],
+            "relation_till_huvudbehandling": [],
+            "antal_kurer": [],
+            "fraktionsdos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "totaldos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "form_av_kemoradioterapi": [],
+            "fritext": [
+             {
+              "detaljer_om_tilläggsbehandling": []
+             }
+            ]
+           }
+          ],
+          "kommentar": []
+         }
+        ]
+       }
+      ],
+      "vidare_utredning": [
+       {
+        "beskrivning_av_vidare_utredning": []
+       }
+      ],
+      "uppföljning": []
+     }
+    ]
+   }
+  ]
+ },
+ "ctx": {
+  "language": "en",
+  "territory": "SI",
+  "generic_fields": {
+   "/bilddiagnostik/generic-layout_group-1268861/generic-coded_text-6688880": [],
+   "/generic-layout_group-2467934/rekommenderad_behandlingsstrategi/behandlingsalternativ|0/generic-layout_group-1254532/huvudbehandling/generic-layout_group-4564376/generic-boolean-2039625": [],
+   "/generic-layout_group-2467934/rekommenderad_behandlingsstrategi/behandlingsalternativ|0/generic-layout_group-1254532/huvudbehandling/generic-layout_group-4564376/generic-boolean-3468095": [],
+   "/generic-layout_group-2048575/generic-input_text-3093912": [
+    {
+     "|value": "form-default-value"
+    }
+   ],
+   "/generic-layout_group-2048575/generic-input_text-3192056": [
+    {}
+   ],
+   "/generic-external_widget-3597421": [
+    "form-default-value"
+   ],
+   "/generic-fieldset-2354375/generic-input_text-6575983": [],
+   "/generic-external_widget-4150733": [],
+   "/generic-input_text-55668": []
+  },
+  "template_id": "Diagnostic_MDT_Lung_cancer",
+  "tags": [
+   {
+    "tag": "formName",
+    "value": "MDK Lungcancer"
+   },
+   {
+    "tag": "formVersion",
+    "value": "1.0.143"
+   }
+  ]
+ }
+}

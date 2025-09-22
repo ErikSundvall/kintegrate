@@ -1,0 +1,166 @@
+/* Basic styles for the page */
+html {
+    height: 100%; /* Ensure html takes full height */
+}
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Use viewport height for the body */
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+header, footer {
+    flex-shrink: 0; /* Prevent header/footer from shrinking */
+    padding: 5px 20px;
+    background-color: #f8f9fa;
+}
+header {
+    border-bottom: 1px solid #dee2e6;
+}
+footer {
+    border-top: 1px solid #dee2e6;
+}
+
+main {
+    flex-grow: 1; /* Make the main content area fill the remaining space */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important: this contains the children and prevents body scrollbars */
+}
+
+/* (Currently unused) container for the columns that dont span full height */
+.container {
+    display: flex;
+    width: 100%;
+}
+
+/* The main container for the columns */
+.fullheight-container {
+    display: flex;
+    width: 100%;
+    flex-grow: 1; /* This is the key: it makes this container fill the available space in <main> */
+    min-height: 0; /* Fix for flexbox overflow issue in some browsers */
+}
+
+/* Styling for the columns */
+.column {
+    /* flex-basis sets the initial size. We use percentages for a responsive start. */
+    flex-basis: 33.33%;
+    
+    /* These are important: they prevent flexbox from automatically growing or shrinking columns */
+    flex-grow: 0;
+    flex-shrink: 0;
+    
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: auto; /* Add scrollbars if content overflows the column */
+    min-width: 75px; /* Prevent columns from becoming too small */
+}
+
+
+.column-fill {
+    
+    /* These are important: they prevent flexbox from automatically growing or shrinking columns */
+    flex-grow: 3;
+    flex-shrink: 0;
+    
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: auto; /* Add scrollbars if content overflows the column */
+    min-width: 75px; /* Prevent columns from becoming too small */
+}
+
+/* Different background colors for clarity */
+.column-left { background-color: #eef2f3; }
+.column-center {
+    background-color: #f6f7f8;
+    display: flex;
+    flex-direction: column; /* Arrange items vertically */
+}
+.column-right {
+    background-color: #eef2f3;
+    display: flex;
+    flex-direction: column; /* Arrange items vertically */
+}
+
+/* Make CodeMirror editor fill its container */
+.column-center .CodeMirror, .column-right .CodeMirror {
+  border: 1px solid #ddd;
+  flex-grow: 1; /* Make the editor fill the remaining vertical space */
+  font-size: 14px;
+}
+
+.column-left .CodeMirror {
+    border: 1px solid #ddd;
+    font-size: 14px;
+    height: 150px; /* Give the input editor a fixed height */
+}
+
+/* Style for the conversion button */
+#run-conversion {
+    margin-top: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+/* Styling for the resizer handles */
+.resizer {
+    flex-basis: 6px;
+    flex-shrink: 0;
+    background-color: #cdd3d6;
+    cursor: col-resize; /* Indicates that this can be dragged horizontally */
+    transition: background-color 0.2s ease;
+}
+
+.resizer:hover {
+    background-color: #a7b0b5;
+}
+
+/* Styles for form elements within columns */
+textarea {
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding doesn't add to the width */
+    resize: vertical; /* Allow user to resize textarea vertically */
+}
+
+/* JSON tree viewer styles */
+.json-tree { list-style: none; padding-left: 1rem; margin: 0; }
+.json-tree li { margin: 2px 0; }
+.tree-node { display: inline-block; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+.tree-node:hover { background: rgba(0,0,0,0.03); }
+.tree-node.selected { background: #cfe3ff; }
+.child-container { margin-left: 1rem; }
+.tree-actions { margin-bottom: 8px; display:flex; gap:8px; align-items:center }
+.tree-actions button { padding:4px 8px; cursor:pointer }
+#selected-paths ul { margin: 6px 0 0 0; padding-left: 1rem }
+#selected-paths li { margin: 2px 0 }
+#selected-paths button { background: #fff; border:1px solid #ddd; padding: 2px 6px; border-radius: 3px; cursor: pointer }
+
+/* Widget and selected paths polish */
+.tree-root {
+    margin-top: 8px;
+}
+.tree-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+#selected-paths ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+#selected-paths button {
+    background: #f8f9fb;
+    border: 1px solid #e1e6eb;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.tree-root .widget-tree {
+    max-height: 50vh;
+    overflow: auto;
+}
