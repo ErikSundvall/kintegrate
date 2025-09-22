@@ -47,32 +47,53 @@
   After importing instance data and/or schema (or other structure defitnitions) they can help you author the conversion script.
   Select nodes in the tree on the left to insert paths to data elements at the current cursor position in this template.
  This ends comment block:   --}}
+ 
+If intro.json is loaded as source this example will work, otherwise likely a lot of blank spots:
+----- Start -----
+Remember, ⤡ means: {{starter_tips.tip_object.Right_click_explanations.[⤡]}}
 
-
+A number of tips:
+{{#with starter_tips}}
+  {{#each tip_array}}
+- {{.}}
+  {{/each}}
+{{/with}}
+----- The end -----
 
 {{!-- Another comment block. Remove this line to run it
   
-  The examples below fit with the example input file MDK_Rek_demo1.json
+The examples below fit with the example input file MDK_Rek_demo1.json
 
-  Example with full flat path: 
-  {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
+Example with full flat path: 
+  {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.[|value]}}
 
-  Example looping/traversing tree combined with parital flat paths when we have 
-  reached relevant level of repetition:
-
+Example looping/traversing tree combined with parital flat 
+paths when we have reached a relevant repeating level:
   {{#with granskning}}
     {{#each rubrik}}
       {{#each behållare}}
-        {{#each deltagare}}
-          {{#each deltagare}}
-Name: {{namn.0.[|value]}}
-Speciality: {{vårdgivarroll.0.specialitet.0.[|value]}}
-----------------
+        {{#each deltagare}} {{! this is a list with potentially many rows }}
+Närvarande:
+          {{#each deltagare}} 
+{{namn.0.[|value]}} (Specialitet: {{vårdgivarroll.0.specialitet.0.[|value]}})
           {{/each}}
         {{/each}}
       {{/each}}
     {{/each}}
   {{/with}}
+
+Bakgrund:
+{{#with granskning}}
+  {{#each bakgrund}}
+    {{#each sjukdomshistoria}}
+      {{#each ospecificerad_händelse}}
+ Aktuellt: {{aktuellt.0.[|value]}}
+ Anamnes: {{anamnes.0.[|value]}}
+ Komorbiditet: {{komorbiditet.0.[|value]}}
+      {{/each}}
+    {{/each}}
+  {{/each}}
+{{/with}}
 
   This ends the second comment block:   --}}
 
