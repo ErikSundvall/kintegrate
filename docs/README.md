@@ -44,9 +44,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 - **Script:** `scripts/build_docs.ps1` (PowerShell) — run from the repository root on Windows.
 - **Usage:**
-
-    Open PowerShell in the project root and run:
-
+    If using windows, open PowerShell in the project root and run:
     ```powershell
     .\scripts\build_docs.ps1
     ```

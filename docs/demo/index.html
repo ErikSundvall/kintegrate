@@ -46,12 +46,20 @@
   Currently you see a simple Handlebars template.
   After importing instance data and/or schema (or other structure defitnitions) they can help you author the conversion script.
   Select nodes in the tree on the left to insert paths to data elements at the current cursor position in this template.
+ This ends comment block:   --}}
+
+
+
+{{!-- Another comment block. Remove this line to run it
   
+  The examples below fit with the example input file MDK_Rek_demo1.json
+
   Example with full flat path: 
   {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
 
   Example looping/traversing tree combined with parital flat paths when we have 
   reached relevant level of repetition:
+
   {{#with granskning}}
     {{#each rubrik}}
       {{#each behållare}}
@@ -66,12 +74,7 @@ Speciality: {{vårdgivarroll.0.specialitet.0.[|value]}}
     {{/each}}
   {{/with}}
 
-  The above examples fit with example input file MDK_Rek_demo1.json
-
-  This ends comment block:   --}}
-
-Språk: {{ctx.language}}
-Land: {{ctx.territory}} 
+  This ends the second comment block:   --}}
 
 </textarea>
         <button id="run-conversion">Run Conversion --- > Output</button>
@@ -87,7 +90,7 @@ Land: {{ctx.territory}}
           <strong>K!ntegrate</strong> v0.2  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
-          |<label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="3" style="width:2em; margin-left:6px;"> 0=show all</label>
+          | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
      </footer>
  
     <!-- CodeMirror 5 JS -->
