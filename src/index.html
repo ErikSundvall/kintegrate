@@ -13,9 +13,6 @@
 
   </head>
   <body>
-    <!--header>
-      <p>K!ntegrate</p>
-    </header -->
     <main>
       <div class="fullheight-container" id="main-container">
         <div id="input-container" class="column column-left">
@@ -37,20 +34,45 @@
         <div class="resizer"></div>
         <div id="conversion-container" class="column column-center">
             <h2>Conversion Template (Handlebars)</h2>
-            <div id="selection-list"></div>
+            <div id="selection-list">
+              <div class="tree-actions">
+                <div id="selected-paths">No nodes selected. Use checkboxes to select nodes.</div>
+              </div>
+            </div>
             <textarea id="template-editor">
-{{!-- 
+{{!-- <--- This is how you start a comment block in Handlebars
   This is the column where you author (and possibly compile) your conversion script.
   Currently you see a simple Handlebars template.
   After importing instance data and/or schema (or other structure defitnitions) they can help you author the conversion script.
   Select nodes in the tree on the left to insert paths to data elements at the current cursor position in this template.
   
-  Example: {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
---}}
+  Example with full flat path: 
+  {{granskning.bakgrund.0.sjukdomshistoria.0.ospecificerad_händelse.0.anamnes.0.['|value']}}
+
+  Example looping/traversing tree combined with parital flat paths when we have 
+  reached relevant level of repetition:
+  {{#with granskning}}
+    {{#each rubrik}}
+      {{#each behållare}}
+        {{#each deltagare}}
+          {{#each deltagare}}
+Name: {{namn.0.[|value]}}
+Speciality: {{vårdgivarroll.0.specialitet.0.[|value]}}
+----------------
+          {{/each}}
+        {{/each}}
+      {{/each}}
+    {{/each}}
+  {{/with}}
+
+  The above examples fit with example input file MDK_Rek_demo1.json
+
+  This ends comment block:   --}}
+
 Språk: {{ctx.language}}
 Land: {{ctx.territory}} 
 
-            </textarea>
+</textarea>
         <button id="run-conversion">Run Conversion --- > Output</button>
         <button id="show-compiled">Show precompiled template</button>
       </div>
@@ -59,13 +81,13 @@ Land: {{ctx.territory}}
             <textarea id="out">Output goes here after conversion is run</textarea>
         </div>
       </div>
-      <footer>
-          <strong>K!ntegrate</strong> v0.1 A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. Settings:
-          <label style="cursor: pointer;">
-            <input type="checkbox" id="toggle-line-numbers" checked> Show line numbers
-          </label>
-      </footer>
     </main>
+    <footer>
+          <strong>K!ntegrate</strong> v0.1 A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
+          || Settings:
+          <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
+          |<label style="">Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="2" style="width:2em; margin-left:6px;"> 0=show all</label>
+     </footer>
  
     <!-- CodeMirror 5 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
@@ -83,6 +105,7 @@ Land: {{ctx.territory}}
     <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', () => {
       // --- Editor initialization ---
       const inputTextarea = document.getElementById('inputInstance');
       const templateTextarea = document.getElementById('template-editor');
@@ -91,15 +114,88 @@ Land: {{ctx.territory}}
       const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
       const templateEditor = CodeMirror.fromTextArea(templateTextarea, { mode: 'text/x-handlebars-template', lineNumbers: true, tabSize: 2 });
       const outputEditor = CodeMirror.fromTextArea(outputTextarea, { mode: 'application/json', lineNumbers: true, readOnly: true });
+      const selectionListBox = document.getElementById('selection-list')
+      const actions = document.getElementById('tree-actions');
 
-      // small helper used by tree integration
+      console.log('111 actions:', actions, "selectionListBox", selectionListBox );
+
+      // small helper creating flat paths in Handlebars syntax
       function buildHandlebarsPath(pathArray) {
         if (!Array.isArray(pathArray)) return '';
         return pathArray.map(p => {
           if (typeof p === 'number') return p;
-          if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
+          // old regex:
+          // if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
+          // new regex: Allow Unicode letters (e.g., åäö), underscore and $ as first char, then letters, numbers, underscore, $
+          if (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(String(p))) return String(p);
         return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
         }).join('.');
+      }
+
+      // small helper creating tree-structs using {{#each ...}} or {{#with ...}} in Handlebars syntax based on a node deeper down in the structure
+      function buildHandlebarsTree(node) {
+        // Walk the node.path array from left (root) to right (leaf) and
+        // emit opening wrappers for properties that are objects (#with) or arrays (#each).
+        // Numeric indices in the path are represented by the preceding property's #each,
+        // so we skip numeric entries when building the wrappers. The leaf is the final
+        // non-numeric path segment (or the last segment if it's not an identifier).
+        if (!node || !Array.isArray(node.path) || node.path.length === 0) return '';
+
+        const path = node.path;
+        const opens = [];
+        let leaf = null;
+
+        for (let i = 0; i < path.length; i++) {
+          const p = path[i];
+          const next = path[i + 1];
+
+          if (typeof p === 'number') {
+            // numeric index is handled by the wrapper emitted for the previous property
+            continue;
+          }
+
+          // If next is a number, this property is an array -> emit #each and skip the numeric index
+          if (typeof next === 'number') {
+            opens.push(`{{#each ${buildHandlebarsPath([p])}}}`);
+            // skip the numeric index
+            i++;
+            continue;
+          }
+
+          // If there is another property after this, emit #with (object context)
+          if (i < path.length - 1) {
+            opens.push(`{{#with ${buildHandlebarsPath([p])}}}`);
+            continue;
+          }
+
+          // Otherwise this is the leaf property
+          leaf = buildHandlebarsPath([p]);
+        }
+
+        // If we still don't have a leaf (e.g. path ends in a number), pick last non-number segment
+        if (!leaf) {
+          for (let j = path.length - 1; j >= 0; j--) {
+            if (typeof path[j] !== 'number') { leaf = buildHandlebarsPath([path[j]]); break; }
+          }
+        }
+
+        // Build output: opens (outer -> inner), leaf at innermost level, then closings (inner -> outer)
+        const lines = [];
+        for (const o of opens) lines.push(o);
+
+        if (leaf) {
+          const indent = '  '.repeat(opens.length);
+          lines.push(indent + '{{' + leaf + '}}');
+        }
+
+        for (let k = opens.length - 1; k >= 0; k--) {
+          const openTag = opens[k];
+          const m = openTag.match(/^\{\{#(each|with)\s+/);
+          const tag = m ? m[1] : 'with';
+          lines.push(`{{/${tag}}}`);
+        }
+
+        return lines.join('\n');
       }
 
       // Use the provided Tree widget (tree.min.js) for rendering and selection.
@@ -174,6 +270,56 @@ Land: {{ctx.territory}}
         templateEditor.focus();
       }
 
+      // Render the selected paths list. Accepts an array of node objects (deepest selected nodes).
+      function renderSelectedPaths(nodes) {
+        const selectedListEl = document.getElementById('selected-paths') || (() => {
+          const el = document.createElement('div'); el.id = 'selected-paths'; el.style.marginTop = '8px'; document.getElementById('selection-list')?.appendChild(el); return el;
+        })();
+
+        if (!nodes || nodes.length === 0) {
+          selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+          return;
+        }
+
+        const ul = document.createElement('ul');
+        for (const n of nodes) {
+          const li = document.createElement('li');
+
+          // Tree button at start of row
+          const treeIconBtn = document.createElement('button');
+          treeIconBtn.type = 'button';
+          treeIconBtn.className = 'path-icon';
+          treeIconBtn.title = 'Selected path';
+          treeIconBtn.style.border = '1px solid';
+          treeIconBtn.style.background = 'transparent';
+          treeIconBtn.style.padding = '0 6px 0 0';
+          treeIconBtn.style.cursor = 'pointer';
+          // simple inline SVG tree-like icon (small)
+          treeIconBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L7 8H10V18H14V8H17L12 2Z" fill="#2F855A"/></svg>';
+          treeIconBtn.addEventListener('click', () => {
+            templateEditor.replaceSelection(`{{${buildHandlebarsTree(n)}}}`);
+            templateEditor.focus();
+          });
+          li.appendChild(treeIconBtn);
+          
+          // Flat path button at second position of row
+          const flatPathBtn = document.createElement('button');
+          flatPathBtn.type = 'button';
+          flatPathBtn.textContent = buildHandlebarsPath(n.path);
+          flatPathBtn.style.cursor = 'pointer';
+          flatPathBtn.addEventListener('click', () => {
+            templateEditor.replaceSelection(`{{${buildHandlebarsPath(n.path)}}}`);
+            templateEditor.focus();
+          });
+          li.appendChild(flatPathBtn);
+
+          ul.appendChild(li);
+        }
+
+        selectedListEl.innerHTML = '';
+        selectedListEl.appendChild(ul);
+      }
+
       function updateJsonTree(jsonString) {
         jsonTreeContainer.innerHTML = '';
 
@@ -182,28 +328,66 @@ Land: {{ctx.territory}}
           _idCounter = 1;
           const treeData = jsonToTreeNodes(jsonData, []);
 
-          // Actions UI
-          const actions = document.createElement('div');
-          actions.className = 'tree-actions';
+          // Actions UI (create locally so we don't depend on external references)
+          let actionsEl = document.getElementById('tree-actions');
+          if (!actionsEl) {
+            actionsEl = document.createElement('div');
+            actionsEl.id = 'tree-actions';
+            actionsEl.className = 'tree-actions';
+          } else {
+            // clear previous children to avoid duplicates
+            actionsEl.innerHTML = '';
+          }
+
+          // Insert button (keeps same behavior as before)
           const insertButton = document.createElement('button');
-          insertButton.textContent = 'Insert Selected Paths';
+          insertButton.textContent = 'Insert all Selected Paths';
           insertButton.id = 'insert-selected-paths';
           insertButton.addEventListener('click', () => {
-            if (treeInstance) insertPathsFromNodes(treeInstance.selectedNodes);
-          });
-          const selectedList = document.createElement('div');
-          selectedList.id = 'selected-paths';
-          selectedList.style.marginTop = '8px';
-          actions.appendChild(insertButton);
-          actions.appendChild(selectedList);
+            if (!treeInstance) return;
+            const selected = treeInstance.selectedNodes || [];
 
-          const selectionListBox = document.getElementById('selection-list')
-          .appendChild(actions);
+            function isAncestor(aPath, bPath) {
+              if (!Array.isArray(aPath) || !Array.isArray(bPath)) return false;
+              if (aPath.length >= bPath.length) return false;
+              for (let i = 0; i < aPath.length; i++) {
+                if (aPath[i] !== bPath[i]) return false;
+              }
+              return true;
+            }
+
+            const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
+            const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && isAncestor(n.path, m.path)));
+
+            insertPathsFromNodes(deepest);
+          });
+
+          let selectedList = document.getElementById('selected-paths');
+          if (!selectedList) {
+            selectedList = document.createElement('div');
+            selectedList.id = 'selected-paths';
+            selectedList.style.marginTop = '8px';
+            selectedList.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+          } else {
+            selectedList.innerHTML = '';
+          }
+
+          actionsEl.appendChild(insertButton);
+          actionsEl.appendChild(selectedList);
+
+          // Attach to selection list container (replace existing contents)
+          const selBox = document.getElementById('selection-list');
+          if (selBox) {
+            selBox.innerHTML = '';
+            selBox.appendChild(actionsEl);
+          }
 
           // Initialize Tree widget into our container
           const selector = '#json-tree-container';
+          const closeDepthOpt = parseInt(document.getElementById('tree-close-depth').value, 10) || 0;
           treeInstance = new Tree(selector, {
             data: treeData,
+            closeDepth: closeDepthOpt,
             onChange: function() {
               const selected = this.selectedNodes || [];
               const selectedListEl = document.getElementById('selected-paths');
@@ -228,29 +412,82 @@ Land: {{ctx.territory}}
               const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
               const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && isAncestor(n.path, m.path)));
 
-              const ul = document.createElement('ul');
-              for (const n of deepest) {
-                const li = document.createElement('li');
-                const btn = document.createElement('button');
-                btn.textContent = buildHandlebarsPath(n.path);
-                btn.style.cursor = 'pointer';
-                btn.addEventListener('click', () => {
-                  templateEditor.replaceSelection(`{{${buildHandlebarsPath(n.path)}}}`);
-                  templateEditor.focus();
-                });
-                li.appendChild(btn);
-                ul.appendChild(li);
-              }
-
-              selectedListEl.innerHTML = '';
-              selectedListEl.appendChild(ul);
-              selectionListBox.innerHTML = '';
-              selectionListBox.appendChild(selectedListEl);
+              // render selected deepest nodes via shared helper
+              renderSelectedPaths(deepest);
+              // keep selectionListBox reference in sync
+              selectionListBox.appendChild(document.getElementById('selected-paths'));
             } // end of onChange
           });
 
+          // ****************************
+          // Right-click on a node: toggle that node only (don't cascade to descendants)
+          // This preserves children selection states but updates ancestor statuses.
+          jsonTreeContainer.addEventListener('contextmenu', (ev) => {
+            if (!treeInstance) return;
+            ev.preventDefault();
+            let el = ev.target;
+            console.log('Right-click target element:', el);
+            // find the nearest LI with class treejs-node
+            while (el && el !== jsonTreeContainer && !el.classList.contains('treejs-node')) el = el.parentNode;
+            if (!el || !el.nodeId) return;
+            const node = treeInstance.nodesById && treeInstance.nodesById[el.nodeId];
+            if (!node) return;
+            // make the element (el) visibly selected for a short moment to give user feedback
+            el.style.backgroundColor = '#cce5cc';
+            setTimeout(() => { el.style.backgroundColor = ''; }, 600);    
+
+            console.log('Right-clicked node identified:', node);
+            // add a green entry representing this right-click-selected node in the list under selected-paths, if not already there. 
+            // Just like when leaf nodes are selected via normal left-click checkbox selection
+
+            try {
+              // toggle between unchecked (0) and checked (2) without walking down
+              node.status = (node.status === 2 ? 0 : 2); //status 0 means unchecked, 2 means checked=
+              treeInstance.markWillUpdateNode && treeInstance.markWillUpdateNode(node);
+              // recompute ancestors so parent visual states stay correct
+              treeInstance.walkUp && treeInstance.walkUp(node, 'status');
+              // apply visual updates
+              treeInstance.updateLiElements && treeInstance.updateLiElements();
+              // compute deepest selected nodes and re-render the selected list
+              const selected = treeInstance.selectedNodes || [];
+              const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
+              const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && (function(aPath,bPath){ if (!Array.isArray(aPath)||!Array.isArray(bPath)) return false; if (aPath.length>=bPath.length) return false; for (let i=0;i<aPath.length;i++) if (aPath[i]!==bPath[i]) return false; return true;})(n.path,m.path)));
+              renderSelectedPaths(deepest);
+              // notify change handlers
+              if (treeInstance.options && typeof treeInstance.options.onChange === 'function') {
+                treeInstance.options.onChange.call(treeInstance);
+              }
+            } catch (e) {
+              console.error('Right-click toggle failed:', e);
+            }
+          });
+
+          //***************************
+
+          // When user changes the tree-close-depth control, update the option and re-render in-place
+          const treeDepthInput = document.getElementById('tree-close-depth');
+          treeDepthInput.addEventListener('change', () => {
+            try {
+              const newDepth = parseInt(treeDepthInput.value, 10) || 0;
+              if (!treeInstance) return;
+              // Update option and re-render the existing tree nodes so we don't lose selection state
+              treeInstance.options = treeInstance.options || {};
+              treeInstance.options.closeDepth = newDepth;
+              // render will rebuild DOM using current treeNodes and the updated closeDepth
+              treeInstance.render(treeInstance.treeNodes);
+              // Ensure visual check/disabled state is synced to the new DOM
+              if (treeInstance.nodesById) {
+                Object.values(treeInstance.nodesById).forEach(n => {
+                  try { treeInstance.updateLiElement && treeInstance.updateLiElement(n); } catch (err) { /* ignore per-node errors */ }
+                });
+              }
+            } catch (e) {
+              console.error('Failed to update tree depth:', e);
+            }
+          });
+
           } catch (e) {
-            selectionListBox.innerHTML = '<p style="color:red;">Invalid input JSON. Error message:<br>'+e.message+'</p>';
+            selectedPaths.innerHTML = '<p style="color:red;">Invalid input JSON. Error message:<br>'+e.message+'</p>';
           }
       }
 
@@ -413,6 +650,7 @@ Land: {{ctx.territory}}
         updateJsonTree(editor.getValue());
       });
 
+      }); // DOMContentLoaded
     </script>
   </body>
 </html>

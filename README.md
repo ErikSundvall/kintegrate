@@ -18,7 +18,19 @@ See `docs/` for GitHub Pages documentation.
 ## version 0.1.1 - in progress
 * Replace the treeviewer with another one (https://github.com/daweilv/treejs already imported in index.html via https://cdn.jsdelivr.net/npm/@widgetjs/tree/dist/tree.min.js) It allows multiple nodes can be selected and the selection is visible by checboxes in front of nodes.
 * Intelligent generation of conversion script structures based on selected nodes and their paths and hierarchical relationships. Buttons that determine output to be pasted into last cursor position in conversion script from selected:
-** Arrow pointing northwest: gernerate hierarchical nesting structrure between selected node closest to root no selected node furthest out on a branch (For Handlebars that would be nested {{#each ...}} clauses for things that can be repated and {{#with ...}} for non-repeating things.)
+** Arrow pointing northwest: gernerate hierarchical nesting structrure between selected node closest to root no selected node furthest out on a branch (For Handlebars that would be nested {{#each ...}} clauses for things that can be repated and {{#with ...}} for non-repeating things.) 
+*** Example: creating a tree-traversing structure corresponding to the flat path output... `{{granskning.context.0.vårdenhet.0.namn.0.[|value]}}` should instead output: 
+```
+{{#with granskning}}
+ {{#each context}}
+  {{#each vårdenhet}}
+   {{#each namn}}
+    {{[|value]}}
+   {{/each}} 
+  {{/each}} 
+ {{/each}} 
+{{/with}}
+```
 ** Arrow pointing west: just produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
 
