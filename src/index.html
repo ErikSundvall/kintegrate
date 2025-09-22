@@ -179,9 +179,13 @@ Land: {{ctx.territory}}
           }
         }
 
-        // Build output: opens (outer -> inner), leaf at innermost level, then closings (inner -> outer)
+        // Build output: openings with indentation (outer -> inner), leaf at innermost level,
+        // then matching closing tags with matching indentation (inner -> outer)
         const lines = [];
-        for (const o of opens) lines.push(o);
+        for (let idx = 0; idx < opens.length; idx++) {
+          const indent = '  '.repeat(idx);
+          lines.push(indent + opens[idx]);
+        }
 
         if (leaf) {
           const indent = '  '.repeat(opens.length);
@@ -192,7 +196,8 @@ Land: {{ctx.territory}}
           const openTag = opens[k];
           const m = openTag.match(/^\{\{#(each|with)\s+/);
           const tag = m ? m[1] : 'with';
-          lines.push(`{{/${tag}}}`);
+          const indent = '  '.repeat(k);
+          lines.push(indent + `{{/${tag}}}`);
         }
 
         return lines.join('\n');
@@ -292,12 +297,12 @@ Land: {{ctx.territory}}
           treeIconBtn.title = 'Selected path';
           treeIconBtn.style.border = '1px solid';
           treeIconBtn.style.background = 'transparent';
-          treeIconBtn.style.padding = '0 6px 0 0';
+          treeIconBtn.style.padding = '3px';
           treeIconBtn.style.cursor = 'pointer';
           // simple inline SVG tree-like icon (small)
-          treeIconBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L7 8H10V18H14V8H17L12 2Z" fill="#2F855A"/></svg>';
+          treeIconBtn.innerHTML = '⤡';
           treeIconBtn.addEventListener('click', () => {
-            templateEditor.replaceSelection(`{{${buildHandlebarsTree(n)}}}`);
+            templateEditor.replaceSelection(buildHandlebarsTree(n));
             templateEditor.focus();
           });
           li.appendChild(treeIconBtn);
@@ -305,8 +310,9 @@ Land: {{ctx.territory}}
           // Flat path button at second position of row
           const flatPathBtn = document.createElement('button');
           flatPathBtn.type = 'button';
-          flatPathBtn.textContent = buildHandlebarsPath(n.path);
+          flatPathBtn.textContent = "↔ "+buildHandlebarsPath(n.path);
           flatPathBtn.style.cursor = 'pointer';
+          flatPathBtn.style.border = '1px solid'
           flatPathBtn.addEventListener('click', () => {
             templateEditor.replaceSelection(`{{${buildHandlebarsPath(n.path)}}}`);
             templateEditor.focus();
