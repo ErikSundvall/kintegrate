@@ -1,5 +1,5 @@
 { 
-  "message": "JSON pasted/loaded into the box get turned into a tree-view.",
+  "message": "JSON pasted/loaded into the box get turned into a foldable tree-view.",
   "starter_tips": {
       "tip_array":[
          "Click an checkbox below to select a node (and all of its decendents).",
