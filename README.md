@@ -40,6 +40,7 @@ See `docs/` for GitHub Pages documentation.
 
 ## version 0.3 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
+* Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
 
 ## version 0.4 contexts and inserts directy from tree
 * Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
