@@ -4,6 +4,8 @@ Vanilla JavaScript + HTML project. Licensed under Apache-2.0.
 
 See `docs/` for GitHub Pages documentation.
 
+# Roadmap
+
 ## version 0.1 test setup - done!
 * user interface with three rezisable columns
 * The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:
@@ -33,8 +35,7 @@ See `docs/` for GitHub Pages documentation.
 ```
 ** ↔ Arrow pointing east-west: just produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-
-## version 0.2.1 website version
+## version 0.2.1 website version - starting soon...
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
 ## version 0.3 dynamic sources (local use)
