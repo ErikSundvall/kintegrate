@@ -37,6 +37,7 @@
         <div class="resizer"></div>
         <div id="conversion-container" class="column column-center">
             <h2>Conversion Template (Handlebars)</h2>
+            <div id="selection-list"></div>
             <textarea id="template-editor">
 {{!-- 
   This is the column where you author (and possibly compile) your conversion script.
@@ -97,7 +98,7 @@ Land: {{ctx.territory}}
         return pathArray.map(p => {
           if (typeof p === 'number') return p;
           if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
-          return `[\'${String(p).replace(/\\/g,'\\\\').replace(/'/g, "\\'")}\']`;
+        return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
         }).join('.');
       }
 
@@ -109,24 +110,61 @@ Land: {{ctx.territory}}
       let _idCounter = 1;
       function nextId() { return 'n' + (_idCounter++); }
 
-      function jsonToTreeNodes(value, path = []) {
+      // Recursive function to convert JSON to tree nodes
+      function jsonToTreeNodes(value, path = [], parent = null) {
         const type = Object.prototype.toString.call(value);
+
+        // Handle plain objects
         if (type === '[object Object]') {
-          return Object.keys(value).map(key => {
-            const nodePath = path.concat(key);
-            const children = jsonToTreeNodes(value[key], nodePath);
-            return { id: nextId(), text: String(key), path: nodePath, children: children.length ? children : undefined };
-          });
+            const nodes = [];
+            for (const key of Object.keys(value)) {
+              const val = value[key];
+              const basePath = path.concat(key);
+
+              if (Array.isArray(val)) {
+                // For arrays that are values of an object key, append indices to the parent label
+                for (let i = 0; i < val.length; i++) {
+                  const nodePath = basePath.concat(i);
+                  const item = val[i];
+                  const itemType = Object.prototype.toString.call(item);
+                  // If the array item is a primitive, collapse it into the parent label as key[i]=value
+                  if (itemType !== '[object Object]' && itemType !== '[object Array]') {
+                    nodes.push({ id: nextId(), text: String(key) + '[' + i + ']=' + String(item), path: nodePath });
+                  } else {
+                    const children = jsonToTreeNodes(item, nodePath, value);
+                    nodes.push({ id: nextId(), text: String(key) + '[' + i + ']', path: nodePath, children: children.length ? children : undefined });
+                  }
+                }
+              } else {
+                const valType = Object.prototype.toString.call(val);
+                // If the property value is a primitive, collapse into parent label as key=value
+                if (valType !== '[object Object]' && valType !== '[object Array]') {
+                  nodes.push({ id: nextId(), text: String(key) + '=' + String(val), path: basePath });
+                } else {
+                  const children = jsonToTreeNodes(val, basePath, value);
+                  nodes.push({ id: nextId(), text: String(key), path: basePath, children: children.length ? children : undefined });
+                }
+              }
+            }
+            return nodes;
         }
+
+        // Handle arrays (when not directly under an object key)
         if (type === '[object Array]') {
           return value.map((item, i) => {
             const nodePath = path.concat(i);
-            const children = jsonToTreeNodes(item, nodePath);
+            const itemType = Object.prototype.toString.call(item);
+            if (itemType !== '[object Object]' && itemType !== '[object Array]') {
+              return { id: nextId(), text: '[' + i + ']=' + String(item), path: nodePath };
+            }
+            const children = jsonToTreeNodes(item, nodePath, value);
             return { id: nextId(), text: '[' + i + ']', path: nodePath, children: children.length ? children : undefined };
           });
         }
-        // primitive
+
+        // Primitive value (top-level or fallback): represent as a single leaf node
         return [{ id: nextId(), text: String(value), path: path }];
+
       }
 
       function insertPathsFromNodes(nodes) {
@@ -158,7 +196,9 @@ Land: {{ctx.territory}}
           selectedList.style.marginTop = '8px';
           actions.appendChild(insertButton);
           actions.appendChild(selectedList);
-          jsonTreeContainer.appendChild(actions);
+
+          const selectionListBox = document.getElementById('selection-list')
+          .appendChild(actions);
 
           // Initialize Tree widget into our container
           const selector = '#json-tree-container';
@@ -167,13 +207,29 @@ Land: {{ctx.territory}}
             onChange: function() {
               const selected = this.selectedNodes || [];
               const selectedListEl = document.getElementById('selected-paths');
-              selectedListEl.innerHTML = '';
+
               if (!selected || selected.length === 0) {
                 selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
                 return;
               }
+
+              // keep only fully-checked nodes (status===2) and remove any node
+              // that is an ancestor of another selected node so we only show
+              // the deepest selected nodes (avoid parents being shown when child selected)
+              function isAncestor(aPath, bPath) {
+                if (!Array.isArray(aPath) || !Array.isArray(bPath)) return false;
+                if (aPath.length >= bPath.length) return false;
+                for (let i = 0; i < aPath.length; i++) {
+                  if (aPath[i] !== bPath[i]) return false;
+                }
+                return true;
+              }
+
+              const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
+              const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && isAncestor(n.path, m.path)));
+
               const ul = document.createElement('ul');
-              for (const n of selected) {
+              for (const n of deepest) {
                 const li = document.createElement('li');
                 const btn = document.createElement('button');
                 btn.textContent = buildHandlebarsPath(n.path);
@@ -185,12 +241,16 @@ Land: {{ctx.territory}}
                 li.appendChild(btn);
                 ul.appendChild(li);
               }
+
+              selectedListEl.innerHTML = '';
               selectedListEl.appendChild(ul);
-            }
+              selectionListBox.innerHTML = '';
+              selectionListBox.appendChild(selectedListEl);
+            } // end of onChange
           });
 
           } catch (e) {
-            jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
+            selectionListBox.innerHTML = '<p style="color:red;">Invalid input JSON. Error message:<br>'+e.message+'</p>';
           }
       }
 
@@ -200,9 +260,6 @@ Land: {{ctx.territory}}
         templateEditor.replaceSelection(inserts.join('\n'));
         templateEditor.focus();
       };
-
-
-
       
       // Set initial content
       const initialJson = '{\n  "message": "Paste JSON here or select an example.",\n  "tip": "Click a node below to copy its path to the cursor/selection in the conversion template."\n}';
@@ -231,7 +288,7 @@ Land: {{ctx.territory}}
           // 4. Display the resulting HTML in the output editor
           outputEditor.setValue(resultHtml);
         } catch (e) {
-          jsonTreeContainer.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
+          outputEditor.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
         }
       });
 
@@ -355,10 +412,6 @@ Land: {{ctx.territory}}
       inputEditor.on('change', (editor) => {
         updateJsonTree(editor.getValue());
       });
-
-      //   Trigger initial render of the JSON tree
-       initialJson = inputEditor.getValue();
-       updateJsonTree(initialJson);
 
     </script>
   </body>
