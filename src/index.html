@@ -34,12 +34,13 @@
         </div>
         <div class="resizer"></div>
         <div id="conversion-container" class="column column-center">
-            <h2>Conversion Template (Handlebars)</h2>
             <div id="selection-list">
+              <div id="number-of-selected-paths"></div>
               <div class="tree-actions">
                 <div id="selected-paths">No nodes selected. Use checkboxes to select nodes.</div>
               </div>
             </div>
+            <div>Conversion Template (Handlebars)</div>
             <textarea id="template-editor">
 {{!-- <--- This is how you start a comment block in Handlebars
   This is the column where you author (and possibly compile) your conversion script.
@@ -306,8 +307,35 @@ Bakgrund:
           const el = document.createElement('div'); el.id = 'selected-paths'; el.style.marginTop = '8px'; document.getElementById('selection-list')?.appendChild(el); return el;
         })();
 
+        // update count indicator
+        const countEl = document.getElementById('number-of-selected-paths');
+        if (countEl) {
+          countEl.textContent = nodes && nodes.length ? `${nodes.length} selected` : '';
+        }
+
+        // show/hide actions area depending on selection
+        const actionsWrap = document.querySelector('.tree-actions');
+        if (actionsWrap) {
+          if (!nodes || nodes.length === 0) {
+            actionsWrap.style.display = 'none';
+          } else {
+            actionsWrap.style.display = '';
+          }
+        }
+
+        // update toggle button label to include count
+        const toggleBtn = document.getElementById('toggle-selected-list');
+        if (toggleBtn) {
+          const n = nodes && nodes.length ? nodes.length : 0;
+          const visible = (selectedListEl && selectedListEl.style.display !== 'none');
+          toggleBtn.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
+        }
+
         if (!nodes || nodes.length === 0) {
           selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+          // ensure actions area hidden when no selection
+          const actionsWrap = document.querySelector('.tree-actions');
+          if (actionsWrap) actionsWrap.style.display = 'none';
           return;
         }
 
@@ -324,14 +352,13 @@ Bakgrund:
           treeIconBtn.style.background = 'transparent';
           treeIconBtn.style.padding = '3px';
           treeIconBtn.style.cursor = 'pointer';
-          // simple inline SVG tree-like icon (small)
           treeIconBtn.innerHTML = '⤡';
           treeIconBtn.addEventListener('click', () => {
             templateEditor.replaceSelection(buildHandlebarsTree(n));
             templateEditor.focus();
           });
           li.appendChild(treeIconBtn);
-          
+
           // Flat path button at second position of row
           const flatPathBtn = document.createElement('button');
           flatPathBtn.type = 'button';
@@ -347,8 +374,12 @@ Bakgrund:
           ul.appendChild(li);
         }
 
-        selectedListEl.innerHTML = '';
-        selectedListEl.appendChild(ul);
+  // show actions area when we have selections
+  const actionsWrap2 = document.querySelector('.tree-actions');
+  if (actionsWrap2) actionsWrap2.style.display = '';
+
+  selectedListEl.innerHTML = '';
+  selectedListEl.appendChild(ul);
       }
 
       function updateJsonTree(jsonString) {
@@ -372,7 +403,7 @@ Bakgrund:
 
           // Insert button (keeps same behavior as before)
           const insertButton = document.createElement('button');
-          insertButton.textContent = 'Insert all Selected Paths';
+          insertButton.textContent = '↔ Insert all Selected node as "flat" Paths';
           insertButton.id = 'insert-selected-paths';
           insertButton.addEventListener('click', () => {
             if (!treeInstance) return;
@@ -399,11 +430,41 @@ Bakgrund:
             selectedList.id = 'selected-paths';
             selectedList.style.marginTop = '8px';
             selectedList.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+            // hidden by default
+            selectedList.style.display = 'none';
           } else {
             selectedList.innerHTML = '';
+            // hidden by default when re-creating
+            selectedList.style.display = 'none';
           }
 
+          // Toggle button to show/hide the selected-paths list
+          let toggleButton = document.getElementById('toggle-selected-list');
+          if (!toggleButton) {
+            toggleButton = document.createElement('button');
+            toggleButton.type = 'button';
+            toggleButton.id = 'toggle-selected-list';
+            // initial text will be updated by renderSelectedPaths to include count
+            toggleButton.textContent = 'Show selected list (0)';
+            toggleButton.style.marginLeft = '8px';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.addEventListener('click', () => {
+              if (!selectedList) return;
+              if (selectedList.style.display === 'none') {
+                selectedList.style.display = '';
+              } else {
+                selectedList.style.display = 'none';
+              }
+              // always refresh label to reflect current count and visibility
+              const n = (treeInstance && treeInstance.selectedNodes) ? (treeInstance.selectedNodes.filter(n=>n&&n.status===2&&Array.isArray(n.path)).length) : 0;
+              const visible = (selectedList && selectedList.style.display !== 'none');
+              toggleButton.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
+            });
+          }
+
+          actionsEl.appendChild(toggleButton);
           actionsEl.appendChild(insertButton);
+          
           actionsEl.appendChild(selectedList);
 
           // Attach to selection list container (replace existing contents)
@@ -457,7 +518,7 @@ Bakgrund:
             if (!treeInstance) return;
             ev.preventDefault();
             let el = ev.target;
-            console.log('Right-click target element:', el);
+            console.log('Right-clicked target element:', el);
             // find the nearest LI with class treejs-node
             while (el && el !== jsonTreeContainer && !el.classList.contains('treejs-node')) el = el.parentNode;
             if (!el || !el.nodeId) return;
@@ -471,26 +532,53 @@ Bakgrund:
             // add a green entry representing this right-click-selected node in the list under selected-paths, if not already there. 
             // Just like when leaf nodes are selected via normal left-click checkbox selection
 
-            try {
-              // toggle between unchecked (0) and checked (2) without walking down
-              node.status = (node.status === 2 ? 0 : 2); //status 0 means unchecked, 2 means checked=
-              treeInstance.markWillUpdateNode && treeInstance.markWillUpdateNode(node);
-              // recompute ancestors so parent visual states stay correct
-              treeInstance.walkUp && treeInstance.walkUp(node, 'status');
-              // apply visual updates
-              treeInstance.updateLiElements && treeInstance.updateLiElements();
-              // compute deepest selected nodes and re-render the selected list
-              const selected = treeInstance.selectedNodes || [];
-              const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
-              const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && (function(aPath,bPath){ if (!Array.isArray(aPath)||!Array.isArray(bPath)) return false; if (aPath.length>=bPath.length) return false; for (let i=0;i<aPath.length;i++) if (aPath[i]!==bPath[i]) return false; return true;})(n.path,m.path)));
-              renderSelectedPaths(deepest);
-              // notify change handlers
-              if (treeInstance.options && typeof treeInstance.options.onChange === 'function') {
-                treeInstance.options.onChange.call(treeInstance);
+            // now pop up a small context menu with options to insert flat path or tree structure at cursor in template editor
+            const menu = document.createElement('div');
+            menu.className = 'kintegrate-context-menu';
+            menu.style.position = 'absolute'; menu.style.left = ev.pageX + 'px'; menu.style.top = ev.pageY + 'px';
+            menu.style.zIndex = 1000;
+            const flatPathOption = document.createElement('div'); 
+            flatPathOption.className = 'kintegrate-context-option';
+            flatPathOption.textContent = '↔ Insert flat path: ' + buildHandlebarsPath(node.path);
+            flatPathOption.addEventListener('click', () => {
+              templateEditor.replaceSelection(`{{${buildHandlebarsPath(node.path)}}}`);
+              templateEditor.focus();
+            });
+            menu.appendChild(flatPathOption);
+            const treeStructOption = document.createElement('div');  
+            treeStructOption.className = 'kintegrate-context-option';
+            treeStructOption.textContent = '⤡ Insert tree structure';
+
+            treeStructOption.addEventListener('click', () => {
+              const treeStr = buildHandlebarsTree(node);
+              if (treeStr) {
+                templateEditor.replaceSelection(treeStr);
+                templateEditor.focus();
               }
-            } catch (e) {
-              console.error('Right-click toggle failed:', e);
-            }
+            });
+            menu.appendChild(treeStructOption);
+            document.body.appendChild(menu);
+
+            // Remove menu when clicking elsewhere or when an option is clicked or when focus is lost by moving pointer more than 10 px outisde the menu
+            const removeMenu = (e) => {              
+              if (menu && menu.parentNode) menu.parentNode.removeChild(menu);
+              document.removeEventListener('click', removeMenu);      
+              document.removeEventListener('mousemove', trackMouse);
+            };
+
+            const trackMouse = (e) => { 
+              if (!menu) return;
+              const rect = menu.getBoundingClientRect();        
+              // If mouse moves more than 10 px outside the menu, remove it
+              if (e.clientX < rect.left - 10 || e.clientX > rect.right + 10 || e.clientY < rect.top - 10 || e.clientY > rect.bottom + 10) {
+                removeMenu();
+              }
+              document.addEventListener('mousemove', trackMouse); 
+            };
+
+            menu.addEventListener('click', removeMenu); 
+            document.addEventListener('click', removeMenu);  
+               
           });
 
           //***************************

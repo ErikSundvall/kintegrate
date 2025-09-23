@@ -98,8 +98,8 @@ Bakgrund:
   This ends the second comment block:   --}}
 
 </textarea>
-        <button id="run-conversion">Run Conversion --- > Output</button>
-        <button id="show-compiled">Show precompiled template</button>
+        <button id="run-conversion" class="button-style">Run Conversion --- > Output</button>
+        <button id="show-compiled" class="button-style">Show precompiled template</button>
       </div>
         <div class="resizer"></div>
         <div id="output-container" class="column column-right">
@@ -318,7 +318,7 @@ Bakgrund:
           // Tree button at start of row
           const treeIconBtn = document.createElement('button');
           treeIconBtn.type = 'button';
-          treeIconBtn.className = 'path-icon';
+          treeIconBtn.className = 'button-style';
           treeIconBtn.title = 'Selected path';
           treeIconBtn.style.border = '1px solid';
           treeIconBtn.style.background = 'transparent';
@@ -335,6 +335,7 @@ Bakgrund:
           // Flat path button at second position of row
           const flatPathBtn = document.createElement('button');
           flatPathBtn.type = 'button';
+          flatPathBtn.className = 'button-style';
           flatPathBtn.textContent = "↔ "+buildHandlebarsPath(n.path);
           flatPathBtn.style.cursor = 'pointer';
           flatPathBtn.style.border = '1px solid'
@@ -374,6 +375,7 @@ Bakgrund:
           const insertButton = document.createElement('button');
           insertButton.textContent = 'Insert all Selected Paths';
           insertButton.id = 'insert-selected-paths';
+          insertButton.className = 'button-style';
           insertButton.addEventListener('click', () => {
             if (!treeInstance) return;
             const selected = treeInstance.selectedNodes || [];
@@ -661,6 +663,7 @@ Bakgrund:
           const copyButton = document.createElement('button');
           copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
           copyButton.id = 'copy-precompiled-button';
+          copyButton.className = 'button-style';
           conversionContainer.appendChild(copyButton);
           copyButton.style.cursor = 'pointer';
           copyButton.onclick = () => {

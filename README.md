@@ -53,14 +53,14 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 - After building, publish the `docs/` folder via GitHub Pages (set Pages source to the `docs/` folder on the `main` branch, or deploy `docs/` to a `gh-pages` branch if you prefer).
 
-## version 0.3 dynamic sources (local use)
+## version 0.3 contexts and inserts directy from tree
+* Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
+* Hide the selected paths list by default.
+* Add popup menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing ↔ flat paths and ⤡ hierarchies. Mark the selected node in the tree with a dotted line. ALso remember the node and use that as a stop (top level) when climbing path hierarchies in all path generation code.
+
+## version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
-
-## version 0.4 contexts and inserts directy from tree
-* Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
-* Remove the selected paths list if no longer needed.
-* Add possibility to set context boundary in tree widget that allows setting what is considered the root level when producing plat paths and hierarchies
 
 ## version 0.5
 * add support for schema/structure defintition-format plugins that can feed the tree view instead of just instances

@@ -143,7 +143,7 @@ textarea {
 }
 .tree-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 6px;
     margin-bottom: 8px;
 }
@@ -163,4 +163,42 @@ textarea {
 .tree-root .widget-tree {
     max-height: 50vh;
     overflow: auto;
+}
+
+/* Kintegrate context menu (speech-bubble like) */
+.kintegrate-context-menu {
+    position: absolute; 
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.08);
+    font-size: 14px;
+    min-width: 220px;
+}
+
+/* Button style used across the project (renamed from .kintegrate-context-option) */
+/* Also applied to native <button> elements so all buttons share the same look */
+.button-style,
+button {
+    display: inline-block;
+    margin: 4px 0;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: linear-gradient(#ffffff, #f7f9fb);
+    border: 1px solid #e3e8ee;
+    cursor: pointer;
+    color: #222;
+    transition: background 120ms ease, transform 80ms ease;
+    font: inherit;
+}
+.button-style:hover,
+button:hover {
+    background: linear-gradient(#f3f7fb, #eef4fb);
+    transform: translateY(-1px);
+}
+.button-style:active,
+button:active {
+    transform: translateY(0);
+    background: linear-gradient(#eaf0f7, #e2ecf6);
 }

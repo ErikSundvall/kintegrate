@@ -148,14 +148,24 @@ console.log("templateSpec defined OK")
 // 2. Use Handlebars.template() to create the executable function.
 const executableTemplate = Handlebars.template(templateSpec);
 console.log("executableTemplate defined OK")
+var output = "";
 
-api.addListener('generic-button-7214684', 'CLICK', function(model) {
+api.addListener('Sammanställ journalanteckning', 'CLICK', function(model) {
   var inputComp = api.getComposition();
   console.log("inputComp", inputComp);
 
   // 3. Render output by calling the function with the context.
-  var output = executableTemplate(inputComp);
+  output = executableTemplate(inputComp);
   console.log(output);
-  api.setFieldValue("generic-rich_text-9855219", output)
+  api.setFieldValue("RichTextNarrative", output)
 
 }, {onInitialValueSet: true})
+
+api.addListener('CopyNarrative', 'CLICK', function(model) {
+  console.log("CopyNarrative clicked, will copy", output);
+              navigator.clipboard.writeText(output).then(() => {
+              console.log("copied to clipboard:",output)
+            }); 
+
+}, {onInitialValueSet: true})
+

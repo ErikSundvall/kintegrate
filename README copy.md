@@ -35,32 +35,20 @@ See `docs/` for GitHub Pages documentation.
 ```
 ** The ↔ arrow: produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-## version 0.2.1 website version - starting soon...
+## version 0.2.1 website version - done
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
-### version 0.2.1 — demo build and docs
-
-Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The helper copies the `src/` directory into `docs/demo/`, preserving relative paths so the single-page app can be served directly from the `docs/` folder.
-
-- **Script:** `scripts/build_docs.ps1` (PowerShell) — run from the repository root on Windows.
-- **Usage:**
-    If using windows, open PowerShell in the project root and run:
-    ```powershell
-    .\scripts\build_docs.ps1
-    ```
-
-- The script will create `docs/demo/` and copy the `src/` contents there. It will also copy `LICENSE` and `README.md` into `docs/` so the site root has basic metadata.
-
-- After building, publish the `docs/` folder via GitHub Pages (set Pages source to the `docs/` folder on the `main` branch, or deploy `docs/` to a `gh-pages` branch if you prefer).
-
-## version 0.3 contexts and inserts directy from tree
-* Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
-* Hide the selected paths list by default.
-* Add menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing plat paths and hierarchies
+## version 0.3 contexts and inserts directy from tree - in progress
+* Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. 
+* Remove the selected paths list if no longer needed.
+* Add possibility to set context boundary in tree widget that allows setting what is considered the root level when producing flat paths and hierarchies
+* Autoconvert after change (configurabel debounce, X seconds after last typing)
+* add if/else-clause insertion button to context menu
 
 ## version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
+* Make it easy to backup/download created scripts easily (posibly also packs in/script/out)
 
 ## version 0.5
 * add support for schema/structure defintition-format plugins that can feed the tree view instead of just instances
@@ -84,6 +72,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** VS Code's integrated AI-integrations
 
 ## Possible extras later
+* Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
 * Investigate possible usage of https://github.com/josdejong/svelte-jsoneditor (if a separate transform code window could be added)
 * user interface with three rezisable columns
 * The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:

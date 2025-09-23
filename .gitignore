@@ -2,6 +2,9 @@
 node_modules/
 dist/
 
+# Proprietary libs
+src/vendor/
+
 # Python venvs that might be left behind
 venv/
 .venv/
