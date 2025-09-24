@@ -9,6 +9,26 @@
     <link rel="stylesheet" href="tree.min.css">
     <!-- CodeMirror 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <style>
+      /* Style for editor buttons (icons from Material UI Icons: https://mui.com/material-ui/material-icons/) */
+      .editor-buttons {
+        margin-bottom: 8px;
+      }
+      .editor-buttons button {
+        margin-right: 8px;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+      }
+      .editor-buttons button svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+      }
+      .editor-buttons button:disabled svg {
+        opacity: 0.5;
+      }
+    </style>
 
 
   </head>
@@ -99,7 +119,30 @@ Bakgrund:
   This ends the second comment block:   --}}
 
 </textarea>
-        <button id="run-conversion">Run Conversion --- > Output</button>
+            <div class="editor-buttons">
+                <button id="undo-button" title="Undo last change (Ctrl+Z)">
+                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"></path>
+                    </svg>
+                </button>
+                <button id="redo-button" title="Redo last undone change (Ctrl+Y)">
+                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"></path>
+                    </svg>
+                </button>
+                <button id="erase-button" title="Clear editor content (can be undone)">
+                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                    </svg>
+                </button>
+                <button id="download-button" title="Download editor content">
+                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"></path>
+                    </svg>
+                </button>
+                <button id="run-conversion">Run Conversion --- > Output</button>
+            </div>          
+    
         <button id="show-compiled">Show precompiled template</button>
       </div>
         <div class="resizer"></div>
@@ -109,7 +152,7 @@ Bakgrund:
       </div>
     </main>
     <footer>
-          <strong>K!ntegrate</strong> v0.2  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
+          <strong>K!ntegrate</strong> v0.3a  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
           | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
@@ -121,6 +164,8 @@ Bakgrund:
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
+    <!-- Add undo/redo addon -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/undo/undo.min.js"></script>
 
     <!-- Tree widget and Handlebars runtime (local) -->
     <script src="tree.min.js"></script>
@@ -139,7 +184,73 @@ Bakgrund:
       const outputTextarea = document.getElementById('out');
 
       const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
-      const templateEditor = CodeMirror.fromTextArea(templateTextarea, { mode: 'text/x-handlebars-template', lineNumbers: true, tabSize: 2 });
+      // Get the pre-defined buttons
+      const undoButton = document.getElementById('undo-button');
+      const redoButton = document.getElementById('redo-button');
+      const eraseButton = document.getElementById('erase-button');
+
+      // Initialize CodeMirror with undo/redo history
+      const templateEditor = CodeMirror.fromTextArea(templateTextarea, {
+        mode: 'text/x-handlebars-template',
+        lineNumbers: true,
+        tabSize: 2,
+        undoDepth: 200,  // Number of undo levels to keep
+        historyEventDelay: 200  // Delay in ms to merge changes into one undo event
+      });
+
+      // Setup undo/redo button handlers
+      undoButton.onclick = () => {
+        if (templateEditor.historySize().undo > 0) {
+          templateEditor.undo();
+          templateEditor.focus();
+        }
+      };
+      redoButton.onclick = () => {
+        if (templateEditor.historySize().redo > 0) {
+          templateEditor.redo();
+          templateEditor.focus();
+        }
+      };
+
+      // Update button states based on history availability
+      function updateButtonStates() {
+        const history = templateEditor.historySize();
+        undoButton.disabled = history.undo === 0;
+        redoButton.disabled = history.redo === 0;
+      }
+
+      // Listen for changes to update button states
+      templateEditor.on('change', updateButtonStates);
+      updateButtonStates();
+
+      // Setup erase button handler
+      eraseButton.onclick = () => {
+        templateEditor.setValue('');
+        templateEditor.focus();
+      };
+
+      // Setup download button handler
+      const downloadButton = document.getElementById('download-button');
+      downloadButton.onclick = () => {
+        // Create filename with current date/time
+        const now = new Date();
+        const timestamp = now.toISOString()
+          .replace(/:/g, '-')  // Replace colons with dashes
+          .replace(/\./g, '-') // Replace dot with dash
+          .replace(/T/, '_')   // Replace T with underscore
+          .slice(0, -1);       // Remove the Z at the end
+        const filename = `Kintegrate_${timestamp}.txt`;
+
+        // Create blob and download link
+        const content = templateEditor.getValue();
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      };
       const outputEditor = CodeMirror.fromTextArea(outputTextarea, { mode: 'application/json', lineNumbers: true, readOnly: true });
       const selectionListBox = document.getElementById('selection-list')
       const actions = document.getElementById('tree-actions');
@@ -154,11 +265,13 @@ Bakgrund:
         function findNearestContextBoundary(currentNode) {
           if (!currentNode || !currentNode.path) return null;
           
+          // First check if the current node itself is a boundary
+          if (treeInstance.isContextBoundary(currentNode.id)) {
+            return currentNode;
+          }
+          
           let current = currentNode;
           while (current) {
-            if (treeInstance.isContextBoundary(current.id)) {
-              return current;
-            }
             // Get parent node by removing last element from path
             const parentPath = current.path.slice(0, -1);
             // Find node with this path
@@ -166,17 +279,26 @@ Bakgrund:
               n => n.path && n.path.length === parentPath.length && 
               n.path.every((v, i) => v === parentPath[i])
             );
+            
+            if (current && treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
           }
           return null;
         }
         
-        // If we have a node and there's a context boundary ancestor, trim the path
+        // If we have a node, check for context boundary
         if (node) {
           const boundaryNode = findNearestContextBoundary(node);
           if (boundaryNode) {
-            // Trim path to start from context boundary
-            const boundaryDepth = boundaryNode.path.length;
-            pathArray = pathArray.slice(boundaryDepth);
+            // If the node itself is the boundary, use its children's paths
+            if (boundaryNode.id === node.id) {
+              pathArray = pathArray.slice(pathArray.length - 1);
+            } else {
+              // Otherwise trim path to start from boundary
+              const boundaryDepth = boundaryNode.path.length;
+              pathArray = pathArray.slice(boundaryDepth);
+            }
           }
         }
         
@@ -196,11 +318,13 @@ Bakgrund:
         function findNearestContextBoundary(currentNode) {
           if (!currentNode || !currentNode.path) return null;
           
+          // First check if the current node itself is a boundary
+          if (treeInstance.isContextBoundary(currentNode.id)) {
+            return currentNode;
+          }
+          
           let current = currentNode;
           while (current) {
-            if (treeInstance.isContextBoundary(current.id)) {
-              return current;
-            }
             // Get parent node by removing last element from path
             const parentPath = current.path.slice(0, -1);
             // Find node with this path
@@ -208,6 +332,10 @@ Bakgrund:
               n => n.path && n.path.length === parentPath.length && 
               n.path.every((v, i) => v === parentPath[i])
             );
+            
+            if (current && treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
           }
           return null;
         }
@@ -215,10 +343,19 @@ Bakgrund:
         // Get the context boundary ancestor if any
         const boundaryNode = findNearestContextBoundary(node);
         
-        // If we have a context boundary, adjust the path to start from there
-        const path = boundaryNode ? 
-          node.path.slice(boundaryNode.path.length) : 
-          node.path;
+        // If we have a context boundary, adjust the path appropriately
+        let path;
+        if (boundaryNode) {
+          if (boundaryNode.id === node.id) {
+            // If the node itself is the boundary, only use its last path segment
+            path = [node.path[node.path.length - 1]];
+          } else {
+            // Otherwise trim path to start from boundary
+            path = node.path.slice(boundaryNode.path.length);
+          }
+        } else {
+          path = node.path;
+        }
 
         const opens = [];
         let leaf = null;
