@@ -4,6 +4,7 @@ dist/
 
 # Proprietary libs
 src/vendor/
+trash/
 
 # Python venvs that might be left behind
 venv/

@@ -172,6 +172,8 @@ textarea {
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     border-radius: 4px;
     padding: 4px;
+    max-width: 300px;
+    box-sizing: border-box;
 }
 
 .kintegrate-context-option {
@@ -185,6 +187,10 @@ textarea {
     cursor: pointer;
     color: #222;
     text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
 }
 .kintegrate-context-option:hover {
     background: linear-gradient(#f3f7fb, #eef4fb);
