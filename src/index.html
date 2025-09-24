@@ -124,6 +124,7 @@ Bakgrund:
 
     <!-- Tree widget and Handlebars runtime (local) -->
     <script src="tree.min.js"></script>
+    <script src="extended-tree.js"></script>
 
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
@@ -146,28 +147,79 @@ Bakgrund:
       console.log('111 actions:', actions, "selectionListBox", selectionListBox );
 
       // small helper creating flat paths in Handlebars syntax
-      function buildHandlebarsPath(pathArray) {
+      function buildHandlebarsPath(pathArray, node) {
         if (!Array.isArray(pathArray)) return '';
+        
+        // Find the nearest context boundary ancestor
+        function findNearestContextBoundary(currentNode) {
+          if (!currentNode || !currentNode.path) return null;
+          
+          let current = currentNode;
+          while (current) {
+            if (treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
+            // Get parent node by removing last element from path
+            const parentPath = current.path.slice(0, -1);
+            // Find node with this path
+            current = Object.values(treeInstance.nodesById).find(
+              n => n.path && n.path.length === parentPath.length && 
+              n.path.every((v, i) => v === parentPath[i])
+            );
+          }
+          return null;
+        }
+        
+        // If we have a node and there's a context boundary ancestor, trim the path
+        if (node) {
+          const boundaryNode = findNearestContextBoundary(node);
+          if (boundaryNode) {
+            // Trim path to start from context boundary
+            const boundaryDepth = boundaryNode.path.length;
+            pathArray = pathArray.slice(boundaryDepth);
+          }
+        }
+        
+        // Convert path segments to Handlebars syntax
         return pathArray.map(p => {
           if (typeof p === 'number') return p;
-          // old regex:
-          // if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
-          // new regex: Allow Unicode letters (e.g., åäö), underscore and $ as first char, then letters, numbers, underscore, $
           if (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(String(p))) return String(p);
-        return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
+          return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
         }).join('.');
       }
 
       // small helper creating tree-structs using {{#each ...}} or {{#with ...}} in Handlebars syntax based on a node deeper down in the structure
       function buildHandlebarsTree(node) {
-        // Walk the node.path array from left (root) to right (leaf) and
-        // emit opening wrappers for properties that are objects (#with) or arrays (#each).
-        // Numeric indices in the path are represented by the preceding property's #each,
-        // so we skip numeric entries when building the wrappers. The leaf is the final
-        // non-numeric path segment (or the last segment if it's not an identifier).
         if (!node || !Array.isArray(node.path) || node.path.length === 0) return '';
 
-        const path = node.path;
+        // Find the nearest context boundary ancestor
+        function findNearestContextBoundary(currentNode) {
+          if (!currentNode || !currentNode.path) return null;
+          
+          let current = currentNode;
+          while (current) {
+            if (treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
+            // Get parent node by removing last element from path
+            const parentPath = current.path.slice(0, -1);
+            // Find node with this path
+            current = Object.values(treeInstance.nodesById).find(
+              n => n.path && n.path.length === parentPath.length && 
+              n.path.every((v, i) => v === parentPath[i])
+            );
+          }
+          return null;
+        }
+
+        // Get the context boundary ancestor if any
+        const boundaryNode = findNearestContextBoundary(node);
+        
+        // If we have a context boundary, adjust the path to start from there
+        const path = boundaryNode ? 
+          node.path.slice(boundaryNode.path.length) : 
+          node.path;
+
         const opens = [];
         let leaf = null;
 
@@ -477,9 +529,12 @@ Bakgrund:
           // Initialize Tree widget into our container
           const selector = '#json-tree-container';
           const closeDepthOpt = parseInt(document.getElementById('tree-close-depth').value, 10) || 0;
-          treeInstance = new Tree(selector, {
+          
+          // Initialize tree with our extended version that includes context boundary support
+          treeInstance = new ExtendedTree(selector, {
             data: treeData,
             closeDepth: closeDepthOpt,
+
             onChange: function() {
               const selected = this.selectedNodes || [];
               const selectedListEl = document.getElementById('selected-paths');
@@ -514,73 +569,122 @@ Bakgrund:
           // ****************************
           // Right-click on a node: toggle that node only (don't cascade to descendants)
           // This preserves children selection states but updates ancestor statuses.
+          
+          // Right-click on a node: show context menu with options
           jsonTreeContainer.addEventListener('contextmenu', (ev) => {
-            if (!treeInstance) return;
-            ev.preventDefault();
-            let el = ev.target;
-            console.log('Right-clicked target element:', el);
-            // find the nearest LI with class treejs-node
-            while (el && el !== jsonTreeContainer && !el.classList.contains('treejs-node')) el = el.parentNode;
-            if (!el || !el.nodeId) return;
-            const node = treeInstance.nodesById && treeInstance.nodesById[el.nodeId];
-            if (!node) return;
-            // make the element (el) visibly selected for a short moment to give user feedback
-            el.style.backgroundColor = '#cce5cc';
-            setTimeout(() => { el.style.backgroundColor = ''; }, 600);    
-
-            console.log('Right-clicked node identified:', node);
-            // add a green entry representing this right-click-selected node in the list under selected-paths, if not already there. 
-            // Just like when leaf nodes are selected via normal left-click checkbox selection
-
-            // now pop up a small context menu with options to insert flat path or tree structure at cursor in template editor
-            const menu = document.createElement('div');
-            menu.className = 'kintegrate-context-menu';
-            menu.style.position = 'absolute'; menu.style.left = ev.pageX + 'px'; menu.style.top = ev.pageY + 'px';
-            menu.style.zIndex = 1000;
-            const flatPathOption = document.createElement('div'); 
-            flatPathOption.className = 'kintegrate-context-option';
-            flatPathOption.textContent = '↔ Insert flat path: ' + buildHandlebarsPath(node.path);
-            flatPathOption.addEventListener('click', () => {
-              templateEditor.replaceSelection(`{{${buildHandlebarsPath(node.path)}}}`);
-              templateEditor.focus();
-            });
-            menu.appendChild(flatPathOption);
-            const treeStructOption = document.createElement('div');  
-            treeStructOption.className = 'kintegrate-context-option';
-            treeStructOption.textContent = '⤡ Insert tree structure';
-
-            treeStructOption.addEventListener('click', () => {
-              const treeStr = buildHandlebarsTree(node);
-              if (treeStr) {
-                templateEditor.replaceSelection(treeStr);
-                templateEditor.focus();
+              if (!treeInstance) return;
+              ev.preventDefault();
+              
+              // Find clicked element
+              let el = ev.target;
+              while (el && el !== jsonTreeContainer) {
+                  if (el.tagName === 'LI' && el.classList.contains('treejs-node')) break;
+                  el = el.parentElement;
               }
-            });
-            menu.appendChild(treeStructOption);
-            document.body.appendChild(menu);
-
-            // Remove menu when clicking elsewhere or when an option is clicked or when focus is lost by moving pointer more than 10 px outisde the menu
-            const removeMenu = (e) => {              
-              if (menu && menu.parentNode) menu.parentNode.removeChild(menu);
-              document.removeEventListener('click', removeMenu);      
-              document.removeEventListener('mousemove', trackMouse);
-            };
-
-            const trackMouse = (e) => { 
-              if (!menu) return;
-              const rect = menu.getBoundingClientRect();        
-              // If mouse moves more than 10 px outside the menu, remove it
-              if (e.clientX < rect.left - 10 || e.clientX > rect.right + 10 || e.clientY < rect.top - 10 || e.clientY > rect.bottom + 10) {
-                removeMenu();
+              
+              // Exit if no valid tree node found
+              if (!el || el === jsonTreeContainer) return;
+              
+              // Get node data from the tree widget
+              const nodeId = el.nodeId;
+              if (!nodeId || !treeInstance.nodesById) return;
+              
+              const node = treeInstance.nodesById[nodeId];
+              if (!node) return;
+              
+              // Remove any existing menus
+              const existingMenu = document.querySelector('.kintegrate-context-menu');
+              if (existingMenu) {
+                  existingMenu.parentNode.removeChild(existingMenu);
               }
-              document.addEventListener('mousemove', trackMouse); 
-            };
+              
+              // Create and position the context menu
+              const menu = document.createElement('div');
+              menu.className = 'kintegrate-context-menu';
+              menu.style.position = 'fixed';  // Changed from 'absolute' to 'fixed'
+              menu.style.left = ev.clientX + 'px';  // Use clientX instead of pageX
+              menu.style.top = ev.clientY + 'px';   // Use clientY instead of pageY
+              menu.style.zIndex = '1000';
 
-            menu.addEventListener('click', removeMenu); 
-            document.addEventListener('click', removeMenu);  
-               
+              // Add menu options
+              const flatPathOption = document.createElement('div'); 
+              flatPathOption.className = 'kintegrate-context-option';
+              flatPathOption.textContent = '↔ Insert flat path: ' + buildHandlebarsPath(node.path, node);
+              flatPathOption.addEventListener('click', () => {
+                  templateEditor.replaceSelection(`{{${buildHandlebarsPath(node.path, node)}}}`);
+                  templateEditor.focus();
+                  menu.remove();
+              });
+              menu.appendChild(flatPathOption);
+
+              const treeStructOption = document.createElement('div');  
+              treeStructOption.className = 'kintegrate-context-option';
+              treeStructOption.textContent = '⤡ Insert tree structure';
+              treeStructOption.addEventListener('click', () => {
+                  const treeStr = buildHandlebarsTree(node);
+                  if (treeStr) {
+                      templateEditor.replaceSelection(treeStr);
+                      templateEditor.focus();
+                  }
+                  menu.remove();
+              });
+              menu.appendChild(treeStructOption);
+
+              // Add context boundary option
+              const contextBoundaryOption = document.createElement('div');
+              contextBoundaryOption.className = 'kintegrate-context-option';
+              const isCurrentlyBoundary = treeInstance.isContextBoundary(nodeId);
+              contextBoundaryOption.textContent = (isCurrentlyBoundary ? '✓ Remove' : '⬚√ Set') + ' as context boundary';
+              contextBoundaryOption.addEventListener('click', () => {
+                  const newState = !treeInstance.isContextBoundary(nodeId);
+                  treeInstance.setContextBoundary(nodeId, newState);
+                  el.classList.toggle('context-boundary', newState);
+                  menu.remove();
+              });
+              menu.appendChild(contextBoundaryOption);
+              
+              // Add the menu to the document
+              document.body.appendChild(menu);
+
+              // Ensure menu is visible within viewport
+              const menuRect = menu.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
+              
+              if (menuRect.right > viewportWidth) {
+                  menu.style.left = (viewportWidth - menuRect.width - 10) + 'px';
+              }
+              if (menuRect.bottom > viewportHeight) {
+                  menu.style.top = (viewportHeight - menuRect.height - 10) + 'px';
+              }
+
+              // Handle menu removal
+              const removeMenu = () => {
+                  if (menu && menu.parentNode) {
+                      menu.parentNode.removeChild(menu);
+                  }
+                  document.removeEventListener('click', removeMenu);
+                  document.removeEventListener('mousemove', trackMouse);
+              };
+
+              // Track mouse movement
+              const trackMouse = (e) => {
+                  if (!menu) return;
+                  const rect = menu.getBoundingClientRect();
+                  const buffer = 10; // 10px buffer zone
+                  
+                  if (e.clientX < rect.left - buffer || 
+                      e.clientX > rect.right + buffer || 
+                      e.clientY < rect.top - buffer || 
+                      e.clientY > rect.bottom + buffer) {
+                      removeMenu();
+                  }
+              };
+
+              // Set up event listeners for menu removal
+              document.addEventListener('click', removeMenu);
+              document.addEventListener('mousemove', trackMouse);
           });
-
           //***************************
 
           // When user changes the tree-close-depth control, update the option and re-render in-place

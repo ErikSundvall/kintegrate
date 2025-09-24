@@ -34,12 +34,13 @@
         </div>
         <div class="resizer"></div>
         <div id="conversion-container" class="column column-center">
-            <h2>Conversion Template (Handlebars)</h2>
             <div id="selection-list">
+              <div id="number-of-selected-paths"></div>
               <div class="tree-actions">
                 <div id="selected-paths">No nodes selected. Use checkboxes to select nodes.</div>
               </div>
             </div>
+            <div>Conversion Template (Handlebars)</div>
             <textarea id="template-editor">
 {{!-- <--- This is how you start a comment block in Handlebars
   This is the column where you author (and possibly compile) your conversion script.
@@ -98,8 +99,8 @@ Bakgrund:
   This ends the second comment block:   --}}
 
 </textarea>
-        <button id="run-conversion" class="button-style">Run Conversion --- > Output</button>
-        <button id="show-compiled" class="button-style">Show precompiled template</button>
+        <button id="run-conversion">Run Conversion --- > Output</button>
+        <button id="show-compiled">Show precompiled template</button>
       </div>
         <div class="resizer"></div>
         <div id="output-container" class="column column-right">
@@ -123,6 +124,7 @@ Bakgrund:
 
     <!-- Tree widget and Handlebars runtime (local) -->
     <script src="tree.min.js"></script>
+    <script src="extended-tree.js"></script>
 
     <!-- Handlebars Runtime -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
@@ -145,28 +147,79 @@ Bakgrund:
       console.log('111 actions:', actions, "selectionListBox", selectionListBox );
 
       // small helper creating flat paths in Handlebars syntax
-      function buildHandlebarsPath(pathArray) {
+      function buildHandlebarsPath(pathArray, node) {
         if (!Array.isArray(pathArray)) return '';
+        
+        // Find the nearest context boundary ancestor
+        function findNearestContextBoundary(currentNode) {
+          if (!currentNode || !currentNode.path) return null;
+          
+          let current = currentNode;
+          while (current) {
+            if (treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
+            // Get parent node by removing last element from path
+            const parentPath = current.path.slice(0, -1);
+            // Find node with this path
+            current = Object.values(treeInstance.nodesById).find(
+              n => n.path && n.path.length === parentPath.length && 
+              n.path.every((v, i) => v === parentPath[i])
+            );
+          }
+          return null;
+        }
+        
+        // If we have a node and there's a context boundary ancestor, trim the path
+        if (node) {
+          const boundaryNode = findNearestContextBoundary(node);
+          if (boundaryNode) {
+            // Trim path to start from context boundary
+            const boundaryDepth = boundaryNode.path.length;
+            pathArray = pathArray.slice(boundaryDepth);
+          }
+        }
+        
+        // Convert path segments to Handlebars syntax
         return pathArray.map(p => {
           if (typeof p === 'number') return p;
-          // old regex:
-          // if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(p))) return String(p);
-          // new regex: Allow Unicode letters (e.g., åäö), underscore and $ as first char, then letters, numbers, underscore, $
           if (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(String(p))) return String(p);
-        return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
+          return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
         }).join('.');
       }
 
       // small helper creating tree-structs using {{#each ...}} or {{#with ...}} in Handlebars syntax based on a node deeper down in the structure
       function buildHandlebarsTree(node) {
-        // Walk the node.path array from left (root) to right (leaf) and
-        // emit opening wrappers for properties that are objects (#with) or arrays (#each).
-        // Numeric indices in the path are represented by the preceding property's #each,
-        // so we skip numeric entries when building the wrappers. The leaf is the final
-        // non-numeric path segment (or the last segment if it's not an identifier).
         if (!node || !Array.isArray(node.path) || node.path.length === 0) return '';
 
-        const path = node.path;
+        // Find the nearest context boundary ancestor
+        function findNearestContextBoundary(currentNode) {
+          if (!currentNode || !currentNode.path) return null;
+          
+          let current = currentNode;
+          while (current) {
+            if (treeInstance.isContextBoundary(current.id)) {
+              return current;
+            }
+            // Get parent node by removing last element from path
+            const parentPath = current.path.slice(0, -1);
+            // Find node with this path
+            current = Object.values(treeInstance.nodesById).find(
+              n => n.path && n.path.length === parentPath.length && 
+              n.path.every((v, i) => v === parentPath[i])
+            );
+          }
+          return null;
+        }
+
+        // Get the context boundary ancestor if any
+        const boundaryNode = findNearestContextBoundary(node);
+        
+        // If we have a context boundary, adjust the path to start from there
+        const path = boundaryNode ? 
+          node.path.slice(boundaryNode.path.length) : 
+          node.path;
+
         const opens = [];
         let leaf = null;
 
@@ -306,8 +359,35 @@ Bakgrund:
           const el = document.createElement('div'); el.id = 'selected-paths'; el.style.marginTop = '8px'; document.getElementById('selection-list')?.appendChild(el); return el;
         })();
 
+        // update count indicator
+        const countEl = document.getElementById('number-of-selected-paths');
+        if (countEl) {
+          countEl.textContent = nodes && nodes.length ? `${nodes.length} selected` : '';
+        }
+
+        // show/hide actions area depending on selection
+        const actionsWrap = document.querySelector('.tree-actions');
+        if (actionsWrap) {
+          if (!nodes || nodes.length === 0) {
+            actionsWrap.style.display = 'none';
+          } else {
+            actionsWrap.style.display = '';
+          }
+        }
+
+        // update toggle button label to include count
+        const toggleBtn = document.getElementById('toggle-selected-list');
+        if (toggleBtn) {
+          const n = nodes && nodes.length ? nodes.length : 0;
+          const visible = (selectedListEl && selectedListEl.style.display !== 'none');
+          toggleBtn.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
+        }
+
         if (!nodes || nodes.length === 0) {
           selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+          // ensure actions area hidden when no selection
+          const actionsWrap = document.querySelector('.tree-actions');
+          if (actionsWrap) actionsWrap.style.display = 'none';
           return;
         }
 
@@ -318,24 +398,22 @@ Bakgrund:
           // Tree button at start of row
           const treeIconBtn = document.createElement('button');
           treeIconBtn.type = 'button';
-          treeIconBtn.className = 'button-style';
+          treeIconBtn.className = 'path-icon';
           treeIconBtn.title = 'Selected path';
           treeIconBtn.style.border = '1px solid';
           treeIconBtn.style.background = 'transparent';
           treeIconBtn.style.padding = '3px';
           treeIconBtn.style.cursor = 'pointer';
-          // simple inline SVG tree-like icon (small)
           treeIconBtn.innerHTML = '⤡';
           treeIconBtn.addEventListener('click', () => {
             templateEditor.replaceSelection(buildHandlebarsTree(n));
             templateEditor.focus();
           });
           li.appendChild(treeIconBtn);
-          
+
           // Flat path button at second position of row
           const flatPathBtn = document.createElement('button');
           flatPathBtn.type = 'button';
-          flatPathBtn.className = 'button-style';
           flatPathBtn.textContent = "↔ "+buildHandlebarsPath(n.path);
           flatPathBtn.style.cursor = 'pointer';
           flatPathBtn.style.border = '1px solid'
@@ -348,8 +426,12 @@ Bakgrund:
           ul.appendChild(li);
         }
 
-        selectedListEl.innerHTML = '';
-        selectedListEl.appendChild(ul);
+  // show actions area when we have selections
+  const actionsWrap2 = document.querySelector('.tree-actions');
+  if (actionsWrap2) actionsWrap2.style.display = '';
+
+  selectedListEl.innerHTML = '';
+  selectedListEl.appendChild(ul);
       }
 
       function updateJsonTree(jsonString) {
@@ -373,9 +455,8 @@ Bakgrund:
 
           // Insert button (keeps same behavior as before)
           const insertButton = document.createElement('button');
-          insertButton.textContent = 'Insert all Selected Paths';
+          insertButton.textContent = '↔ Insert all Selected node as "flat" Paths';
           insertButton.id = 'insert-selected-paths';
-          insertButton.className = 'button-style';
           insertButton.addEventListener('click', () => {
             if (!treeInstance) return;
             const selected = treeInstance.selectedNodes || [];
@@ -401,11 +482,41 @@ Bakgrund:
             selectedList.id = 'selected-paths';
             selectedList.style.marginTop = '8px';
             selectedList.textContent = 'No nodes selected. Use checkboxes to select nodes.';
+            // hidden by default
+            selectedList.style.display = 'none';
           } else {
             selectedList.innerHTML = '';
+            // hidden by default when re-creating
+            selectedList.style.display = 'none';
           }
 
+          // Toggle button to show/hide the selected-paths list
+          let toggleButton = document.getElementById('toggle-selected-list');
+          if (!toggleButton) {
+            toggleButton = document.createElement('button');
+            toggleButton.type = 'button';
+            toggleButton.id = 'toggle-selected-list';
+            // initial text will be updated by renderSelectedPaths to include count
+            toggleButton.textContent = 'Show selected list (0)';
+            toggleButton.style.marginLeft = '8px';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.addEventListener('click', () => {
+              if (!selectedList) return;
+              if (selectedList.style.display === 'none') {
+                selectedList.style.display = '';
+              } else {
+                selectedList.style.display = 'none';
+              }
+              // always refresh label to reflect current count and visibility
+              const n = (treeInstance && treeInstance.selectedNodes) ? (treeInstance.selectedNodes.filter(n=>n&&n.status===2&&Array.isArray(n.path)).length) : 0;
+              const visible = (selectedList && selectedList.style.display !== 'none');
+              toggleButton.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
+            });
+          }
+
+          actionsEl.appendChild(toggleButton);
           actionsEl.appendChild(insertButton);
+          
           actionsEl.appendChild(selectedList);
 
           // Attach to selection list container (replace existing contents)
@@ -418,9 +529,12 @@ Bakgrund:
           // Initialize Tree widget into our container
           const selector = '#json-tree-container';
           const closeDepthOpt = parseInt(document.getElementById('tree-close-depth').value, 10) || 0;
-          treeInstance = new Tree(selector, {
+          
+          // Initialize tree with our extended version that includes context boundary support
+          treeInstance = new ExtendedTree(selector, {
             data: treeData,
             closeDepth: closeDepthOpt,
+
             onChange: function() {
               const selected = this.selectedNodes || [];
               const selectedListEl = document.getElementById('selected-paths');
@@ -455,46 +569,122 @@ Bakgrund:
           // ****************************
           // Right-click on a node: toggle that node only (don't cascade to descendants)
           // This preserves children selection states but updates ancestor statuses.
+          
+          // Right-click on a node: show context menu with options
           jsonTreeContainer.addEventListener('contextmenu', (ev) => {
-            if (!treeInstance) return;
-            ev.preventDefault();
-            let el = ev.target;
-            console.log('Right-click target element:', el);
-            // find the nearest LI with class treejs-node
-            while (el && el !== jsonTreeContainer && !el.classList.contains('treejs-node')) el = el.parentNode;
-            if (!el || !el.nodeId) return;
-            const node = treeInstance.nodesById && treeInstance.nodesById[el.nodeId];
-            if (!node) return;
-            // make the element (el) visibly selected for a short moment to give user feedback
-            el.style.backgroundColor = '#cce5cc';
-            setTimeout(() => { el.style.backgroundColor = ''; }, 600);    
-
-            console.log('Right-clicked node identified:', node);
-            // add a green entry representing this right-click-selected node in the list under selected-paths, if not already there. 
-            // Just like when leaf nodes are selected via normal left-click checkbox selection
-
-            try {
-              // toggle between unchecked (0) and checked (2) without walking down
-              node.status = (node.status === 2 ? 0 : 2); //status 0 means unchecked, 2 means checked=
-              treeInstance.markWillUpdateNode && treeInstance.markWillUpdateNode(node);
-              // recompute ancestors so parent visual states stay correct
-              treeInstance.walkUp && treeInstance.walkUp(node, 'status');
-              // apply visual updates
-              treeInstance.updateLiElements && treeInstance.updateLiElements();
-              // compute deepest selected nodes and re-render the selected list
-              const selected = treeInstance.selectedNodes || [];
-              const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
-              const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && (function(aPath,bPath){ if (!Array.isArray(aPath)||!Array.isArray(bPath)) return false; if (aPath.length>=bPath.length) return false; for (let i=0;i<aPath.length;i++) if (aPath[i]!==bPath[i]) return false; return true;})(n.path,m.path)));
-              renderSelectedPaths(deepest);
-              // notify change handlers
-              if (treeInstance.options && typeof treeInstance.options.onChange === 'function') {
-                treeInstance.options.onChange.call(treeInstance);
+              if (!treeInstance) return;
+              ev.preventDefault();
+              
+              // Find clicked element
+              let el = ev.target;
+              while (el && el !== jsonTreeContainer) {
+                  if (el.tagName === 'LI' && el.classList.contains('treejs-node')) break;
+                  el = el.parentElement;
               }
-            } catch (e) {
-              console.error('Right-click toggle failed:', e);
-            }
-          });
+              
+              // Exit if no valid tree node found
+              if (!el || el === jsonTreeContainer) return;
+              
+              // Get node data from the tree widget
+              const nodeId = el.nodeId;
+              if (!nodeId || !treeInstance.nodesById) return;
+              
+              const node = treeInstance.nodesById[nodeId];
+              if (!node) return;
+              
+              // Remove any existing menus
+              const existingMenu = document.querySelector('.kintegrate-context-menu');
+              if (existingMenu) {
+                  existingMenu.parentNode.removeChild(existingMenu);
+              }
+              
+              // Create and position the context menu
+              const menu = document.createElement('div');
+              menu.className = 'kintegrate-context-menu';
+              menu.style.position = 'fixed';  // Changed from 'absolute' to 'fixed'
+              menu.style.left = ev.clientX + 'px';  // Use clientX instead of pageX
+              menu.style.top = ev.clientY + 'px';   // Use clientY instead of pageY
+              menu.style.zIndex = '1000';
 
+              // Add menu options
+              const flatPathOption = document.createElement('div'); 
+              flatPathOption.className = 'kintegrate-context-option';
+              flatPathOption.textContent = '↔ Insert flat path: ' + buildHandlebarsPath(node.path, node);
+              flatPathOption.addEventListener('click', () => {
+                  templateEditor.replaceSelection(`{{${buildHandlebarsPath(node.path, node)}}}`);
+                  templateEditor.focus();
+                  menu.remove();
+              });
+              menu.appendChild(flatPathOption);
+
+              const treeStructOption = document.createElement('div');  
+              treeStructOption.className = 'kintegrate-context-option';
+              treeStructOption.textContent = '⤡ Insert tree structure';
+              treeStructOption.addEventListener('click', () => {
+                  const treeStr = buildHandlebarsTree(node);
+                  if (treeStr) {
+                      templateEditor.replaceSelection(treeStr);
+                      templateEditor.focus();
+                  }
+                  menu.remove();
+              });
+              menu.appendChild(treeStructOption);
+
+              // Add context boundary option
+              const contextBoundaryOption = document.createElement('div');
+              contextBoundaryOption.className = 'kintegrate-context-option';
+              const isCurrentlyBoundary = treeInstance.isContextBoundary(nodeId);
+              contextBoundaryOption.textContent = (isCurrentlyBoundary ? '✓ Remove' : '⬚√ Set') + ' as context boundary';
+              contextBoundaryOption.addEventListener('click', () => {
+                  const newState = !treeInstance.isContextBoundary(nodeId);
+                  treeInstance.setContextBoundary(nodeId, newState);
+                  el.classList.toggle('context-boundary', newState);
+                  menu.remove();
+              });
+              menu.appendChild(contextBoundaryOption);
+              
+              // Add the menu to the document
+              document.body.appendChild(menu);
+
+              // Ensure menu is visible within viewport
+              const menuRect = menu.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
+              
+              if (menuRect.right > viewportWidth) {
+                  menu.style.left = (viewportWidth - menuRect.width - 10) + 'px';
+              }
+              if (menuRect.bottom > viewportHeight) {
+                  menu.style.top = (viewportHeight - menuRect.height - 10) + 'px';
+              }
+
+              // Handle menu removal
+              const removeMenu = () => {
+                  if (menu && menu.parentNode) {
+                      menu.parentNode.removeChild(menu);
+                  }
+                  document.removeEventListener('click', removeMenu);
+                  document.removeEventListener('mousemove', trackMouse);
+              };
+
+              // Track mouse movement
+              const trackMouse = (e) => {
+                  if (!menu) return;
+                  const rect = menu.getBoundingClientRect();
+                  const buffer = 10; // 10px buffer zone
+                  
+                  if (e.clientX < rect.left - buffer || 
+                      e.clientX > rect.right + buffer || 
+                      e.clientY < rect.top - buffer || 
+                      e.clientY > rect.bottom + buffer) {
+                      removeMenu();
+                  }
+              };
+
+              // Set up event listeners for menu removal
+              document.addEventListener('click', removeMenu);
+              document.addEventListener('mousemove', trackMouse);
+          });
           //***************************
 
           // When user changes the tree-close-depth control, update the option and re-render in-place
@@ -663,7 +853,6 @@ Bakgrund:
           const copyButton = document.createElement('button');
           copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
           copyButton.id = 'copy-precompiled-button';
-          copyButton.className = 'button-style';
           conversionContainer.appendChild(copyButton);
           copyButton.style.cursor = 'pointer';
           copyButton.onclick = () => {

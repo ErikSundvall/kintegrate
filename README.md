@@ -58,6 +58,9 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * Hide the selected paths list by default.
 * Add popup menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing ↔ flat paths and ⤡ hierarchies. Mark the selected node in the tree with a dotted line. ALso remember the node and use that as a stop (top level) when climbing path hierarchies in all path generation code.
 
+## version 0.3.1 UI tweaks
+* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
+
 ## version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.

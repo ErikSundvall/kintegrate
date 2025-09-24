@@ -26,13 +26,28 @@ if (-not (Test-Path $SourceDir)) {
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
-# Copy site files (html, css, js and vendor files)
-Get-ChildItem -Path $SourceDir -Recurse -File | ForEach-Object {
-  $rel = $_.FullName.Substring((Get-Item $SourceDir).FullName.Length).TrimStart('\')
-  $dest = Join-Path $OutDir $rel
-  $dpath = Split-Path $dest -Parent
-  if (-not (Test-Path $dpath)) { New-Item -ItemType Directory -Path $dpath -Force | Out-Null }
-  Copy-Item -Path $_.FullName -Destination $dest -Force
+# Define files and directories to exclude
+$excludeDirs = @("vendor")
+$excludeFiles = @("index2.html", "index3.html")
+
+# Copy site files (html, css, js) excluding specified files and directories
+Get-ChildItem -Path $SourceDir -Recurse -File | Where-Object {
+    $relPath = $_.FullName.Substring((Get-Item $SourceDir).FullName.Length).TrimStart('\')
+    $inExcludedDir = $false
+    foreach ($dir in $excludeDirs) {
+        if ($relPath.StartsWith($dir)) {
+            $inExcludedDir = $true
+            break
+        }
+    }
+    -not $inExcludedDir -and -not ($excludeFiles -contains $_.Name)
+} | ForEach-Object {
+    $rel = $_.FullName.Substring((Get-Item $SourceDir).FullName.Length).TrimStart('\')
+    $dest = Join-Path $OutDir $rel
+    $dpath = Split-Path $dest -Parent
+    if (-not (Test-Path $dpath)) { New-Item -ItemType Directory -Path $dpath -Force | Out-Null }
+    Write-Host "Copying $($_.Name) to $dest"
+    Copy-Item -Path $_.FullName -Destination $dest -Force
 }
 
 # Copy top-level assets for the site

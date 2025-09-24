@@ -190,6 +190,40 @@ textarea {
     background: linear-gradient(#f3f7fb, #eef4fb);
 }
 
+/* Context boundary node styling */
+.treejs-node.context-boundary {
+    position: relative;
+    margin-top: 8px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding: 8px;
+    border: 2px dotted #666;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.01);
+}
+
+
+/* #json-tree-container > div > ul > li:nth-child(1) > ul > li:nth-child(1) > ul > li > ul > li.treejs-node.context-boundary > span.treejs-label */
+
+/* Add a small icon/label to indicate context boundary */
+.treejs-node.context-boundary > span.treejs-label::after {
+    content: '⬚√';
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 12px;
+    color: #666;
+    background: white;
+    padding: 0 4px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+}
+
+/* Remove the green highlighting from the click effect */
+.treejs-node.context-boundary:not(:hover) {
+    background: rgba(0,0,0,0.01);
+}
+
 /* Menu option button style */
 .menu-option {
     display: block;
