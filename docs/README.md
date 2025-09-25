@@ -1,8 +1,18 @@
 # Kintegrate
+Prototype of integration builder tool. 
+Demo found at https://eriksundvall.github.io/kintegrate/demo/index.html
 
-Vanilla JavaScript + HTML project. Licensed under Apache-2.0.
+Vanilla JavaScript + HTML project. 
+Licensed under Apache-2.0.
 
 See `docs/` for GitHub Pages documentation.
+
+
+Credits:
+* Icons: https://mui.com/material-ui/material-icons/
+* Editor Widget: https://codemirror.net
+* Tree widget: https://github.com/daweilv/treejs
+* Initial coding, Erik Sundvall & AI helpers...
 
 # Roadmap
 
@@ -35,10 +45,10 @@ See `docs/` for GitHub Pages documentation.
 ```
 ** The ↔ arrow: produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-## <a id="v0.2.1"></a>version 0.2.1 website version - ./sc soon...
+## <a id="v0.2.1"></a>version 0.2.1 website version - done! 
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
-### version 0.2.1 — demo build and docs
+### version 0.2.1 — demo build and docs - done!
 
 Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The helper copies the `src/` directory into `docs/demo/`, preserving relative paths so the single-page app can be served directly from the `docs/` folder.
 
@@ -58,14 +68,17 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * Hide the selected paths list by default.
 * Add popup menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing ↔ flat paths and ⤡ hierarchies. Mark the selected node in the tree with a dotted line. ALso remember the node and use that as a stop (top level) when climbing path hierarchies in all path generation code.
 
-## <a id="v0.3.1"></a>version 0.3.1 UI tweaks
+## <a id="v0.3.1"></a>version 0.3.1 UI tweaks - done!
 * add undo/redo/clear
 * better error visibility in json pastebox
 
-## <a id="v0.3.2"></a>version 0.3.2 UI tweaks
+## <a id="v0.3.2"></a>version 0.3.2 Bug fix & UI tweaks
+* fix bug in path/tree building when traversing arrays, it does not respect context boundary (only works for traversing objects now)
+* Play/pause button for autoconverting to output
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
 * Autoconvert after change (configurable debounce setting, X seconds after last typing?)
 * add if/else-clause insertion button to context menu
+* settings: choose tree right-click behaviour
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.1';
+      const APP_VERSION = 'v0.3.3';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
@@ -30,6 +30,46 @@
       }
       .editor-buttons button:disabled svg {
         opacity: 0.5;
+      }
+
+      /* Tree node type styles */
+      .node-primitive {
+        color: #333;
+      }
+      .node-array {
+        color: #0066cc;
+        font-weight: 500;
+      }
+      .node-array::before {
+        content: "[A] ";
+        font-size: 0.8em;
+        color: #666;
+      }
+      .node-object {
+        color: #006633;
+        font-weight: 500;
+      }
+      .node-object::before {
+        content: "{O} ";
+        font-size: 0.8em;
+        color: #666;
+      }
+      
+      /* Visual styling for primitives */
+      .node-primitive {
+        color: #333;
+      }
+      .node-primitive::before {
+        content: "(P) ";
+        font-size: 0.8em;
+        color: #666;
+      }
+
+      /* Context boundary styling */
+      .context-boundary {
+        border: 1px dotted #666 !important;
+        border-radius: 3px;
+        background-color: rgba(200, 200, 200, 0.1);
       }
     </style>
 
@@ -268,25 +308,21 @@ Bakgrund:
         if (!Array.isArray(pathArray)) return '';
         
         // Find the nearest context boundary ancestor
-        function findNearestContextBoundary(currentNode) {
-          if (!currentNode || !currentNode.path) return null;
-          
-          // First check if the current node itself is a boundary
-          if (treeInstance.isContextBoundary(currentNode.id)) {
-            return currentNode;
-          }
-          
-          let current = currentNode;
-          while (current) {
-            // Get parent node by removing last element from path
-            const parentPath = current.path.slice(0, -1);
-            // Find node with this path
-            current = Object.values(treeInstance.nodesById).find(
-              n => n.path && n.path.length === parentPath.length && 
-              n.path.every((v, i) => v === parentPath[i])
-            );
+          function findNearestContextBoundary(currentNode) {
+            if (!currentNode || !currentNode.path) return null;
             
-            if (current && treeInstance.isContextBoundary(current.id)) {
+            // First check if the current node itself is a boundary
+            if (treeInstance.isContextBoundary(currentNode.id)) {
+              return currentNode;
+            }
+            
+            // Look up parent by ID instead of reconstructing from path
+            let current = currentNode;
+            while (current && current.parentId) {
+              current = treeInstance.nodesById[current.parentId];
+              if (current && treeInstance.isContextBoundary(current.id)) {
+                return current;
+              }            if (current && treeInstance.isContextBoundary(current.id)) {
               return current;
             }
           }
@@ -294,22 +330,35 @@ Bakgrund:
         }
         
         // If we have a node, check for context boundary
+        let processedPath = [...pathArray]; // Create a copy we can modify
         if (node) {
           const boundaryNode = findNearestContextBoundary(node);
           if (boundaryNode) {
-            // If the node itself is the boundary, use its children's paths
+            // Find the indices of all array indices in the boundary node's path
+            const boundaryArrayIndices = boundaryNode.path
+              .map((v, i) => typeof v === 'number' ? i : -1)
+              .filter(i => i !== -1);
+            
             if (boundaryNode.id === node.id) {
-              pathArray = pathArray.slice(pathArray.length - 1);
+              // If the node itself is the boundary, keep only what's after it
+              processedPath = processedPath.slice(processedPath.length - 1);
             } else {
-              // Otherwise trim path to start from boundary
+              // Otherwise trim path to start from boundary, but preserve array structure
               const boundaryDepth = boundaryNode.path.length;
-              pathArray = pathArray.slice(boundaryDepth);
+              processedPath = processedPath.slice(boundaryDepth);
+              
+              // Insert array indices from boundary path where needed
+              boundaryArrayIndices.forEach(idx => {
+                if (idx < boundaryDepth) {
+                  processedPath.unshift(boundaryNode.path[idx]);
+                }
+              });
             }
           }
         }
         
         // Convert path segments to Handlebars syntax
-        return pathArray.map(p => {
+        return processedPath.map(p => {
           if (typeof p === 'number') return p;
           if (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(String(p))) return String(p);
           return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
@@ -333,7 +382,7 @@ Bakgrund:
           while (current) {
             // Get parent node by removing last element from path
             const parentPath = current.path.slice(0, -1);
-            // Find node with this path
+            // Find node with this path including array indices
             current = Object.values(treeInstance.nodesById).find(
               n => n.path && n.path.length === parentPath.length && 
               n.path.every((v, i) => v === parentPath[i])
@@ -352,12 +401,28 @@ Bakgrund:
         // If we have a context boundary, adjust the path appropriately
         let path;
         if (boundaryNode) {
+          // Find array indices in the boundary path that we need to preserve
+          const boundaryArrayIndices = boundaryNode.path
+            .map((v, i) => typeof v === 'number' ? { index: i, value: v } : null)
+            .filter(x => x !== null);
+          
           if (boundaryNode.id === node.id) {
             // If the node itself is the boundary, only use its last path segment
             path = [node.path[node.path.length - 1]];
           } else {
-            // Otherwise trim path to start from boundary
+            // Otherwise trim path to start from boundary but preserve array indices
             path = node.path.slice(boundaryNode.path.length);
+            
+            // Insert necessary array indices from the boundary path
+            boundaryArrayIndices.forEach(({ index, value }) => {
+              if (index < boundaryNode.path.length) {
+                // Insert array index at correct position relative to its parent
+                const parentIndex = Math.max(0, index - 1);
+                if (parentIndex < path.length) {
+                  path.splice(parentIndex + 1, 0, value);
+                }
+              }
+            });
           }
         } else {
           path = node.path;
@@ -428,13 +493,39 @@ Bakgrund:
       const jsonTreeContainer = document.getElementById('json-tree-container');
       let treeInstance = null;
 
+      // Node type constants
+      const NODE_TYPE = {
+        PRIMITIVE: 'primitive',
+        ARRAY: 'array',
+        OBJECT: 'object'
+      };
+
       // Convert arbitrary JSON into the tree widget's expected node format.
       let _idCounter = 1;
       function nextId() { return 'n' + (_idCounter++); }
 
+      // Create a node with common properties
+      function createNode(id, text, path, nodeType, parent = null, children = undefined) {
+        // Store parent ID instead of direct reference to avoid circular structure
+        const parentId = parent ? parent.id : null;
+        return {
+          id,
+          text,
+          path,
+          nodeType,
+          parentId, // Store parent ID instead of direct reference
+          children  // undefined for leaf nodes
+        };
+      }
+
       // Recursive function to convert JSON to tree nodes
       function jsonToTreeNodes(value, path = [], parent = null) {
         const type = Object.prototype.toString.call(value);
+
+        // Create a lookup map for finding nodes by path
+        if (!jsonToTreeNodes.nodesByPath) {
+          jsonToTreeNodes.nodesByPath = new Map();
+        }
 
         // Handle plain objects
         if (type === '[object Object]') {
@@ -442,29 +533,44 @@ Bakgrund:
             for (const key of Object.keys(value)) {
               const val = value[key];
               const basePath = path.concat(key);
+              const nodeId = nextId();
 
               if (Array.isArray(val)) {
-                // For arrays that are values of an object key, append indices to the parent label
+                // For arrays that are values of an object key
+                const arrayNode = createNode(nodeId, String(key), basePath, NODE_TYPE.ARRAY, parent);
+                const arrayChildren = [];
+                
                 for (let i = 0; i < val.length; i++) {
                   const nodePath = basePath.concat(i);
                   const item = val[i];
                   const itemType = Object.prototype.toString.call(item);
-                  // If the array item is a primitive, collapse it into the parent label as key[i]=value
+                  const itemId = nextId();
+
                   if (itemType !== '[object Object]' && itemType !== '[object Array]') {
-                    nodes.push({ id: nextId(), text: String(key) + '[' + i + ']=' + String(item), path: nodePath });
+                    // Primitive array item
+                    arrayChildren.push(createNode(itemId, `[${i}] = ${String(item)}`, nodePath, NODE_TYPE.PRIMITIVE, arrayNode));
                   } else {
-                    const children = jsonToTreeNodes(item, nodePath, value);
-                    nodes.push({ id: nextId(), text: String(key) + '[' + i + ']', path: nodePath, children: children.length ? children : undefined });
+                    // Complex array item
+                    const itemNode = createNode(itemId, `[${i}]`, nodePath, itemType === '[object Array]' ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT, arrayNode);
+                    const children = jsonToTreeNodes(item, nodePath, itemNode);
+                    if (children.length) itemNode.children = children;
+                    arrayChildren.push(itemNode);
                   }
                 }
+
+                if (arrayChildren.length) arrayNode.children = arrayChildren;
+                nodes.push(arrayNode);
               } else {
                 const valType = Object.prototype.toString.call(val);
-                // If the property value is a primitive, collapse into parent label as key=value
                 if (valType !== '[object Object]' && valType !== '[object Array]') {
-                  nodes.push({ id: nextId(), text: String(key) + '=' + String(val), path: basePath });
+                  // Primitive value
+                  nodes.push(createNode(nodeId, `${key} = ${String(val)}`, basePath, NODE_TYPE.PRIMITIVE, parent));
                 } else {
-                  const children = jsonToTreeNodes(val, basePath, value);
-                  nodes.push({ id: nextId(), text: String(key), path: basePath, children: children.length ? children : undefined });
+                  // Object or array value
+                  const objNode = createNode(nodeId, key, basePath, NODE_TYPE.OBJECT, parent);
+                  const children = jsonToTreeNodes(val, basePath, objNode);
+                  if (children.length) objNode.children = children;
+                  nodes.push(objNode);
                 }
               }
             }
@@ -476,16 +582,23 @@ Bakgrund:
           return value.map((item, i) => {
             const nodePath = path.concat(i);
             const itemType = Object.prototype.toString.call(item);
+            const nodeId = nextId();
+
             if (itemType !== '[object Object]' && itemType !== '[object Array]') {
-              return { id: nextId(), text: '[' + i + ']=' + String(item), path: nodePath };
+              // Primitive array item
+              return createNode(nodeId, `[${i}] = ${String(item)}`, nodePath, NODE_TYPE.PRIMITIVE, parent);
+            } else {
+              // Complex array item
+              const arrayNode = createNode(nodeId, `[${i}]`, nodePath, itemType === '[object Array]' ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT, parent);
+              const children = jsonToTreeNodes(item, nodePath, arrayNode);
+              if (children.length) arrayNode.children = children;
+              return arrayNode;
             }
-            const children = jsonToTreeNodes(item, nodePath, value);
-            return { id: nextId(), text: '[' + i + ']', path: nodePath, children: children.length ? children : undefined };
           });
         }
 
         // Primitive value (top-level or fallback): represent as a single leaf node
-        return [{ id: nextId(), text: String(value), path: path }];
+        return [createNode(nextId(), String(value), path, NODE_TYPE.PRIMITIVE, parent)];
 
       }
 
@@ -674,10 +787,20 @@ Bakgrund:
           const selector = '#json-tree-container';
           const closeDepthOpt = parseInt(document.getElementById('tree-close-depth').value, 10) || 0;
           
+          // Clear node path lookup before initializing tree
+          jsonToTreeNodes.nodesByPath = new Map();
+          
           // Initialize tree with our extended version that includes context boundary support
           treeInstance = new ExtendedTree(selector, {
             data: treeData,
             closeDepth: closeDepthOpt,
+            
+            // Add node type classes during rendering
+            onCreateLi: function(node, li) {
+              if (node.nodeType) {
+                li.classList.add('node-' + node.nodeType);
+              }
+            },
 
             onChange: function() {
               const selected = this.selectedNodes || [];
