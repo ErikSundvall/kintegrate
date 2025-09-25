@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
+    <script>
+      const APP_VERSION = 'v0.3.1';
+    </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
     <link rel="stylesheet" href="tree.min.css">
@@ -152,7 +155,7 @@ Bakgrund:
       </div>
     </main>
     <footer>
-          <strong>K!ntegrate</strong> v0.3a  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
+          <strong>K!ntegrate</strong> <span id="app-version"></span>  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
           | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
@@ -178,6 +181,9 @@ Bakgrund:
     <script src="resizable-columns.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
+      // Set version in footer
+      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+
       // --- Editor initialization ---
       const inputTextarea = document.getElementById('inputInstance');
       const templateTextarea = document.getElementById('template-editor');

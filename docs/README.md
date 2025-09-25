@@ -6,7 +6,7 @@ See `docs/` for GitHub Pages documentation.
 
 # Roadmap
 
-## version 0.1 test setup - done!
+## <a id="v0.1"></a>version 0.1 test setup - done!
 * user interface with three rezisable columns
 * The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:
 ** a textarea for stored instance examples as input from either
@@ -17,7 +17,7 @@ See `docs/` for GitHub Pages documentation.
 * The middle "conversion-container" is where conversion scripts can be created by the user in a text editor, and for certain formalisms (such as Handlebars) the scripts can also be precopmiled for more efficient use at runtime in production environments.
 * The rightmost "output-container" column shows results of running instance examples from input through the conversion script.
 
-## version 0.2 - done!
+## <a id="v0.2"></a>version 0.2 - done!
 * Replace the treeviewer with https://github.com/daweilv/treejs (It allows multiple nodes can be selected and the selection is visible by checboxes in front of nodes.)
 * Intelligent generation of conversion script structures based on selected nodes and their paths and hierarchical relationships. Buttons that determine output to be pasted into last cursor position in conversion script from selected:
 ** The ⤡ arrow: generate hierarchical nesting structrure between selected node closest to root to selected node furthest out on a branch (For Handlebars that would be nested {{#each ...}} clauses for things that can be repated and {{#with ...}} for non-repeating things.) 
@@ -35,7 +35,7 @@ See `docs/` for GitHub Pages documentation.
 ```
 ** The ↔ arrow: produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-## version 0.2.1 website version - starting soon...
+## <a id="v0.2.1"></a>version 0.2.1 website version - ./sc soon...
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
 ### version 0.2.1 — demo build and docs
@@ -53,37 +53,41 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 - After building, publish the `docs/` folder via GitHub Pages (set Pages source to the `docs/` folder on the `main` branch, or deploy `docs/` to a `gh-pages` branch if you prefer).
 
-## version 0.3 contexts and inserts directy from tree - done!
+## <a id="v0.3"></a>version 0.3 contexts and inserts directy from tree - done!
 * Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
 * Hide the selected paths list by default.
 * Add popup menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing ↔ flat paths and ⤡ hierarchies. Mark the selected node in the tree with a dotted line. ALso remember the node and use that as a stop (top level) when climbing path hierarchies in all path generation code.
-* Autoconvert after change (configurabel debounce, X seconds after last typing)
+
+## <a id="v0.3.1"></a>version 0.3.1 UI tweaks
+* add undo/redo/clear
+* better error visibility in json pastebox
+
+## <a id="v0.3.2"></a>version 0.3.2 UI tweaks
+* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
+* Autoconvert after change (configurable debounce setting, X seconds after last typing?)
 * add if/else-clause insertion button to context menu
 
-## version 0.3.1 UI tweaks
-* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
-
-## version 0.4 dynamic sources (local use)
+## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
 * Make it easy to backup/download created scripts easily (posibly also packs in/script/out)
 
-## version 0.5
+## <a id="v0.5"></a>version 0.5
 * add support for schema/structure defintition-format plugins that can feed the tree view instead of just instances
 ** refactor json instance to be such a plugin
 ** create a plugin for openEHR web template defintions (see documentation at ...TODO...)
 ** Stretch: add plugin for Sectra forms defintions
 
-## Version 0.6
+## <a id="v0.6"></a>Version 0.6
 * Add support for plugins for other scripting formalisms than Handlebars. Keep supporting flat and hierarchical forms if scripting language allows it.
 ** refactor Handlebars support to be a plugin
 ** add support for https://github.com/WorkMaze/JUST.net sriptinh (used by Sectra)
 
-## version 0.7 
+## <a id="v0.7"></a>version 0.7 
 * investigate if (another) tree view can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates
 * Investigate support for FlatEHR
 
-## version 0.x
+## <a id="v0.x"></a>version 0.x
 * investigate if it in addition to a web based tool can be built as a VS Code extension so that it is easy to work with: 
 ** the examples and transformation scripts as local files and 
 ** version control in e.g. Git using VS Code's integrated version control support

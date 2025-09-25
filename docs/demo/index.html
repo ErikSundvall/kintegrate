@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
+    <script>
+      const APP_VERSION = 'v0.3.1';
+    </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
     <link rel="stylesheet" href="tree.min.css">
@@ -152,7 +155,7 @@ Bakgrund:
       </div>
     </main>
     <footer>
-          <strong>K!ntegrate</strong> v0.3a  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
+          <strong>K!ntegrate</strong> <span id="app-version"></span>  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
           | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
@@ -178,6 +181,9 @@ Bakgrund:
     <script src="resizable-columns.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
+      // Set version in footer
+      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+
       // --- Editor initialization ---
       const inputTextarea = document.getElementById('inputInstance');
       const templateTextarea = document.getElementById('template-editor');
@@ -572,12 +578,13 @@ Bakgrund:
       }
 
       function updateJsonTree(jsonString) {
-        jsonTreeContainer.innerHTML = '';
-
         try {
           const jsonData = JSON.parse(jsonString);
           _idCounter = 1;
           const treeData = jsonToTreeNodes(jsonData, []);
+          
+          // Clear the container before adding new content
+          jsonTreeContainer.innerHTML = '';
 
           // Actions UI (create locally so we don't depend on external references)
           let actionsEl = document.getElementById('tree-actions');
@@ -847,7 +854,24 @@ Bakgrund:
           });
 
           } catch (e) {
-            selectedPaths.innerHTML = '<p style="color:red;">Invalid input JSON. Error message:<br>'+e.message+'</p>';
+            // Display error in the tree container
+            jsonTreeContainer.innerHTML = `
+              <div style="color: red; padding: 10px; border: 1px solid red; margin: 10px; background-color: #fff0f0;">
+                <strong>Invalid JSON</strong><br>
+                <pre style="margin-top: 8px; white-space: pre-wrap;">${e.message}</pre>
+              </div>`;
+            
+            // Also update the selected paths area to show no selection
+            const selectedPaths = document.getElementById('selected-paths');
+            if (selectedPaths) {
+              selectedPaths.innerHTML = 'No nodes selected. (Fix JSON syntax error to enable selection)';
+            }
+            
+            // Hide the actions area since we can't select anything
+            const actionsWrap = document.querySelector('.tree-actions');
+            if (actionsWrap) {
+              actionsWrap.style.display = 'none';
+            }
           }
       }
 
@@ -858,32 +882,18 @@ Bakgrund:
         templateEditor.focus();
       };
       
-      // Set initial content
-      const initialJson = `{ 
-  "message": "JSON pasted/loaded into the box get turned into a tree-view.",
-  "starter_tips": {
-      "tip_array":[
-         "Click an checkbox below to select a node (and all of its decendents).",
-         "Click an already selected checkbox to unselect it (and all of its decendents).",
-         "Right-click to pop up a menu that can be used to create paths/structures at the cursor/selection position in the conversion column ➠"
-        ],
-      "tip_object_please_open_descendants":
-       {"Right_click_explanations" :
-         {
-          "⤡" : "Generate hierarchical nesting structrure",
-          "↔" : "Generate flat path to value of this node"
-         },
-        "Not yet implemented" :
-         {
-          "↔🔑" : "Generate flat path to value of this node",
-          "⬚√" : "Frame this node as context root - very useful when working inside deep tree-structures" 
-         }
-       }
-    }
-}`;
-      
-      
-      inputEditor.setValue(initialJson);
+      // Load intro.json by default
+      fetch('example/instance/intro.json')
+        .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
+        .then(data => {
+          inputEditor.setValue(data);
+          updateJsonTree(data);
+        })
+        .catch(error => {
+          console.error('Error loading intro.json:', error);
+          // Fallback to empty JSON if file can't be loaded
+          inputEditor.setValue('{}');
+        });
       outputEditor.setValue('Output goes here after conversion is run.');
 
       // --- Event Handlers ---
