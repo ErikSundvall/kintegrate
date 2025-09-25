@@ -74,6 +74,8 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 ## <a id="v0.3.2"></a>version 0.3.2 Bug fix & UI tweaks
 * fix bug in path/tree building when traversing arrays, it does not respect context boundary (only works for traversing objects now)
+
+## <a id="v0.3.3"></a>version 0.3.3 Bug fix & UI tweaks
 * Play/pause button for autoconverting to output
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
 * Autoconvert after change (configurable debounce setting, X seconds after last typing?)

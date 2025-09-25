@@ -5,73 +5,15 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.2';
+      const APP_VERSION = 'v0.3.3';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
     <link rel="stylesheet" href="tree.min.css">
     <!-- CodeMirror 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <style>
-      /* Style for editor buttons (icons from Material UI Icons: https://mui.com/material-ui/material-icons/) */
-      .editor-buttons {
-        margin-bottom: 8px;
-      }
-      .editor-buttons button {
-        margin-right: 8px;
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 12px;
-      }
-      .editor-buttons button svg {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-      }
-      .editor-buttons button:disabled svg {
-        opacity: 0.5;
-      }
-
-      /* Tree node type styles */
-      .node-primitive {
-        color: #333;
-      }
-      .node-array {
-        color: #0066cc;
-        font-weight: 500;
-      }
-      .node-array::before {
-        content: "[A] ";
-        font-size: 0.8em;
-        color: #666;
-      }
-      .node-object {
-        color: #006633;
-        font-weight: 500;
-      }
-      .node-object::before {
-        content: "{O} ";
-        font-size: 0.8em;
-        color: #666;
-      }
-      
-      /* Visual styling for primitives */
-      .node-primitive {
-        color: #333;
-      }
-      .node-primitive::before {
-        content: "(P) ";
-        font-size: 0.8em;
-        color: #666;
-      }
-
-      /* Context boundary styling */
-      .context-boundary {
-        border: 1px dotted #666 !important;
-        border-radius: 3px;
-        background-color: rgba(200, 200, 200, 0.1);
-      }
-    </style>
+    <!-- Application styles -->
+    <link rel="stylesheet" href="kintegrate.css">
 
 
   </head>
@@ -359,7 +301,7 @@ Bakgrund:
         
         // Convert path segments to Handlebars syntax
         return processedPath.map(p => {
-          if (typeof p === 'number') return p;
+          if (typeof p === 'number') return `[${p}]`; // Wrap array indices in square brackets
           if (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(String(p))) return String(p);
           return `[${String(p).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}]`;
         }).join('.');
@@ -428,7 +370,7 @@ Bakgrund:
           path = node.path;
         }
 
-        const opens = [];
+        let opens = [];
         let leaf = null;
 
         for (let i = 0; i < path.length; i++) {
@@ -465,25 +407,87 @@ Bakgrund:
           }
         }
 
-        // Build output: openings with indentation (outer -> inner), leaf at innermost level,
-        // then matching closing tags with matching indentation (inner -> outer)
+        // Build output with smarter nesting based on node type
         const lines = [];
-        for (let idx = 0; idx < opens.length; idx++) {
-          const indent = '  '.repeat(idx);
-          lines.push(indent + opens[idx]);
+        
+        // For array nodes, modify the opens array to handle array properly
+        if (node.nodeType === NODE_TYPE.ARRAY) {
+            // Check if this is a specific array element by looking at the last path segment
+            const isSpecificArrayElement = typeof path[path.length - 1] === 'number';
+            
+            // Remove any {{#each}} that might have been added for the array itself
+            opens = opens.filter(o => !o.includes(leaf));
+            
+            // Add opening tags for parent contexts with indentation
+            for (let idx = 0; idx < opens.length; idx++) {
+                const indent = '  '.repeat(idx);
+                lines.push(indent + opens[idx]);
+            }
+
+            // Add either with block for specific element or each block for whole array
+            const indent = '  '.repeat(opens.length);
+            if (leaf) {
+                if (isSpecificArrayElement) {
+                    // If a specific array element is selected, use {{#with}} and output the indexed value
+                    const arrayPath = path.slice(0, -1);
+                    const lastIndex = path[path.length - 1];
+                    const arrayName = arrayPath.length > 0 ? buildHandlebarsPath(arrayPath) : leaf;
+                    lines.push(indent + `{{#with ${arrayName}}}`);
+                    lines.push(indent + `  {{[${lastIndex}]}}`);
+                    lines.push(indent + '{{/with}}');
+                } else {
+                    // For the whole array, use {{#each}}
+                    lines.push(indent + `{{#each ${leaf}}}`);
+                    lines.push(indent + '  {{.}}');
+                    lines.push(indent + '{{/each}}');
+                }
+            }
+        } else {
+            // Handle non-array nodes (objects and primitives)
+            // Add opening tags with indentation (outer -> inner)
+            for (let idx = 0; idx < opens.length; idx++) {
+                const indent = '  '.repeat(idx);
+                lines.push(indent + opens[idx]);
+            }
+
+            // Add inner content based on node type
+            const indent = '  '.repeat(opens.length);
+            if (node.nodeType === NODE_TYPE.OBJECT && leaf) {
+                // For objects, add {{#with}} to access properties
+                lines.push(indent + `{{#with ${leaf}}}`);
+                lines.push(indent + '  {{.}}');
+                lines.push(indent + '{{/with}}');
+            } else if (node.nodeType === NODE_TYPE.ARRAY) {
+                // Check if this is a specific array element
+                const lastPathSegment = path[path.length - 1];
+                const isSpecificArrayElement = typeof lastPathSegment === 'number';
+                
+                if (isSpecificArrayElement) {
+                    // For specific array element, use {{#with}} and the index
+                    const arrayPath = path.slice(0, -1);
+                    const arrayName = arrayPath.map(p => typeof p === 'string' ? p : `[${p}]`).join('.');
+                    lines.push(indent + `{{#with ${arrayName}}}`);
+                    lines.push(indent + `  {{[${lastPathSegment}]}}`);
+                    lines.push(indent + '{{/with}}');
+                } else {
+                    // For whole array, use {{#each}}
+                    lines.push(indent + `{{#each ${leaf}}}`);
+                    lines.push(indent + '  {{.}}');
+                    lines.push(indent + '{{/each}}');
+                }
+            } else if (leaf) {
+                // For primitives, just output the leaf value
+                lines.push(indent + '{{' + leaf + '}}');
+            }
         }
 
-        if (leaf) {
-          const indent = '  '.repeat(opens.length);
-          lines.push(indent + '{{' + leaf + '}}');
-        }
-
+        // Add closing tags with matching indentation (inner -> outer)
         for (let k = opens.length - 1; k >= 0; k--) {
-          const openTag = opens[k];
-          const m = openTag.match(/^\{\{#(each|with)\s+/);
-          const tag = m ? m[1] : 'with';
-          const indent = '  '.repeat(k);
-          lines.push(indent + `{{/${tag}}}`);
+            const openTag = opens[k];
+            const m = openTag.match(/^\{\{#(each|with)\s+/);
+            const tag = m ? m[1] : 'with';
+            const indent = '  '.repeat(k);
+            lines.push(indent + `{{/${tag}}}`);
         }
 
         return lines.join('\n');
@@ -518,86 +522,89 @@ Bakgrund:
         };
       }
 
-      // Recursive function to convert JSON to tree nodes
+      // Recursive function to convert JSON to tree nodes with cleaner array handling
       function jsonToTreeNodes(value, path = [], parent = null) {
         const type = Object.prototype.toString.call(value);
 
-        // Create a lookup map for finding nodes by path
-        if (!jsonToTreeNodes.nodesByPath) {
-          jsonToTreeNodes.nodesByPath = new Map();
-        }
-
         // Handle plain objects
         if (type === '[object Object]') {
-            const nodes = [];
-            for (const key of Object.keys(value)) {
-              const val = value[key];
-              const basePath = path.concat(key);
-              const nodeId = nextId();
-
-              if (Array.isArray(val)) {
-                // For arrays that are values of an object key
-                const arrayNode = createNode(nodeId, String(key), basePath, NODE_TYPE.ARRAY, parent);
-                const arrayChildren = [];
-                
-                for (let i = 0; i < val.length; i++) {
-                  const nodePath = basePath.concat(i);
-                  const item = val[i];
-                  const itemType = Object.prototype.toString.call(item);
-                  const itemId = nextId();
-
-                  if (itemType !== '[object Object]' && itemType !== '[object Array]') {
-                    // Primitive array item
-                    arrayChildren.push(createNode(itemId, `[${i}] = ${String(item)}`, nodePath, NODE_TYPE.PRIMITIVE, arrayNode));
-                  } else {
-                    // Complex array item
-                    const itemNode = createNode(itemId, `[${i}]`, nodePath, itemType === '[object Array]' ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT, arrayNode);
-                    const children = jsonToTreeNodes(item, nodePath, itemNode);
-                    if (children.length) itemNode.children = children;
-                    arrayChildren.push(itemNode);
-                  }
-                }
-
-                if (arrayChildren.length) arrayNode.children = arrayChildren;
-                nodes.push(arrayNode);
-              } else {
-                const valType = Object.prototype.toString.call(val);
-                if (valType !== '[object Object]' && valType !== '[object Array]') {
-                  // Primitive value
-                  nodes.push(createNode(nodeId, `${key} = ${String(val)}`, basePath, NODE_TYPE.PRIMITIVE, parent));
-                } else {
-                  // Object or array value
-                  const objNode = createNode(nodeId, key, basePath, NODE_TYPE.OBJECT, parent);
-                  const children = jsonToTreeNodes(val, basePath, objNode);
-                  if (children.length) objNode.children = children;
-                  nodes.push(objNode);
-                }
-              }
-            }
-            return nodes;
-        }
-
-        // Handle arrays (when not directly under an object key)
-        if (type === '[object Array]') {
-          return value.map((item, i) => {
-            const nodePath = path.concat(i);
-            const itemType = Object.prototype.toString.call(item);
+          const nodes = [];
+          for (const key of Object.keys(value)) {
+            const val = value[key];
+            const basePath = path.concat(key);
             const nodeId = nextId();
 
-            if (itemType !== '[object Object]' && itemType !== '[object Array]') {
-              // Primitive array item
-              return createNode(nodeId, `[${i}] = ${String(item)}`, nodePath, NODE_TYPE.PRIMITIVE, parent);
-            } else {
-              // Complex array item
-              const arrayNode = createNode(nodeId, `[${i}]`, nodePath, itemType === '[object Array]' ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT, parent);
-              const children = jsonToTreeNodes(item, nodePath, arrayNode);
+            // Handle the value
+            const valType = Object.prototype.toString.call(val);
+            if (valType === '[object Object]') {
+              // Object value
+              const objNode = createNode(nodeId, key, basePath, NODE_TYPE.OBJECT, parent);
+              const children = jsonToTreeNodes(val, basePath, objNode);
+              if (children.length) objNode.children = children;
+              nodes.push(objNode);
+            } else if (Array.isArray(val)) {
+              // Array value - use key as node text with array type indicator
+              const arrayNode = createNode(nodeId, key, basePath, NODE_TYPE.ARRAY, parent);
+              const children = val.map((item, i) => {
+                const itemPath = basePath.concat(i);
+                const itemId = nextId();
+                const itemType = Object.prototype.toString.call(item);
+
+                if (itemType === '[object Object]' || Array.isArray(item)) {
+                  // Complex item (object/array)
+                  const itemNode = createNode(
+                    itemId,
+                    Array.isArray(item) ? `[${i}]` : i.toString(),
+                    itemPath,
+                    Array.isArray(item) ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT,
+                    arrayNode
+                  );
+                  const itemChildren = jsonToTreeNodes(item, itemPath, itemNode);
+                  if (itemChildren.length) itemNode.children = itemChildren;
+                  return itemNode;
+                } else {
+                  // Primitive item
+                  return createNode(itemId, String(item), itemPath, NODE_TYPE.PRIMITIVE, arrayNode);
+                }
+              });
+              
               if (children.length) arrayNode.children = children;
-              return arrayNode;
+              nodes.push(arrayNode);
+            } else {
+              // Primitive value
+              nodes.push(createNode(nodeId, `${key} = ${String(val)}`, basePath, NODE_TYPE.PRIMITIVE, parent));
+            }
+          }
+          return nodes;
+        }
+
+        // Handle arrays (top level)
+        if (Array.isArray(value)) {
+          return value.map((item, i) => {
+            const nodePath = path.concat(i);
+            const nodeId = nextId();
+            const itemType = Object.prototype.toString.call(item);
+
+            if (itemType === '[object Object]' || Array.isArray(item)) {
+              // Complex item (object/array)
+              const node = createNode(
+                nodeId,
+                `[${i}]`,
+                nodePath,
+                Array.isArray(item) ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT,
+                parent
+              );
+              const children = jsonToTreeNodes(item, nodePath, node);
+              if (children.length) node.children = children;
+              return node;
+            } else {
+              // Primitive item
+              return createNode(nodeId, String(item), nodePath, NODE_TYPE.PRIMITIVE, parent);
             }
           });
         }
 
-        // Primitive value (top-level or fallback): represent as a single leaf node
+        // Primitive value
         return [createNode(nextId(), String(value), path, NODE_TYPE.PRIMITIVE, parent)];
 
       }
@@ -662,7 +669,36 @@ Bakgrund:
           treeIconBtn.style.cursor = 'pointer';
           treeIconBtn.innerHTML = '⤡';
           treeIconBtn.addEventListener('click', () => {
-            templateEditor.replaceSelection(buildHandlebarsTree(n));
+            // For array elements, use direct template generation
+            if (n.nodeType === NODE_TYPE.PRIMITIVE && typeof n.path[n.path.length - 1] === 'number') {
+              // Get the array path (everything before the numeric index)
+              const arrayPath = n.path.slice(0, -1);
+              const lastIndex = n.path[n.path.length - 1];
+              
+              // Build the template with proper nesting and index access
+              let template = arrayPath.reduce((acc, pathSegment, i) => {
+                if (typeof pathSegment === 'string') {
+                  return acc + `{{#with ${pathSegment}}}\n  ` + '  '.repeat(i);
+                }
+                return acc;
+              }, '');
+              
+              template += `{{[${lastIndex}]}}`;
+              
+              // Add closing tags
+              const closingTags = arrayPath.filter(p => typeof p === 'string')
+                .map((_, i) => '  '.repeat(arrayPath.length - i - 2) + '{{/with}}')
+                .reverse()
+                .join('\n');
+              
+              if (closingTags) {
+                template += '\n' + closingTags;
+              }
+              
+              templateEditor.replaceSelection(template);
+            } else {
+              templateEditor.replaceSelection(buildHandlebarsTree(n));
+            }
             templateEditor.focus();
           });
           li.appendChild(treeIconBtn);
