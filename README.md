@@ -62,10 +62,13 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * add undo/redo/clear
 * better error visibility in json pastebox
 
-## <a id="v0.3.2"></a>version 0.3.2 UI tweaks
+## <a id="v0.3.2"></a>version 0.3.2 Bug fix & UI tweaks
+* fix bug in path/tree building when traversing arrays, it does not respect context boundary (only works for traversing objects now)
+* Play/pause button for autoconverting to output
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
 * Autoconvert after change (configurable debounce setting, X seconds after last typing?)
 * add if/else-clause insertion button to context menu
+* settings: choose tree right-click behaviour
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
