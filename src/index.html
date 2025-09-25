@@ -12,66 +12,8 @@
     <link rel="stylesheet" href="tree.min.css">
     <!-- CodeMirror 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <style>
-      /* Style for editor buttons (icons from Material UI Icons: https://mui.com/material-ui/material-icons/) */
-      .editor-buttons {
-        margin-bottom: 8px;
-      }
-      .editor-buttons button {
-        margin-right: 8px;
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 12px;
-      }
-      .editor-buttons button svg {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-      }
-      .editor-buttons button:disabled svg {
-        opacity: 0.5;
-      }
-
-      /* Tree node type styles */
-      .node-primitive {
-        color: #333;
-      }
-      .node-array {
-        color: #0066cc;
-        font-weight: 500;
-      }
-      .node-array::before {
-        content: "[A] ";
-        font-size: 0.8em;
-        color: #666;
-      }
-      .node-object {
-        color: #006633;
-        font-weight: 500;
-      }
-      .node-object::before {
-        content: "{O} ";
-        font-size: 0.8em;
-        color: #666;
-      }
-      
-      /* Visual styling for primitives */
-      .node-primitive {
-        color: #333;
-      }
-      .node-primitive::before {
-        content: "(P) ";
-        font-size: 0.8em;
-        color: #666;
-      }
-
-      /* Context boundary styling */
-      .context-boundary {
-        border: 1px dotted #666 !important;
-        border-radius: 3px;
-        background-color: rgba(200, 200, 200, 0.1);
-      }
-    </style>
+    <!-- Application styles -->
+    <link rel="stylesheet" href="kintegrate.css">
 
 
   </head>
