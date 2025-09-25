@@ -35,7 +35,7 @@ See `docs/` for GitHub Pages documentation.
 ```
 ** The ↔ arrow: produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-## version 0.2.1 website version - starting soon...
+## version 0.2.1 website version - ./sc soon...
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
 ### version 0.2.1 — demo build and docs
