@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.3';
+      const APP_VERSION = 'v0.3.4';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
@@ -14,6 +14,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <!-- Application styles -->
     <link rel="stylesheet" href="kintegrate.css">
+    <style>
+      #copy-button {
+        background: none;
+        border: 1px solid #ccc;
+        padding: 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s, border-color 0.3s;
+      }
+      #copy-button:hover {
+        border-color: #999;
+      }
+      #copy-button svg {
+        width: 24px;
+        height: 24px;
+      }
+      .toggle-button.active .auto-convert-icon-fill {
+        fill: #4caf50;
+        opacity: 0.3;
+      }
+      .toggle-button {
+        background: none;
+        border: 1px solid #ccc;
+        padding: 4px;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      .toggle-button.active {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+      }
+      .toggle-button:hover {
+        border-color: #999;
+      }
+      .toggle-button.active:hover {
+        border-color: #2e7d32;
+      }
+    </style>
 
 
   </head>
@@ -38,13 +76,13 @@
             <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
         </div>
         <div class="resizer"></div>
+
         <div id="conversion-container" class="column column-center">
-            <div id="selection-list">
-              <div id="number-of-selected-paths"></div>
-              <div class="tree-actions">
-                <div id="selected-paths">No nodes selected. Use checkboxes to select nodes.</div>
-              </div>
+          <div id="selection-list">
+            <div class="tree-actions">
+              <button id="insert-selected-paths" style="display: none;">↔ Insert all selected nodes as flat paths!!</button>
             </div>
+          </div>
             <div>Conversion Template (Handlebars)</div>
             <textarea id="template-editor">
 {{!-- <--- This is how you start a comment block in Handlebars
@@ -105,27 +143,32 @@ Bakgrund:
 
 </textarea>
             <div class="editor-buttons">
-                <button id="undo-button" title="Undo last change (Ctrl+Z)">
-                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                        <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"></path>
-                    </svg>
-                </button>
-                <button id="redo-button" title="Redo last undone change (Ctrl+Y)">
-                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                        <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"></path>
-                    </svg>
-                </button>
-                <button id="erase-button" title="Clear editor content (can be undone)">
-                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                        <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
-                    </svg>
-                </button>
-                <button id="download-button" title="Download editor content">
-                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                        <path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"></path>
-                    </svg>
-                </button>
-                <button id="run-conversion">Run Conversion --- > Output</button>
+              <button id="erase-button" title="Clear editor content (can be undone)">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                </svg>
+              </button>
+              <button id="undo-button" title="Undo last change (Ctrl+Z)">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"></path>
+                </svg>
+              </button>
+              <button id="redo-button" title="Redo last undone change (Ctrl+Y)">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"></path>
+                </svg>
+              </button>
+              <button id="download-button" title="Download editor content">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"></path>
+                </svg>
+              </button>
+              <button id="auto-convert-button" title="Toggle auto-conversion" class="toggle-button">
+                  <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                      <path class="auto-convert-icon-fill" d="M12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8m-1 12H9V8h2zm1 0V8l5 4z" opacity=".3"></path>
+                      <path d="M12 4c4.41 0 8 3.59 8 8s-3.59 8-8 8-8-3.59-8-8 3.59-8 8-8m0-2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-1 6H9v8h2zm6 4-5-4v8z"></path>
+                  </svg>
+              </button>
             </div>          
     
         <button id="show-compiled">Show precompiled template</button>
@@ -141,12 +184,15 @@ Bakgrund:
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
           | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
+          | <label>Auto-convert delay (ms):<input type="number" id="auto-convert-delay" min="100" max="5000" value="500" style="width:4em; margin-left:6px;"></label>
      </footer>
  
     <!-- CodeMirror 5 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <!-- Add simple mode addon first, required by handlebars mode -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script><!-- If we want HTML+XML highlight too -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
     <!-- Add undo/redo addon -->
@@ -186,6 +232,63 @@ Bakgrund:
         historyEventDelay: 200  // Delay in ms to merge changes into one undo event
       });
 
+      // Auto-conversion functionality
+      let autoConvertEnabled = false;
+      let autoConvertTimeout = null;
+      
+      function debounce(func, wait) {
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(autoConvertTimeout);
+            func(...args);
+          };
+          clearTimeout(autoConvertTimeout);
+          autoConvertTimeout = setTimeout(later, wait);
+        };
+      }
+      
+      function runConversion() {
+        try {
+          const templateString = templateEditor.getValue();
+          const jsonString = inputEditor.getValue();
+
+          if (!jsonString.trim()) {
+            outputEditor.setValue('Input JSON is empty.');
+            return;
+          }
+          
+          const data = JSON.parse(jsonString);
+          const template = Handlebars.compile(templateString);
+          const resultHtml = template(data);
+          outputEditor.setValue(resultHtml);
+        } catch (e) {
+          outputEditor.setValue('Error: ' + e.message);
+        }
+      }
+
+      // Set up auto-convert button
+      const autoConvertButton = document.getElementById('auto-convert-button');
+      const autoConvertDelay = document.getElementById('auto-convert-delay');
+      
+      autoConvertButton.addEventListener('click', () => {
+        autoConvertEnabled = !autoConvertEnabled;
+        autoConvertButton.classList.toggle('active', autoConvertEnabled);
+        if (autoConvertEnabled) {
+          // Run once immediately when enabled
+          runConversion();
+        }
+      });
+
+      // Set up debounced conversion
+      const debouncedConvert = () => {
+        if (!autoConvertEnabled) return;
+        const delay = parseInt(autoConvertDelay.value, 10) || 500;
+        debounce(runConversion, delay)();
+      };
+
+      // Listen for changes in the template editor
+      templateEditor.on('change', debouncedConvert);
+
       // Setup undo/redo button handlers
       undoButton.onclick = () => {
         if (templateEditor.historySize().undo > 0) {
@@ -210,6 +313,32 @@ Bakgrund:
       // Listen for changes to update button states
       templateEditor.on('change', updateButtonStates);
       updateButtonStates();
+
+      // Setup copy button handler
+      const copyButton = document.createElement('button');
+      copyButton.id = 'copy-button';
+      copyButton.title = 'Copy template to clipboard';
+      copyButton.innerHTML = `
+        <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M9 4h9v12H9z" opacity=".3"></path>
+          <path d="M18 2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H9V4h9zM3 15v-2h2v2zm0-5.5h2v2H3zM10 20h2v2h-2zm-7-1.5v-2h2v2zM5 22c-1.1 0-2-.9-2-2h2zm3.5 0h-2v-2h2zm5 0v-2h2c0 1.1-.9 2-2 2M5 6v2H3c0-1.1.9-2 2-2"></path>
+        </svg>
+      `;
+      copyButton.onclick = () => {
+        const content = templateEditor.getValue();
+        navigator.clipboard.writeText(content).then(() => {
+          // Visual feedback
+          copyButton.style.backgroundColor = '#4caf50';
+          copyButton.style.borderColor = '#2e7d32';
+          setTimeout(() => {
+            copyButton.style.backgroundColor = '';
+            copyButton.style.borderColor = '';
+          }, 1000);
+        });
+      };
+      
+      // Insert copy button before erase button
+      eraseButton.parentNode.insertBefore(copyButton, eraseButton);
 
       // Setup erase button handler
       eraseButton.onclick = () => {
@@ -276,25 +405,21 @@ Bakgrund:
         if (node) {
           const boundaryNode = findNearestContextBoundary(node);
           if (boundaryNode) {
-            // Find the indices of all array indices in the boundary node's path
-            const boundaryArrayIndices = boundaryNode.path
-              .map((v, i) => typeof v === 'number' ? i : -1)
-              .filter(i => i !== -1);
-            
             if (boundaryNode.id === node.id) {
               // If the node itself is the boundary, keep only what's after it
               processedPath = processedPath.slice(processedPath.length - 1);
             } else {
-              // Otherwise trim path to start from boundary, but preserve array structure
+              // Trim path to start from boundary
               const boundaryDepth = boundaryNode.path.length;
               processedPath = processedPath.slice(boundaryDepth);
               
-              // Insert array indices from boundary path where needed
-              boundaryArrayIndices.forEach(idx => {
-                if (idx < boundaryDepth) {
-                  processedPath.unshift(boundaryNode.path[idx]);
-                }
-              });
+              // When there's a context boundary, we want to start with the first string segment
+              // Find the index of the first string segment
+              const firstStrIdx = processedPath.findIndex(p => typeof p === 'string');
+              if (firstStrIdx > 0) {
+                // Remove any leading numeric indices
+                processedPath = processedPath.slice(firstStrIdx);
+              }
             }
           }
         }
@@ -638,13 +763,7 @@ Bakgrund:
           }
         }
 
-        // update toggle button label to include count
-        const toggleBtn = document.getElementById('toggle-selected-list');
-        if (toggleBtn) {
-          const n = nodes && nodes.length ? nodes.length : 0;
-          const visible = (selectedListEl && selectedListEl.style.display !== 'none');
-          toggleBtn.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
-        }
+        // No toggle button updates needed
 
         if (!nodes || nodes.length === 0) {
           selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
@@ -658,7 +777,7 @@ Bakgrund:
         for (const n of nodes) {
           const li = document.createElement('li');
 
-          // Tree button at start of row
+          // Tree structure generator button at start of row
           const treeIconBtn = document.createElement('button');
           treeIconBtn.type = 'button';
           treeIconBtn.className = 'path-icon';
@@ -746,27 +865,18 @@ Bakgrund:
             actionsEl.innerHTML = '';
           }
 
-          // Insert button (keeps same behavior as before)
+          // Set up insert button for selected paths
           const insertButton = document.createElement('button');
-          insertButton.textContent = '↔ Insert all Selected node as "flat" Paths';
+          insertButton.textContent = '↔ Insert all selected nodes as flat Paths';
           insertButton.id = 'insert-selected-paths';
+          insertButton.style.display = 'none';  // Hidden by default
           insertButton.addEventListener('click', () => {
             if (!treeInstance) return;
             const selected = treeInstance.selectedNodes || [];
-
-            function isAncestor(aPath, bPath) {
-              if (!Array.isArray(aPath) || !Array.isArray(bPath)) return false;
-              if (aPath.length >= bPath.length) return false;
-              for (let i = 0; i < aPath.length; i++) {
-                if (aPath[i] !== bPath[i]) return false;
-              }
-              return true;
+            const selectedNodes = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
+            if (selectedNodes.length > 0) {
+              insertPathsFromNodes(selectedNodes);
             }
-
-            const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
-            const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && isAncestor(n.path, m.path)));
-
-            insertPathsFromNodes(deepest);
           });
 
           let selectedList = document.getElementById('selected-paths');
@@ -774,40 +884,15 @@ Bakgrund:
             selectedList = document.createElement('div');
             selectedList.id = 'selected-paths';
             selectedList.style.marginTop = '8px';
-            selectedList.textContent = 'No nodes selected. Use checkboxes to select nodes.';
             // hidden by default
-            selectedList.style.display = 'none';
+            selectedList.style.display = '';
           } else {
             selectedList.innerHTML = '';
-            // hidden by default when re-creating
-            selectedList.style.display = 'none';
+            // always visible
+            selectedList.style.display = '';
           }
 
-          // Toggle button to show/hide the selected-paths list
-          let toggleButton = document.getElementById('toggle-selected-list');
-          if (!toggleButton) {
-            toggleButton = document.createElement('button');
-            toggleButton.type = 'button';
-            toggleButton.id = 'toggle-selected-list';
-            // initial text will be updated by renderSelectedPaths to include count
-            toggleButton.textContent = 'Show selected list (0)';
-            toggleButton.style.marginLeft = '8px';
-            toggleButton.style.cursor = 'pointer';
-            toggleButton.addEventListener('click', () => {
-              if (!selectedList) return;
-              if (selectedList.style.display === 'none') {
-                selectedList.style.display = '';
-              } else {
-                selectedList.style.display = 'none';
-              }
-              // always refresh label to reflect current count and visibility
-              const n = (treeInstance && treeInstance.selectedNodes) ? (treeInstance.selectedNodes.filter(n=>n&&n.status===2&&Array.isArray(n.path)).length) : 0;
-              const visible = (selectedList && selectedList.style.display !== 'none');
-              toggleButton.textContent = (visible ? 'Hide selected list' : 'Show selected list') + ` (${n})`;
-            });
-          }
-
-          actionsEl.appendChild(toggleButton);
+          // No toggle button needed
           actionsEl.appendChild(insertButton);
           
           actionsEl.appendChild(selectedList);
@@ -840,32 +925,12 @@ Bakgrund:
 
             onChange: function() {
               const selected = this.selectedNodes || [];
-              const selectedListEl = document.getElementById('selected-paths');
-
-              if (!selected || selected.length === 0) {
-                selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
-                return;
+              const insertButton = document.getElementById('insert-selected-paths');
+              
+              // Show/hide insert button based on selection
+              if (insertButton) {
+                insertButton.style.display = selected.some(n => n && n.status === 2) ? '' : 'none';
               }
-
-              // keep only fully-checked nodes (status===2) and remove any node
-              // that is an ancestor of another selected node so we only show
-              // the deepest selected nodes (avoid parents being shown when child selected)
-              function isAncestor(aPath, bPath) {
-                if (!Array.isArray(aPath) || !Array.isArray(bPath)) return false;
-                if (aPath.length >= bPath.length) return false;
-                for (let i = 0; i < aPath.length; i++) {
-                  if (aPath[i] !== bPath[i]) return false;
-                }
-                return true;
-              }
-
-              const fullyChecked = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
-              const deepest = fullyChecked.filter(n => !fullyChecked.some(m => m !== n && isAncestor(n.path, m.path)));
-
-              // render selected deepest nodes via shared helper
-              renderSelectedPaths(deepest);
-              // keep selectionListBox reference in sync
-              selectionListBox.appendChild(document.getElementById('selected-paths'));
             } // end of onChange
           });
 
@@ -1056,30 +1121,7 @@ Bakgrund:
       outputEditor.setValue('Output goes here after conversion is run.');
 
       // --- Event Handlers ---
-      document.getElementById('run-conversion').addEventListener('click', () => {
-        try {
-          // 1. Get template and input from editors
-          const templateString = templateEditor.getValue();
-          const jsonString = inputEditor.getValue();
-
-          if (!jsonString.trim()) {
-            outputEditor.setValue('Input JSON is empty.');
-            return;
-          }
-          const data = JSON.parse(jsonString);
-
-          // 2. Compile the template
-          const template = Handlebars.compile(templateString);
-
-          // 3. Execute the template with the data
-          const resultHtml = template(data);
-
-          // 4. Display the resulting HTML in the output editor
-          outputEditor.setValue(resultHtml);
-        } catch (e) {
-          outputEditor.innerHTML = '<p style="color:red;">Invalid JSON. Error message:<br>'+e.message+'</p>';
-        }
-      });
+      // We use auto-convert now, no manual conversion button needed
 
       // File input handling
       document.getElementById('fileInput').addEventListener('change', function(ev) {
@@ -1113,32 +1155,7 @@ Bakgrund:
         }
       });
 
-      // Run conversion button
-      document.getElementById('run-conversion').addEventListener('click', () => {
-        const templateString = templateEditor.getValue();
-        let inputData;
-        try {
-          inputData = JSON.parse(inputEditor.getValue());
-        } catch (e) {
-          alert('Invalid input JSON: ' + e.message);
-          return;
-        }
-        try {
-          if (window.Handlebars && typeof Handlebars.compile === 'function') {
-            const fn = Handlebars.compile(templateString);
-            const result = fn(inputData);
-            outputEditor.setValue(result);
-          } else if (window.Handlebars && typeof Handlebars.template === 'function' && typeof Handlebars.precompile === 'function') {
-            // As a fallback, try precompilation (may not be available in runtime-only builds)
-            const pre = Handlebars.precompile(templateString);
-            outputEditor.setValue(pre);
-          } else {
-            outputEditor.setValue('Handlebars not available in this environment.');
-          }
-        } catch (e) {
-          alert('Conversion error: ' + e.message);
-        }
-      });
+      // Conversion is now handled by auto-convert functionality
 
       // when show-compiled button is clicked, show the compiled template
       var showCompiledButton = document.getElementById('show-compiled');

@@ -10,13 +10,21 @@
        {"Right_click_explanations" :
          {
           "⤡" : "Generate hierarchical nesting structrure",
-          "↔" : "Generate flat path to value of this node"
-         },
+          "↔" : "Generate flat path to value of this node",
+          "√⬚" : "Frame this node as context root, meaning that paths will be generated relative to this node"
+        },
         "Not yet implemented" :
          {
-          "↔🔑" : "Generate flat path to key of this node",
-          "√⬚" : "Frame this node as context root" 
+          "↔🔑" : "Generate flat path to key of this node"
          }
-       }
+       },
+      "Troublesome array filled with objects rather than literals/leafs": [
+         {"foo": "bar"},
+         {"foo2": "baz"},
+         {"no1": 1},
+         {"no2": 2},
+         {"array": [0,2,1,7,4,{"deep": "value"}]}
+        ] 
+
     }
 }

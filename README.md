@@ -80,6 +80,11 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 ## <a id="v0.3.4"></a>version 0.3.4 Bug fix & UI tweaks
 * Play/pause button for autoconverting to output
+* Copy button for script
+* Bug fixes
+
+## <a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
+* Simplify insertButton code
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
 * Autoconvert after change (configurable debounce setting, X seconds after last typing?)
 * add if/else-clause insertion button to context menu
