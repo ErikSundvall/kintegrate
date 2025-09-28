@@ -127,3 +127,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** a treeviewer where nodes from instance examples or schema can be selected and used in the editor in the "conversion-container" 
 * The middle "conversion-container" is where conversion scripts can be created by the user in a text editor, and for certain formalisms (such as Handlebars) the scripts can also be precopmiled for more efficient use at runtime in production environments.
 * The rightmost "output-container" column shows results of running instance examples from input through the conversion script.
+* replace "done" with green checmark in readme headings
+* plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
+
+
