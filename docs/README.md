@@ -1,12 +1,18 @@
 # Kintegrate
-Prototype of integration builder tool. 
-Demo found at https://eriksundvall.github.io/kintegrate/demo/index.html
+Prototype of integration builder tool for open-minded people with wide screens.
 
-Vanilla JavaScript + HTML project. 
-Licensed under Apache-2.0.
+Demo found at https://eriksundvall.github.io/kintegrate/demo/index.html (published from  `docs/` on GitHub Pages.)
 
-See `docs/` for GitHub Pages documentation.
+The user interface has three rezisable columns
+* The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains 
+** a textarea/field for input by pasting or by selecting examples from the /example/instance folder on web server or
+from user's local files (upload button)
+** a treeviewer where nodes from instance examples or schema can be selected and used in the editor in the "conversion-container" 
+* The middle "conversion-container" is where conversion scripts can be created by the user in a text editor, and for certain formalisms (such as Handlebars) the scripts can also be precopmiled for more efficient use at runtime in production environments.
+* The rightmost "output-container" column shows results of running instance examples from input through the conversion script.
 
+Technology stack: Vanilla JavaScript + HTML + CSS  
+Licensed under Apache-2.0. See `LICENSE` file for details.
 
 Credits:
 * Icons: https://mui.com/material-ui/material-icons/
@@ -79,18 +85,18 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * more useful output generated for most tree structures and for flat paths for individual array elements
 
 ## <a id="v0.3.4"></a>version 0.3.4 Bug fix & UI tweaks
-* Play/pause button for autoconverting to output
+* Play/pause button for autoconverting to output after change (configurable debounce setting, X seconds after last typing)
 * Copy button for script
 * Bug fixes
 
 ## <a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
-* Simplify insertButton code
-* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
-* Autoconvert after change (configurable debounce setting, X seconds after last typing?)
-* add if/else-clause insertion button to context menu
-* settings: choose tree right-click behaviour
+* Cleaning up UI buttons and precompile
+* Simplify insertButton code (inserting all selected nodes) 
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
+* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
+* add if/else-clause insertion button to context menu
+* settings: choose tree right-click behaviour
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
 * Make it easy to backup/download created scripts easily (posibly also packs in/script/out)
@@ -107,8 +113,9 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** add support for https://github.com/WorkMaze/JUST.net sriptinh (used by Sectra)
 
 ## <a id="v0.7"></a>version 0.7 
-* investigate if (another) tree view can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates
+* investigate if (another) tree view can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates. 
 * Investigate support for FlatEHR
+* The tree for output format highlights what nodes are mentionend/connected or not especially marks missing mandatory nodes.
 
 ## <a id="v0.x"></a>version 0.x
 * investigate if it in addition to a web based tool can be built as a VS Code extension so that it is easy to work with: 
@@ -117,13 +124,3 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** VS Code's integrated AI-integrations
 
 ## Possible extras later
-* Investigate possible usage of https://github.com/josdejong/svelte-jsoneditor (if a separate transform code window could be added)
-* user interface with three rezisable columns
-* The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:
-** a textarea for stored instance examples as input from either
-*** /example/instance folder on web server or
-*** user's local files (upload button) or
-*** what the user pastes into the textarea.
-** a treeviewer where nodes from instance examples or schema can be selected and used in the editor in the "conversion-container" 
-* The middle "conversion-container" is where conversion scripts can be created by the user in a text editor, and for certain formalisms (such as Handlebars) the scripts can also be precopmiled for more efficient use at runtime in production environments.
-* The rightmost "output-container" column shows results of running instance examples from input through the conversion script.

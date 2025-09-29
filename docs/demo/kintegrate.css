@@ -28,17 +28,138 @@ main {
 }
 
 .column {
-    padding: 20px;
+    padding: 20px 20px 0 20px; /* Remove bottom padding to accommodate footer */
     box-sizing: border-box;
-    overflow: auto;
     min-width: 200px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* Prevent content from spilling */
+}
+
+/* Common container styles for all columns */
+#input-container,
+#conversion-container,
+#output-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 28px; /* Match footer height exactly */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Common footer styles for all columns */
+#input-footer,
+#conversion-footer,
+#output-footer {
+    position: absolute;
+    bottom: 0;
+    left: 20px; /* Match column padding */
+    right: 20px; /* Match column padding */
+    height: 28px;
+    border-top: 1px solid #ccc;
+    padding: 4px 0; /* Vertical padding only */
+    z-index: 10;
+    font-size: 0.9em;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.hide-column-footers #input-footer,
+.hide-column-footers #conversion-footer,
+.hide-column-footers #output-footer {
+    transform: translateY(100%);
+}
+
+/* Footer controls styling */
+.footer-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.footer-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.compact-slider {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ddd;
+    outline: none;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.compact-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #666;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.compact-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #666;
+    cursor: pointer;
+    transition: background .15s ease;
+    border: none;
+}
+
+.compact-slider:hover::-webkit-slider-thumb {
+    background: #333;
+}
+
+.compact-slider:hover::-moz-range-thumb {
+    background: #333;
+}
+
+.slider-value {
+    min-width: 2.5em;
+    font-size: 0.9em;
+    color: #666;
 }
 
 .column-left {
     width: 33%;
     background-color: #eef2f3;
     border-right: 1px solid #ccc;
+}
+
+#input-footer {
+    background-color: #eef2f3;
+}
+
+.column-center {
+    width: 34%;
+    background-color: #f6f7f8;
+    border-right: 1px solid #ccc;
+}
+
+#conversion-footer {
+    background-color: #f6f7f8;
+}
+
+.column-right {
+    width: 33%;
+    background-color: #eef2f3;
+}
+
+#output-footer {
+    background-color: #eef2f3;
 }
 
 .column-center {
@@ -57,10 +178,18 @@ main {
 }
 
 /* CodeMirror customization */
-.column-center .CodeMirror,
-.column-right .CodeMirror {
+#conversion-container,
+#output-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#conversion-container .CodeMirror,
+#output-container .CodeMirror {
+    flex: 1;
+    height: auto !important;
     border: 1px solid #ddd;
-    flex-grow: 1;
     font-size: 14px;
 }
 
@@ -68,6 +197,12 @@ main {
     border: 1px solid #ddd;
     font-size: 14px;
     height: 150px;
+}
+
+/* Ensure elements before CodeMirror don't take extra space */
+#conversion-container > :not(.CodeMirror),
+#output-container > :not(.CodeMirror) {
+    flex-shrink: 0;
 }
 
 /* Resizer styling */
@@ -107,6 +242,76 @@ main {
 
 .editor-buttons button:disabled svg {
     opacity: 0.5;
+}
+
+/* Tree container and scaling */
+#json-tree-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden; /* Prevent horizontal scrolling of container */
+}
+
+/* Tree base structure */
+.treejs-nodes {
+    margin: 0 !important;
+    padding-left: 1.5em !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.treejs-node {
+    width: 100%;
+    position: relative;
+    overflow: hidden; /* Prevent text overflow */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Handle indentation properly */
+.treejs-nodes .treejs-nodes {
+    margin-left: 0.7em !important;
+    width: calc(100% - 0.7em); /* Account for margin in width */
+}
+
+/* Control spacing of tree elements */
+.treejs-label {
+    margin-left: 0.3em;
+}
+
+.treejs-checkbox {
+    margin-right: 0.3em;
+}
+
+.treejs-toggle {
+    width: 1em;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Content wrapper for scaling */
+.tree-scale-wrapper {
+    transform-origin: left top;
+    transition: transform 0.2s ease;
+    width: 100%;
+    min-width: max-content;
+}
+
+/* Basic tree styling */
+#json-tree-container .treejs-nodes {
+    margin: 0;
+    padding: 0;
+}
+
+#json-tree-container .treejs-node {
+    margin: 2px 0;
+}
+
+#json-tree-container .treejs-checkbox {
+    margin-right: 4px;
+}
+
+#json-tree-container .treejs-toggle {
+    margin-right: 2px;
 }
 
 /* Tree node styling */

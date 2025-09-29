@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.4';
+      const APP_VERSION = 'v0.3.5';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
@@ -15,20 +15,9 @@
     <!-- Application styles -->
     <link rel="stylesheet" href="kintegrate.css">
     <style>
-      #copy-button {
-        background: none;
-        border: 1px solid #ccc;
-        padding: 4px;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background-color 0.3s, border-color 0.3s;
-      }
-      #copy-button:hover {
-        border-color: #999;
-      }
-      #copy-button svg {
-        width: 24px;
-        height: 24px;
+      .success {
+        background-color: #4caf50 !important;
+        border-color: #2e7d32 !important;
       }
       .toggle-button.active .auto-convert-icon-fill {
         fill: #4caf50;
@@ -58,33 +47,51 @@
   <body>
     <main>
       <div class="fullheight-container" id="main-container">
-        <div id="input-container" class="column column-left">
-            <!-- file picker that can pick files from user upload -->
-            Pick example file <input type="file" id="fileInput" accept=".json,.xml,.txt"><br>
-            or select example:
-            <!-- Dropdown that can load any existing file in web server side subdirectory /example/instance into the textarea that has id="inputInstance"  -->
-            <select id="exampleSelect">
-              <option value="">--Select an example--</option>
-              <option value="intro.json">intro.json</option>
-              <option value="MDK_Rek_demo1.json">MDK_Rek_demo1.json</option>
-              <option value="mdk_lunga_1.json">mdk_lunga_1.json</option>
-              <option value="non_existing_example.json">non_existing_example.json</option>
-            </select><br>
-            or just paste input into the box below<br>
-            <textarea id="inputInstance">Input example goes here</textarea>
-            <hr>
-            <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
-        </div>
-        <div class="resizer"></div>
-
-        <div id="conversion-container" class="column column-center">
-          <div id="selection-list">
-            <div class="tree-actions">
-              <button id="insert-selected-paths" style="display: none;">↔ Insert all selected nodes as flat paths!!</button>
+        <!-- div id="input-wrapper" -->
+          <div class="column column-left">
+            <div id="input-container">
+              <!-- file picker that can pick files from user upload -->
+              Pick example file <input type="file" id="fileInput" accept=".json,.xml,.txt"><br>
+              or select example:
+              <!-- Dropdown that can load any existing file in web server side subdirectory /example/instance into the textarea that has id="inputInstance"  -->
+              <select id="exampleSelect">
+                <option value="">--Select an example--</option>
+                <option value="intro.json">intro.json</option>
+                <option value="MDK_Rek_demo1.json">MDK_Rek_demo1.json</option>
+                <option value="mdk_lunga_1.json">mdk_lunga_1.json</option>
+                <option value="non_existing_example.json">non_existing_example.json</option>
+              </select><br>
+              or just paste input into the box below<br>
+              <textarea id="inputInstance">Input example goes here</textarea>
+              <hr>
+              <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
+            </div>
+            <div id="input-footer">
+              <div class="footer-controls">
+                <label title="Adjust tree depth (0 = show all)">
+                  Depth: <input type="range" id="tree-depth-slider" min="1" max="6" value="6" class="compact-slider">
+                  <span class="slider-value" id="depth-value">All</span>
+                </label>
+                <label title="Adjust tree item size">
+                  | Size: <input type="range" id="tree-size-slider" min="10" max="150" value="100" class="compact-slider">
+                  <span class="slider-value" id="size-value">100%</span>
+                </label>
+              </div>
             </div>
           </div>
-            <div>Conversion Template (Handlebars)</div>
-            <textarea id="template-editor">
+        <!-- /div -->
+
+        <div class="resizer"></div>
+
+        <div class="column column-center">
+          <div id="conversion-container">
+            <div id="selection-list">
+              <div class="tree-actions">
+                <button id="insert-selected-paths" style="display: none;">↔ Insert all selected nodes as flat paths!!</button>
+              </div>
+            </div>
+              <div>Conversion Template (Handlebars)</div>
+              <textarea id="template-editor">
 {{!-- <--- This is how you start a comment block in Handlebars
   This is the column where you author (and possibly compile) your conversion script.
   Currently you see a simple Handlebars template.
@@ -142,10 +149,11 @@ Bakgrund:
   This ends the second comment block:   --}}
 
 </textarea>
-            <div class="editor-buttons">
+            <div id="conversion-buttons" class="editor-buttons">
               <button id="erase-button" title="Clear editor content (can be undone)">
                 <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                  <path d="M16 9H8v10h8zm-.47 7.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14z" opacity=".3"></path>
+                  <path d="M14.12 10.47 12 12.59l-2.13-2.12-1.41 1.41L10.59 14l-2.12 2.12 1.41 1.41L12 15.41l2.12 2.12 1.41-1.41L13.41 14l2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8z"></path>
                 </svg>
               </button>
               <button id="undo-button" title="Undo last change (Ctrl+Z)">
@@ -158,9 +166,23 @@ Bakgrund:
                   <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"></path>
                 </svg>
               </button>
+              <button id="copy-button" title="Copy conversion template to clipboard">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M9 4h9v12H9z" opacity=".3"></path>
+                  <path d="M18 2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H9V4h9zM3 15v-2h2v2zm0-5.5h2v2H3zM10 20h2v2h-2zm-7-1.5v-2h2v2zM5 22c-1.1 0-2-.9-2-2h2zm3.5 0h-2v-2h2zm5 0v-2h2c0 1.1-.9 2-2 2M5 6v2H3c0-1.1.9-2 2-2"></path>
+                </svg>
+              </button>
               <button id="download-button" title="Download editor content">
                 <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"></path>
+                </svg>
+              </button>
+              <button id="show-compiled" title="Toggle precompiled template view" class="toggle-button">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+                  <path  d="M4 18h16V8H4zm8-3h6v2h-6zm-5.91-4.59L7.5 9l4 4-4 4-1.41-1.41L8.67 13z" opacity=".3"></path>
+                  <path d="M12 15h6v2h-6z"></path>
+                  <path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2m0 14H4V8h16z"></path>
+                  <path d="m7.5 17 4-4-4-4-1.41 1.41L8.67 13l-2.58 2.59z"></path>
                 </svg>
               </button>
               <button id="auto-convert-button" title="Toggle auto-conversion" class="toggle-button">
@@ -169,21 +191,40 @@ Bakgrund:
                       <path d="M12 4c4.41 0 8 3.59 8 8s-3.59 8-8 8-8-3.59-8-8 3.59-8 8-8m0-2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-1 6H9v8h2zm6 4-5-4v8z"></path>
                   </svg>
               </button>
-            </div>          
-    
-        <button id="show-compiled">Show precompiled template</button>
-      </div>
+            </div> <!-- .editor-buttons -->
+            <div id="precompile-container" style="position: relative;">
+              <textarea id="precompiled-textarea" style="display: none; width: 100%; height: 200px; margin-top: 10px; padding: 8px; padding-right: 70px; resize: vertical; box-sizing: border-box;"></textarea>
+              <div id="precompiled-buttons" style="display: none; position: absolute; right: 24px; top: 18px; z-index: 10; background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; flex-direction: row;">
+                <button id="copy-precompiled-button" title="Copy precompiled template to clipboard" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                  <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                    <path d="M9 4h9v12H9z" opacity=".3"></path>
+                    <path d="M18 2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H9V4h9zM3 15v-2h2v2zm0-5.5h2v2H3zM10 20h2v2h-2zm-7-1.5v-2h2v2zM5 22c-1.1 0-2-.9-2-2h2zm3.5 0h-2v-2h2zm5 0v-2h2c0 1.1-.9 2-2 2M5 6v2H3c0-1.1.9-2 2-2"></path>
+                  </svg>
+                </button>
+                <button id="close-precompiled-button" title="Close precompiled view" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                  <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div> <!--  -->
+          <div id="conversion-footer">Template status: Ready</div>
+        </div> <!-- .column-center -->
         <div class="resizer"></div>
-        <div id="output-container" class="column column-right">
-            <textarea id="out">Output goes here after conversion is run</textarea>
-        </div>
+        <div class="column column-right">
+            <div id="output-container">
+              <textarea id="out">Output goes here after conversion is run</textarea>
+            </div>
+            <div id="output-footer">Output status: Ready</div>
+          </div>
       </div>
     </main>
     <footer>
           <strong>K!ntegrate</strong> <span id="app-version"></span>  A rudimentary integration tool with roots at <strong><a href="https://www.karolinskahospital.com/">K</a></a></strong>. 
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
-          | <label>Tree unfold depth:<input type="number" id="tree-close-depth" min="0" value="0" style="width:2em; margin-left:6px;"> 0=show all</label>
+          | <label style="cursor: pointer;"><input type="checkbox" id="toggle-column-footers" checked>Show column footers</label>
           | <label>Auto-convert delay (ms):<input type="number" id="auto-convert-delay" min="100" max="5000" value="500" style="width:4em; margin-left:6px;"></label>
      </footer>
  
@@ -233,7 +274,7 @@ Bakgrund:
       });
 
       // Auto-conversion functionality
-      let autoConvertEnabled = false;
+      let autoConvertEnabled = true; // Enabled by default
       let autoConvertTimeout = null;
       
       function debounce(func, wait) {
@@ -270,6 +311,9 @@ Bakgrund:
       const autoConvertButton = document.getElementById('auto-convert-button');
       const autoConvertDelay = document.getElementById('auto-convert-delay');
       
+      // Set initial active state
+      autoConvertButton.classList.add('active');
+      
       autoConvertButton.addEventListener('click', () => {
         autoConvertEnabled = !autoConvertEnabled;
         autoConvertButton.classList.toggle('active', autoConvertEnabled);
@@ -288,6 +332,109 @@ Bakgrund:
 
       // Listen for changes in the template editor
       templateEditor.on('change', debouncedConvert);
+
+      // Set up tree depth slider
+      const treeDepthSlider = document.getElementById('tree-depth-slider');
+      const depthValue = document.getElementById('depth-value');
+      
+      treeDepthSlider.addEventListener('input', () => {
+        const value = parseInt(treeDepthSlider.value);
+        const depth = value === 6 ? 0 : value; // 6 = infinite (0)
+        depthValue.textContent = depth === 0 ? 'All' : depth;
+        
+        if (treeInstance) {
+          treeInstance.options = treeInstance.options || {};
+          treeInstance.options.closeDepth = depth;
+          treeInstance.render(treeInstance.treeNodes);
+          // Update visual states
+          if (treeInstance.nodesById) {
+            Object.values(treeInstance.nodesById).forEach(n => {
+              try { treeInstance.updateLiElement && treeInstance.updateLiElement(n); } catch (err) { /* ignore */ }
+            });
+          }
+        }
+      });
+
+      // Set up tree size slider
+      const treeSizeSlider = document.getElementById('tree-size-slider');
+      const sizeValue = document.getElementById('size-value');
+      
+      // Move ensureTreeWrapper to a higher scope
+      const ensureTreeWrapper = () => {
+        console.log('Ensuring tree wrapper...');
+        const container = document.getElementById('json-tree-container');
+        console.log('Container found:', container);
+        if (container) {
+          // Find the tree's ul element (the main nodes container)
+          const treeUl = container.querySelector('.treejs-nodes');
+          if (treeUl && !treeUl.closest('.tree-scale-wrapper')) {
+            console.log('Creating new wrapper around tree nodes');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tree-scale-wrapper';
+            // Wrap only the ul element
+            treeUl.parentNode.insertBefore(wrapper, treeUl);
+            wrapper.appendChild(treeUl);
+            console.log('Wrapper created and populated');
+          } else {
+            console.log('Tree nodes or wrapper not found');
+          }
+        } else {
+          console.log('Container not found');
+        }
+      };
+
+      // Scale application function
+      const applyTreeScale = (scale) => {
+        const wrapper = document.getElementById('json-tree-container')
+          ?.querySelector('.tree-scale-wrapper');
+        if (wrapper) {
+          console.log('Applying scale:', scale);
+          wrapper.style.transform = `scale(${scale})`;
+        }
+      };
+
+      let scaleTimeout = null;
+      treeSizeSlider.addEventListener('input', () => {
+        console.log('Size slider changed');
+        const value = parseInt(treeSizeSlider.value);
+        sizeValue.textContent = value + '%';
+        const scale = value / 100;
+        
+        // Clear any pending timeout
+        if (scaleTimeout) {
+          clearTimeout(scaleTimeout);
+        }
+        
+        // Apply scale immediately
+        applyTreeScale(scale);
+        
+        // Track last scale that triggered a rerender
+        treeSizeSlider.lastRenderScale = treeSizeSlider.lastRenderScale || 1;
+        
+        // Schedule a rerender if scale change is significant
+        const scaleChange = Math.abs(scale - treeSizeSlider.lastRenderScale);
+        if (scaleChange > 0.3 || scale <= 0.7) {
+          scaleTimeout = setTimeout(() => {
+            console.log(`Rerendering tree due to significant scale change (${scaleChange.toFixed(2)})`);
+            if (treeInstance && treeInstance.treeNodes) {
+              const currentScale = parseInt(treeSizeSlider.value) / 100;
+              treeInstance.render(treeInstance.treeNodes);
+              ensureTreeWrapper();
+              // Wait a bit for the DOM to update before reapplying scale
+              requestAnimationFrame(() => {
+                applyTreeScale(currentScale);
+                treeSizeSlider.lastRenderScale = currentScale;
+              });
+            }
+          }, 500); // Wait for slider to settle
+        }
+      });
+
+      // Set up column footers toggle
+      const footersToggle = document.getElementById('toggle-column-footers');
+      footersToggle.addEventListener('change', () => {
+        document.body.classList.toggle('hide-column-footers', !footersToggle.checked);
+      });
 
       // Setup undo/redo button handlers
       undoButton.onclick = () => {
@@ -315,30 +462,17 @@ Bakgrund:
       updateButtonStates();
 
       // Setup copy button handler
-      const copyButton = document.createElement('button');
-      copyButton.id = 'copy-button';
-      copyButton.title = 'Copy template to clipboard';
-      copyButton.innerHTML = `
-        <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M9 4h9v12H9z" opacity=".3"></path>
-          <path d="M18 2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H9V4h9zM3 15v-2h2v2zm0-5.5h2v2H3zM10 20h2v2h-2zm-7-1.5v-2h2v2zM5 22c-1.1 0-2-.9-2-2h2zm3.5 0h-2v-2h2zm5 0v-2h2c0 1.1-.9 2-2 2M5 6v2H3c0-1.1.9-2 2-2"></path>
-        </svg>
-      `;
-      copyButton.onclick = () => {
+      document.getElementById('copy-button').onclick = () => {
         const content = templateEditor.getValue();
         navigator.clipboard.writeText(content).then(() => {
-          // Visual feedback
-          copyButton.style.backgroundColor = '#4caf50';
-          copyButton.style.borderColor = '#2e7d32';
+          // Visual feedback using CSS class
+          const copyButton = document.getElementById('copy-button');
+          copyButton.classList.add('success');
           setTimeout(() => {
-            copyButton.style.backgroundColor = '';
-            copyButton.style.borderColor = '';
+            copyButton.classList.remove('success');
           }, 1000);
         });
       };
-      
-      // Insert copy button before erase button
-      eraseButton.parentNode.insertBefore(copyButton, eraseButton);
 
       // Setup erase button handler
       eraseButton.onclick = () => {
@@ -368,11 +502,77 @@ Bakgrund:
         a.click();
         window.URL.revokeObjectURL(url);
       };
+
+      // Set up precompiled view functionality
+      const showPrecompiledButton = document.getElementById('show-compiled');
+      const precompiledTextarea = document.getElementById('precompiled-textarea');
+      const precompiledButtons = document.getElementById('precompiled-buttons');
+      const copyPrecompiledButton = document.getElementById('copy-precompiled-button');
+      const closePrecompiledButton = document.getElementById('close-precompiled-button');
+
+      let autoPrecompileEnabled = false;
+      let precompileTimeout = null;
+
+      function updatePrecompiledView() {
+        const templateString = templateEditor.getValue();
+        try {
+          const compiled = Handlebars.precompile(templateString);
+          precompiledTextarea.value = compiled;
+        } catch (e) {
+          precompiledTextarea.value = 'Error precompiling template: ' + e.message;
+        }
+      }
+
+      function hidePrecompiledView() {
+        precompiledTextarea.style.display = 'none';
+        precompiledButtons.style.display = 'none';
+        showPrecompiledButton.classList.remove('active');
+        autoPrecompileEnabled = false;
+      }
+
+      function togglePrecompiledView() {
+        autoPrecompileEnabled = !autoPrecompileEnabled;
+        showPrecompiledButton.classList.toggle('active', autoPrecompileEnabled);
+        
+        if (autoPrecompileEnabled) {
+          // Show the view and do initial update
+          precompiledTextarea.style.display = 'block';
+          precompiledButtons.style.display = 'flex';
+          showPrecompiledButton.classList.add('active');
+          updatePrecompiledView();
+        } else {
+          // Hide the view
+          hidePrecompiledView();
+          showPrecompiledButton.classList.remove('active');
+        }
+      }
+
+      // Set up auto-update for precompiled view
+      function debouncedPrecompileUpdate() {
+        if (!autoPrecompileEnabled) return;
+        const delay = parseInt(autoConvertDelay.value, 10) || 500;
+        clearTimeout(precompileTimeout);
+        precompileTimeout = setTimeout(updatePrecompiledView, delay);
+      }
+
+      // Listen for template changes to update precompiled view
+      templateEditor.on('change', debouncedPrecompileUpdate);
+
+      showPrecompiledButton.onclick = togglePrecompiledView;
+      closePrecompiledButton.onclick = hidePrecompiledView;
+
+      copyPrecompiledButton.onclick = () => {
+        navigator.clipboard.writeText(precompiledTextarea.value).then(() => {
+          // Visual feedback using CSS class
+          copyPrecompiledButton.classList.add('success');
+          setTimeout(() => {
+            copyPrecompiledButton.classList.remove('success');
+          }, 1000);
+        });
+      };
       const outputEditor = CodeMirror.fromTextArea(outputTextarea, { mode: 'application/json', lineNumbers: true, readOnly: true });
       const selectionListBox = document.getElementById('selection-list')
       const actions = document.getElementById('tree-actions');
-
-      console.log('111 actions:', actions, "selectionListBox", selectionListBox );
 
       // small helper creating flat paths in Handlebars syntax
       function buildHandlebarsPath(pathArray, node) {
@@ -473,7 +673,7 @@ Bakgrund:
             .map((v, i) => typeof v === 'number' ? { index: i, value: v } : null)
             .filter(x => x !== null);
           
-          if (boundaryNode.id === node.id) {
+          if (boundaryNode.id === node.id) {f
             // If the node itself is the boundary, only use its last path segment
             path = [node.path[node.path.length - 1]];
           } else {
@@ -648,7 +848,7 @@ Bakgrund:
       }
 
       // Recursive function to convert JSON to tree nodes with cleaner array handling
-      function jsonToTreeNodes(value, path = [], parent = null) {
+      function jsTreeNodes(value, path = [], parent = null) {
         const type = Object.prototype.toString.call(value);
 
         // Handle plain objects
@@ -664,7 +864,7 @@ Bakgrund:
             if (valType === '[object Object]') {
               // Object value
               const objNode = createNode(nodeId, key, basePath, NODE_TYPE.OBJECT, parent);
-              const children = jsonToTreeNodes(val, basePath, objNode);
+              const children = jsTreeNodes(val, basePath, objNode);
               if (children.length) objNode.children = children;
               nodes.push(objNode);
             } else if (Array.isArray(val)) {
@@ -684,7 +884,7 @@ Bakgrund:
                     Array.isArray(item) ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT,
                     arrayNode
                   );
-                  const itemChildren = jsonToTreeNodes(item, itemPath, itemNode);
+                  const itemChildren = jsTreeNodes(item, itemPath, itemNode);
                   if (itemChildren.length) itemNode.children = itemChildren;
                   return itemNode;
                 } else {
@@ -719,7 +919,7 @@ Bakgrund:
                 Array.isArray(item) ? NODE_TYPE.ARRAY : NODE_TYPE.OBJECT,
                 parent
               );
-              const children = jsonToTreeNodes(item, nodePath, node);
+              const children = jsTreeNodes(item, nodePath, node);
               if (children.length) node.children = children;
               return node;
             } else {
@@ -849,7 +1049,7 @@ Bakgrund:
         try {
           const jsonData = JSON.parse(jsonString);
           _idCounter = 1;
-          const treeData = jsonToTreeNodes(jsonData, []);
+          const treeData = jsTreeNodes(jsonData, []);
           
           // Clear the container before adding new content
           jsonTreeContainer.innerHTML = '';
@@ -906,15 +1106,30 @@ Bakgrund:
 
           // Initialize Tree widget into our container
           const selector = '#json-tree-container';
-          const closeDepthOpt = parseInt(document.getElementById('tree-close-depth').value, 10) || 0;
+          let initialTreeDepth = 0;
+          const treeDepthControl = document.getElementById('tree-depth-slider');
+          if (treeDepthControl) {
+            const sliderValue = parseInt(treeDepthControl.value);
+            initialTreeDepth = sliderValue === 6 ? 0 : sliderValue;
+          }
           
           // Clear node path lookup before initializing tree
-          jsonToTreeNodes.nodesByPath = new Map();
+          jsTreeNodes.nodesByPath = new Map();
           
+          // Note: ensureTreeWrapper is now defined in a higher scope
+
           // Initialize tree with our extended version that includes context boundary support
           treeInstance = new ExtendedTree(selector, {
             data: treeData,
-            closeDepth: closeDepthOpt,
+            closeDepth: initialTreeDepth,
+            onCreateLi: function(node, li) {
+              // Add node type classes during rendering
+              if (node.nodeType) {
+                li.classList.add('node-' + node.nodeType);
+              }
+              // Ensure wrapper exists after tree renders
+              ensureTreeWrapper();
+            },
             
             // Add node type classes during rendering
             onCreateLi: function(node, li) {
@@ -1055,27 +1270,35 @@ Bakgrund:
           });
           //***************************
 
-          // When user changes the tree-close-depth control, update the option and re-render in-place
-          const treeDepthInput = document.getElementById('tree-close-depth');
-          treeDepthInput.addEventListener('change', () => {
-            try {
-              const newDepth = parseInt(treeDepthInput.value, 10) || 0;
-              if (!treeInstance) return;
-              // Update option and re-render the existing tree nodes so we don't lose selection state
-              treeInstance.options = treeInstance.options || {};
-              treeInstance.options.closeDepth = newDepth;
-              // render will rebuild DOM using current treeNodes and the updated closeDepth
-              treeInstance.render(treeInstance.treeNodes);
-              // Ensure visual check/disabled state is synced to the new DOM
-              if (treeInstance.nodesById) {
-                Object.values(treeInstance.nodesById).forEach(n => {
-                  try { treeInstance.updateLiElement && treeInstance.updateLiElement(n); } catch (err) { /* ignore per-node errors */ }
-                });
+          // Update tree depth slider display
+          if (treeDepthControl && document.getElementById('depth-value')) {
+            const value = parseInt(treeDepthControl.value);
+            const depth = value === 6 ? 0 : value;
+            document.getElementById('depth-value').textContent = depth === 0 ? 'All' : depth;
+          }
+
+          console.log('Tree rendering complete, checking wrapper...');
+          // Ensure wrapper exists after tree is rendered
+          setTimeout(() => {
+            console.log('Delayed wrapper check...');
+            ensureTreeWrapper();
+          }, 100);
+
+          // Initialize the tree size slider
+          const treeSizeSlider = document.getElementById('tree-size-slider');
+          const sizeValue = document.getElementById('size-value');
+          if (treeSizeSlider && sizeValue) {
+            const value = parseInt(treeSizeSlider.value);
+            sizeValue.textContent = value + '%';
+            const treeContainer = document.getElementById('json-tree-container');
+            if (treeContainer) {
+              const wrapper = treeContainer.querySelector('.tree-scale-wrapper');
+              if (wrapper) {
+                const scale = value / 100;
+                wrapper.style.transform = `scale(${scale})`;
               }
-            } catch (e) {
-              console.error('Failed to update tree depth:', e);
             }
-          });
+          }
 
           } catch (e) {
             // Display error in the tree container
@@ -1112,11 +1335,15 @@ Bakgrund:
         .then(data => {
           inputEditor.setValue(data);
           updateJsonTree(data);
+          // Run initial conversion since auto-convert is enabled by default
+          runConversion();
         })
         .catch(error => {
           console.error('Error loading intro.json:', error);
           // Fallback to empty JSON if file can't be loaded
           inputEditor.setValue('{}');
+          // Run initial conversion even with empty data
+          runConversion();
         });
       outputEditor.setValue('Output goes here after conversion is run.');
 
@@ -1132,6 +1359,10 @@ Bakgrund:
             const content = e.target.result;
             inputEditor.setValue(content);
             updateJsonTree(content);
+            // Run conversion immediately if auto-convert is enabled
+            if (autoConvertEnabled) {
+              runConversion();
+            }
           };
           reader.readAsText(file);
         }
@@ -1146,6 +1377,10 @@ Bakgrund:
             .then(data => {
               inputEditor.setValue(data);
               updateJsonTree(data);
+              // Run conversion immediately if auto-convert is enabled
+              if (autoConvertEnabled) {
+                runConversion();
+              }
             })
             .catch(error => {
               console.error('There was a problem with the fetch operation:', error);
@@ -1158,34 +1393,34 @@ Bakgrund:
       // Conversion is now handled by auto-convert functionality
 
       // when show-compiled button is clicked, show the compiled template
-      var showCompiledButton = document.getElementById('show-compiled');
-      showCompiledButton.addEventListener('click', () => {
+/*      var showPreCompiledButton = document.getElementById('show-compiled');
+      showPreCompiledButton.addEventListener('click', () => {
         const templateString = templateEditor.getValue();
         try {
           var precompiledTemplate = Handlebars.precompile ? Handlebars.precompile(templateString) : 'Precompile not available';
-          const conversionContainer = document.getElementById('conversion-container');
+          const precompileContainer = document.getElementById('precompile-container');
           const compiledTextarea = document.createElement('textarea');
           compiledTextarea.id = 'precompiled-textarea';
           compiledTextarea.style.width = '100%';
           compiledTextarea.style.height = '50%';
           compiledTextarea.readOnly = true;
           compiledTextarea.value = precompiledTemplate;
-          conversionContainer.insertBefore(compiledTextarea, showCompiledButton);
-          showCompiledButton.style.display = 'none'; // hide the button after click
-          // add a copy to clipboard button to the alert that copies the template to clipboard
+          precompileContainer.appendChild(showPreCompiledButton);
+          showPreCompiledButton.style.display = 'none'; // hide the button after click
+          // add a copy to cli§pboard button to the alert that copies the template to clipboard
           const copyButton = document.createElement('button');
           copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
           copyButton.id = 'copy-precompiled-button';
-          conversionContainer.appendChild(copyButton);
+          precompileContainer.appendChild(copyButton);
           copyButton.style.cursor = 'pointer';
           copyButton.onclick = () => {
             navigator.clipboard.writeText(precompiledTemplate).then(() => {
               // show text "Copied!" on the button for 1 second then remove the textarea and copy button;
               copyButton.textContent = 'Copied!';
               setTimeout(() => {
-                conversionContainer.removeChild(compiledTextarea);
-                conversionContainer.removeChild(copyButton);
-                showCompiledButton.style.display = 'inline'; // show the show-compiled button again
+                precompileContainer.removeChild(compiledTextarea);
+                precompileContainer.removeChild(copyButton);
+                showPreCompiledButton.style.display = 'inline'; // show the show-compiled button again
               }, 1000);
             });
           };
@@ -1198,25 +1433,30 @@ Bakgrund:
       // When content of template-editor changes: If compiled-textarea exists, remove it + copy button and show the show-compiled button again
       templateEditor.on('change', () => {
         console.log("Template editor changed, removing precompiled view if exists.");
-        const conversionContainer = document.getElementById('conversion-container');
+        const precompileContainer = document.getElementById('conversion-container');
         const compiledTextarea = document.getElementById('precompiled-textarea');
         const copyButton = document.getElementById('copy-precompiled-button');
         if (compiledTextarea && copyButton) {
-          conversionContainer.removeChild(compiledTextarea);
-          conversionContainer.removeChild(copyButton);
-          showCompiledButton.style.display = 'inline'; // show the show-compiled button again
+          precompileContainer.removeChild(compiledTextarea);
+          precompileContainer.removeChild(copyButton);
+          showPreCompiledButton.style.display = 'inline'; // show the show-compiled button again
         }
       });
-
+*/
       document.getElementById('toggle-line-numbers').addEventListener('change', function() {
         const showLineNumbers = this.checked;
         const editors = [inputEditor, templateEditor, outputEditor];
         editors.forEach(editor => editor.setOption('lineNumbers', showLineNumbers));
       });
 
-      // Update tree when user types in the input editor
+      // Update tree and run conversion when user types in the input editor
       inputEditor.on('change', (editor) => {
         updateJsonTree(editor.getValue());
+        // Run auto-convert if enabled
+        if (autoConvertEnabled) {
+          const delay = parseInt(autoConvertDelay.value, 10) || 500;
+          debounce(runConversion, delay)();
+        }
       });
 
       }); // DOMContentLoaded
