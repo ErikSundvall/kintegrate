@@ -124,3 +124,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** VS Code's integrated AI-integrations
 
 ## Possible extras later
+* replace "done" with green checmark in readme headings
+* plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
+
+
