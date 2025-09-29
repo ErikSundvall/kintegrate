@@ -90,16 +90,13 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * Bug fixes
 
 ## <a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
-* Cleaning up UI buttons
+* Cleaning up UI buttons and precompile
+* Simplify insertButton code (inserting all selected nodes) 
 
-
-
-* Simplify insertButton code (inserting all selected nodes)
+## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
 * add if/else-clause insertion button to context menu
 * settings: choose tree right-click behaviour
-
-## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
 * Make it easy to backup/download created scripts easily (posibly also packs in/script/out)
