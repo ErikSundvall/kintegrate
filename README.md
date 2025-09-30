@@ -87,33 +87,37 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ## <a id="v0.3.4"></a>version 0.3.4 Bug fix & UI tweaks
 * Play/pause button for autoconverting to output after change (configurable debounce setting, X seconds after last typing)
 * Copy button for script
-* Bug fixes
+* Bug fixes, e.g. got syntax highlihting working for Handlebars.
 
 ## <a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
 * Cleaning up UI buttons and precompile
 * Simplify insertButton code (inserting all selected nodes) 
 
-## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
-* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node 
+
 * add if/else-clause insertion button to context menu
+
+## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
+* change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
 * settings: choose tree right-click behaviour
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
-* Get syntax highlihting working for Handlebars? Bug? (Works for JSON) and remove unnecesary highlighters.
-* Make it easy to backup/download created scripts easily (posibly also packs in/script/out)
+* Make it easy to save/backup created scripts to github or similar (posibly also packs in/script/out)
 
 ## <a id="v0.5"></a>version 0.5
 * add support for schema/structure defintition-format plugins that can feed the tree view instead of just instances
+** Switch tree to D3
+** When in instance/schema combo mode: highlight missing mandatory nodes from example instance relative to schema.
 ** refactor json instance to be such a plugin
 ** create a plugin for openEHR web template defintions (see documentation at ...TODO...)
+** First version of example instance generation
 ** Stretch: add plugin for Sectra forms defintions
 
 ## <a id="v0.6"></a>Version 0.6
 * Add support for plugins for other scripting formalisms than Handlebars. Keep supporting flat and hierarchical forms if scripting language allows it.
 ** refactor Handlebars support to be a plugin
-** add support for https://github.com/WorkMaze/JUST.net sriptinh (used by Sectra)
+** add support for https://github.com/WorkMaze/JUST.net scripting (used by Sectra) or just the mid-identifier-array-iterator helper functions (useful for Dicom SR)
 
 ## <a id="v0.7"></a>version 0.7 
-* investigate if (another) tree view can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates. 
+* investigate if (another) tree view (column) can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates. 
 * Investigate support for FlatEHR
 * The tree for output format highlights what nodes are mentionend/connected or not especially marks missing mandatory nodes.
 
