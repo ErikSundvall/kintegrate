@@ -76,6 +76,13 @@
                   | Size: <input type="range" id="tree-size-slider" min="10" max="150" value="100" class="compact-slider">
                   <span class="slider-value" id="size-value">100%</span>
                 </label>
+                <span style="white-space: nowrap;">|</span>
+                <div id="selection-list" style="display: inline-block; margin-left: 8px;">
+                  <div class="tree-actions" style="display: inline-block;">
+                    <button id="insert-selected-paths" style="display: none; padding: 2px 6px; font-size: 0.9em;">↔ Insert selected</button>
+                  </div>
+                  <div id="selected-paths" style="display: none;">No nodes selected. Use checkboxes to select nodes.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -85,13 +92,8 @@
 
         <div class="column column-center">
           <div id="conversion-container">
-            <div id="selection-list">
-              <div class="tree-actions">
-                <button id="insert-selected-paths" style="display: none;">↔ Insert all selected nodes as flat paths!!</button>
-              </div>
-            </div>
               <div>Conversion Template (Handlebars)</div>
-              <textarea id="template-editor">
+<textarea id="template-editor">
 {{!-- <--- This is how you start a comment block in Handlebars
   This is the column where you author (and possibly compile) your conversion script.
   Currently you see a simple Handlebars template.
@@ -111,8 +113,9 @@ A number of tips:
 {{/with}}
 ----- The end -----
 
-{{!-- Another comment block. Remove this line to run it
-  
+
+----- Another example block -----
+
 The examples below fit with the example input file MDK_Rek_demo1.json
 
 Example with full flat path: 
@@ -146,8 +149,71 @@ Bakgrund:
   {{/each}}
 {{/with}}
 
-  This ends the second comment block:   --}}
+{{!-- Example of helper functions for comparisons that can be used (in parenthesis) in e.g. #if-blocks 
 
+      eq: v1 === v2, equals
+      ne: v1 !== v2, not equals
+      lt: v1 < v2, less than
+      gt: v1 > v2, greater than
+      lte: v1 <= v2, less than or equal to
+      gte: v1 >= v2, greater than or equal to
+      and(expression1, expression2, ...expressions) => all expressions must be true
+      or(expression1, expression2, ...expressions) => at least one expression must be true
+
+--}}
+{{!-- Example of numeric comparisons (if there are values) --}}
+{{#with granskning.utredning_undersökning.0.funktionsutredning.0.spirometriresultat.[0].ospecificerad_händelse.[0].kvot_fev1_fvc.[0].resultat.[0]}}
+  {{#if [|numerator]}}
+FEV1/FVC: {{[|numerator]}}
+    {{#if (gte [|numerator] 70)}}
+  FEV1/FVC kvot är över eller lika med 70% - då kanske patienten kan pusta ut? Om den har någon luft kvar?
+    {{else}}
+  FEV1/FVC kvot är under 70% (eller saknas?) - kanske inte så bra värde, men ett Handlebars script ska nog inte ge medicinskt beslutsstöd
+    {{/if}}
+  {{else}}
+FEV1/FVC-resutat saknas!
+  {{/if}}
+{{/with}}
+
+{{!-- Or simpler by going deeper and using "." (current context) instead of repeating the path. Also compressed line breaks in syntax a bit,  --}}
+{{#with granskning.utredning_undersökning.0.funktionsutredning.0.spirometriresultat.[0].ospecificerad_händelse.[0].kvot_fev1_fvc.[0].resultat.[0].[|numerator]}}
+ {{~#if .}}FEV1/FVC: {{.}}
+  {{#if (gte . 70)}}  FEV1/FVC kvot är över eller lika med 70% - då kanske patienten kan pusta ut? Om den har någon luft kvar?
+  {{else}}FEV1/FVC kvot är under 70% (eller saknas?) - kanske inte så bra värde, men ett Handlebars script ska nog inte ge medicinskt beslutsstöd
+  {{/if}}
+ {{else}}FEV1/FVC-resutat saknas!
+ {{/if}}
+{{/with}}
+
+{{!-- Using "~" for removing whitespace. Using "#if (and x y z)" to check if all of values x y and z are available --}}
+TNM-Klassificering:
+{{~#with granskning.bedömning.0.behållare.0.klinisk_tnm-klassificering.[0]}}
+ (Version: {{tnm-version.0.[|value]}})
+{{#if (and primärtumör_t.0.[|value] regional_lymfkörtlar_n.0.[|value] fjärrmetastaser_m.0.[|value])}}
+T: {{primärtumör_t.0.[|value]}}
+N: {{regional_lymfkörtlar_n.0.[|value]}}
+M: {{fjärrmetastaser_m.0.[|value]}}
+Stadium: {{stadieindelning.0.[|value]}}
+{{/if}}
+{{/with}} 
+
+{{!-- Example of using @data variables described in https://handlebarsjs.com/api-reference/data-variables.html 
+      by looping over participants (deltagare) separating with a comma and ending with and and period.--}}
+Närvarande:
+{{~#with granskning.rubrik.[0].behållare.[0].deltagare.[0]}}    
+  {{#each deltagare}}
+    {{~#if @first}} {{namn.0.[|value]}}
+    {{~else if @last}} och {{namn.0.[|value]}}.
+    {{else}} , {{namn.0.[|value]}}
+    {{/if}}
+  {{/each}}
+  
+{{!-- Example of using @index variable to number items in a list --}}
+Närvarolista i ankomstordning:
+  {{#each deltagare}}
+    {{~@index}}. {{namn.0.[|value]}}
+  {{/each}}    
+{{/with}}
 </textarea>
             <div id="conversion-buttons" class="editor-buttons">
               <button id="erase-button" title="Clear editor content (can be undone)">
@@ -209,14 +275,18 @@ Bakgrund:
               </div>
             </div>
           </div> <!--  -->
-          <div id="conversion-footer">Template status: Ready</div>
+          <div id="conversion-footer" style="display: flex; align-items: baseline; gap: 8px;">
+            <label style="cursor: pointer; white-space: nowrap; display: flex; align-items: baseline; gap: 6px;">Auto-convert delay (ms):<input type="number" id="auto-convert-delay" min="100" max="5000" value="500" style="width:4em;"></label>
+            <span style="white-space: nowrap;">|</span>
+            <span id="conversion-status" style="white-space: nowrap;">Latest conversion: Ready</span>
+          </div>
         </div> <!-- .column-center -->
         <div class="resizer"></div>
         <div class="column column-right">
             <div id="output-container">
               <textarea id="out">Output goes here after conversion is run</textarea>
             </div>
-            <div id="output-footer">Output status: Ready</div>
+            <div id="output-footer">This column shows the output from conversions.</div>
           </div>
       </div>
     </main>
@@ -225,7 +295,6 @@ Bakgrund:
           || Settings:
           <label style="cursor: pointer;"><input type="checkbox" id="toggle-line-numbers" checked>Show line numbers</label>
           | <label style="cursor: pointer;"><input type="checkbox" id="toggle-column-footers" checked>Show column footers</label>
-          | <label>Auto-convert delay (ms):<input type="number" id="auto-convert-delay" min="100" max="5000" value="500" style="width:4em; margin-left:6px;"></label>
      </footer>
  
     <!-- CodeMirror 5 JS -->
@@ -252,6 +321,23 @@ Bakgrund:
       document.addEventListener('DOMContentLoaded', () => {
       // Set version in footer
       document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+
+      //handlebars helper from https://stackoverflow.com/a/31632215
+
+    Handlebars.registerHelper({
+      eq: (v1, v2) => v1 === v2,
+      ne: (v1, v2) => v1 !== v2,
+      lt: (v1, v2) => v1 < v2,
+      gt: (v1, v2) => v1 > v2,
+      lte: (v1, v2) => v1 <= v2,
+      gte: (v1, v2) => v1 >= v2,
+      and() {
+        return Array.prototype.every.call(arguments, Boolean);
+      },
+      or() {
+        return Array.prototype.slice.call(arguments, 0, -1).some(Boolean);
+      }
+    });
 
       // --- Editor initialization ---
       const inputTextarea = document.getElementById('inputInstance');
@@ -288,6 +374,20 @@ Bakgrund:
         };
       }
       
+      function updateConversionStatus(status, duration = null) {
+        const footer = document.getElementById('conversion-footer');
+        let text = `Latest conversion: ${status}`;
+        if (duration !== null) {
+          text += ` (${duration.toFixed(2)} ms)`;
+        }
+        const delayInput = footer.querySelector('label');
+        footer.innerHTML = text;
+        if (delayInput) {
+          footer.appendChild(document.createTextNode(' | '));
+          footer.appendChild(delayInput);
+        }
+      }
+
       function runConversion() {
         try {
           const templateString = templateEditor.getValue();
@@ -295,15 +395,22 @@ Bakgrund:
 
           if (!jsonString.trim()) {
             outputEditor.setValue('Input JSON is empty.');
+            updateConversionStatus('No input');
             return;
           }
           
+          const startTime = performance.now();
           const data = JSON.parse(jsonString);
           const template = Handlebars.compile(templateString);
           const resultHtml = template(data);
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+          
           outputEditor.setValue(resultHtml);
+          updateConversionStatus('Success', duration);
         } catch (e) {
           outputEditor.setValue('Error: ' + e.message);
+          updateConversionStatus('Error: ' + e.message);
         }
       }
 
@@ -943,35 +1050,20 @@ Bakgrund:
 
       // Render the selected paths list. Accepts an array of node objects (deepest selected nodes).
       function renderSelectedPaths(nodes) {
-        const selectedListEl = document.getElementById('selected-paths') || (() => {
-          const el = document.createElement('div'); el.id = 'selected-paths'; el.style.marginTop = '8px'; document.getElementById('selection-list')?.appendChild(el); return el;
-        })();
+        const selectedListEl = document.getElementById('selected-paths');
+        if (!selectedListEl) return;
 
-        // update count indicator
-        const countEl = document.getElementById('number-of-selected-paths');
-        if (countEl) {
-          countEl.textContent = nodes && nodes.length ? `${nodes.length} selected` : '';
-        }
-
-        // show/hide actions area depending on selection
+        // show/hide actions area and paths list depending on selection
         const actionsWrap = document.querySelector('.tree-actions');
-        if (actionsWrap) {
-          if (!nodes || nodes.length === 0) {
-            actionsWrap.style.display = 'none';
-          } else {
-            actionsWrap.style.display = '';
-          }
-        }
-
-        // No toggle button updates needed
-
         if (!nodes || nodes.length === 0) {
-          selectedListEl.textContent = 'No nodes selected. Use checkboxes to select nodes.';
-          // ensure actions area hidden when no selection
-          const actionsWrap = document.querySelector('.tree-actions');
           if (actionsWrap) actionsWrap.style.display = 'none';
+          selectedListEl.style.display = 'none';
           return;
         }
+
+        // Show the containers since we have selections
+        if (actionsWrap) actionsWrap.style.display = 'inline-block';
+        selectedListEl.style.display = 'block';
 
         const ul = document.createElement('ul');
         for (const n of nodes) {
@@ -1054,54 +1146,17 @@ Bakgrund:
           // Clear the container before adding new content
           jsonTreeContainer.innerHTML = '';
 
-          // Actions UI (create locally so we don't depend on external references)
-          let actionsEl = document.getElementById('tree-actions');
-          if (!actionsEl) {
-            actionsEl = document.createElement('div');
-            actionsEl.id = 'tree-actions';
-            actionsEl.className = 'tree-actions';
-          } else {
-            // clear previous children to avoid duplicates
-            actionsEl.innerHTML = '';
-          }
-
-          // Set up insert button for selected paths
-          const insertButton = document.createElement('button');
-          insertButton.textContent = '↔ Insert all selected nodes as flat Paths';
-          insertButton.id = 'insert-selected-paths';
-          insertButton.style.display = 'none';  // Hidden by default
-          insertButton.addEventListener('click', () => {
-            if (!treeInstance) return;
-            const selected = treeInstance.selectedNodes || [];
-            const selectedNodes = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
-            if (selectedNodes.length > 0) {
-              insertPathsFromNodes(selectedNodes);
-            }
-          });
-
-          let selectedList = document.getElementById('selected-paths');
-          if (!selectedList) {
-            selectedList = document.createElement('div');
-            selectedList.id = 'selected-paths';
-            selectedList.style.marginTop = '8px';
-            // hidden by default
-            selectedList.style.display = '';
-          } else {
-            selectedList.innerHTML = '';
-            // always visible
-            selectedList.style.display = '';
-          }
-
-          // No toggle button needed
-          actionsEl.appendChild(insertButton);
-          
-          actionsEl.appendChild(selectedList);
-
-          // Attach to selection list container (replace existing contents)
-          const selBox = document.getElementById('selection-list');
-          if (selBox) {
-            selBox.innerHTML = '';
-            selBox.appendChild(actionsEl);
+          // Set up insert button click handler
+          const insertButton = document.getElementById('insert-selected-paths');
+          if (insertButton) {
+            insertButton.onclick = () => {
+              if (!treeInstance) return;
+              const selected = treeInstance.selectedNodes || [];
+              const selectedNodes = selected.filter(n => n && n.status === 2 && Array.isArray(n.path));
+              if (selectedNodes.length > 0) {
+                insertPathsFromNodes(selectedNodes);
+              }
+            };
           }
 
           // Initialize Tree widget into our container
@@ -1389,60 +1444,6 @@ Bakgrund:
             });
         }
       });
-
-      // Conversion is now handled by auto-convert functionality
-
-      // when show-compiled button is clicked, show the compiled template
-/*      var showPreCompiledButton = document.getElementById('show-compiled');
-      showPreCompiledButton.addEventListener('click', () => {
-        const templateString = templateEditor.getValue();
-        try {
-          var precompiledTemplate = Handlebars.precompile ? Handlebars.precompile(templateString) : 'Precompile not available';
-          const precompileContainer = document.getElementById('precompile-container');
-          const compiledTextarea = document.createElement('textarea');
-          compiledTextarea.id = 'precompiled-textarea';
-          compiledTextarea.style.width = '100%';
-          compiledTextarea.style.height = '50%';
-          compiledTextarea.readOnly = true;
-          compiledTextarea.value = precompiledTemplate;
-          precompileContainer.appendChild(showPreCompiledButton);
-          showPreCompiledButton.style.display = 'none'; // hide the button after click
-          // add a copy to cli§pboard button to the alert that copies the template to clipboard
-          const copyButton = document.createElement('button');
-          copyButton.textContent = 'Copy precompiled template to Clipboard (+close)';
-          copyButton.id = 'copy-precompiled-button';
-          precompileContainer.appendChild(copyButton);
-          copyButton.style.cursor = 'pointer';
-          copyButton.onclick = () => {
-            navigator.clipboard.writeText(precompiledTemplate).then(() => {
-              // show text "Copied!" on the button for 1 second then remove the textarea and copy button;
-              copyButton.textContent = 'Copied!';
-              setTimeout(() => {
-                precompileContainer.removeChild(compiledTextarea);
-                precompileContainer.removeChild(copyButton);
-                showPreCompiledButton.style.display = 'inline'; // show the show-compiled button again
-              }, 1000);
-            });
-          };
-        } catch (e) {
-          alert('Error during precompilation:\n\n' + e.message);
-          console.error('Precompilation Error:', e);
-        }
-      });
-
-      // When content of template-editor changes: If compiled-textarea exists, remove it + copy button and show the show-compiled button again
-      templateEditor.on('change', () => {
-        console.log("Template editor changed, removing precompiled view if exists.");
-        const precompileContainer = document.getElementById('conversion-container');
-        const compiledTextarea = document.getElementById('precompiled-textarea');
-        const copyButton = document.getElementById('copy-precompiled-button');
-        if (compiledTextarea && copyButton) {
-          precompileContainer.removeChild(compiledTextarea);
-          precompileContainer.removeChild(copyButton);
-          showPreCompiledButton.style.display = 'inline'; // show the show-compiled button again
-        }
-      });
-*/
       document.getElementById('toggle-line-numbers').addEventListener('change', function() {
         const showLineNumbers = this.checked;
         const editors = [inputEditor, templateEditor, outputEditor];

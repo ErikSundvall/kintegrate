@@ -93,8 +93,17 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * Cleaning up UI buttons and precompile
 * Simplify insertButton code (inserting all selected nodes) 
 
+# <a id="v0.3.6"></a>version 0.3.6 adding helper functions for if/then etc
+ Example of helper functions for comparisons that can be used (in parenthesis) in e.g. #if-blocks
+*      eq: v1 === v2, equals
+*      ne: v1 !== v2, not equals
+*      lt: v1 < v2, less than
+*      gt: v1 > v2, greater than
+*      lte: v1 <= v2, less than or equal to
+*      gte: v1 >= v2, greater than or equal to
+*      and(expression1, expression2, ...expressions) => all expressions must be true
+*      or(expression1, expression2, ...expressions) => at least one expression must be true
 
-* add if/else-clause insertion button to context menu
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
@@ -109,7 +118,8 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ** refactor json instance to be such a plugin
 ** create a plugin for openEHR web template defintions (see documentation at ...TODO...)
 ** First version of example instance generation
-** Stretch: add plugin for Sectra forms defintions
+** Note: useful also for analyzing/highliting converted target instance vs target schema during development
+* Stretch: add plugin for Sectra forms defintions
 
 ## <a id="v0.6"></a>Version 0.6
 * Add support for plugins for other scripting formalisms than Handlebars. Keep supporting flat and hierarchical forms if scripting language allows it.
@@ -130,5 +140,8 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ## Possible extras later
 * replace "done" with green checmark in readme headings
 * plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
+* Local search box (possibly for each column in footer) --> ciunt and hihligt ocurrences - see VS Code's good search impl. (and/or plugin to CodeMirror?)
+* add if/else-clause insertion button to context menu
+
 
 
