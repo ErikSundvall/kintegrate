@@ -94,7 +94,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * Simplify insertButton code (inserting all selected nodes) 
 
 # <a id="v0.3.6"></a>version 0.3.6 adding helper functions for if/then etc
- Example of helper functions for comparisons that can be used (in parenthesis) in e.g. #if-blocks
+ Example of helper functions for comparisons that can be used (in parenthesis) in e.g. #if/#unless-blocks
 *      eq: v1 === v2, equals
 *      ne: v1 !== v2, not equals
 *      lt: v1 < v2, less than
@@ -104,6 +104,9 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 *      and(expression1, expression2, ...expressions) => all expressions must be true
 *      or(expression1, expression2, ...expressions) => at least one expression must be true
 
+# <a id="v0.3.7"></a>version 0.3.7 adding helper functions for case shift
+* added functions {{toLowerCase .}} and {{toUpperCase .}}
+* UI tweaks
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
