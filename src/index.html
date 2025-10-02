@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.5';
+      const APP_VERSION = 'v0.3.7';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
@@ -50,18 +50,13 @@
         <!-- div id="input-wrapper" -->
           <div class="column column-left">
             <div id="input-container">
-              <!-- file picker that can pick files from user upload -->
-              Pick example file <input type="file" id="fileInput" accept=".json,.xml,.txt"><br>
-              or select example:
-              <!-- Dropdown that can load any existing file in web server side subdirectory /example/instance into the textarea that has id="inputInstance"  -->
-              <select id="exampleSelect">
-                <option value="">--Select an example--</option>
-                <option value="intro.json">intro.json</option>
-                <option value="MDK_Rek_demo1.json">MDK_Rek_demo1.json</option>
-                <option value="mdk_lunga_1.json">mdk_lunga_1.json</option>
-                <option value="non_existing_example.json">non_existing_example.json</option>
-              </select><br>
-              or just paste input into the box below<br>
+              Pick 
+              <button id="example-select" title="Load example input from server">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
+                  <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-3 2v5l-1-.75L15 9V4zm3 12H8V4h5v9l3-2.25L19 13V4h1z"></path>
+                </svg>
+              </button>, upload <input type="file" id="fileInput" style="display: inline-block; width: 12em;" />
+              <br>or just paste input into the box below<br>
               <textarea id="inputInstance">Input example goes here</textarea>
               <hr>
               <div id="json-tree-container">Parsed input from above goes here into a foldable tree. The tree-branches can then be clicked to get paths that can be used in conversion template</div>
@@ -215,18 +210,28 @@ Närvarolista i ankomstordning:
   {{/each}}    
 {{/with}}
 </textarea>
-            <div id="conversion-buttons" class="editor-buttons">
-              <button id="erase-button" title="Clear editor content (can be undone)">
-                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M16 9H8v10h8zm-.47 7.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14z" opacity=".3"></path>
-                  <path d="M14.12 10.47 12 12.59l-2.13-2.12-1.41 1.41L10.59 14l-2.12 2.12 1.41 1.41L12 15.41l2.12 2.12 1.41-1.41L13.41 14l2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8z"></path>
-                </svg>
-              </button>
-              <button id="undo-button" title="Undo last change (Ctrl+Z)">
-                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"></path>
-                </svg>
-              </button>
+<div id="conversion-buttons" class="editor-buttons">
+  <button id="erase-button" title="Clear editor content (can be undone)">
+    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M16 9H8v10h8zm-.47 7.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14z" opacity=".3"></path>
+      <path d="M14.12 10.47 12 12.59l-2.13-2.12-1.41 1.41L10.59 14l-2.12 2.12 1.41 1.41L12 15.41l2.12 2.12 1.41-1.41L13.41 14l2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8z"></path>
+    </svg>
+  </button>
+  <button id="upload-button" title="Load template from file">
+    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5z"></path>
+    </svg>
+  </button>
+  <button id="load-examples-button" title="Load example template from server">
+    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-3 2v5l-1-.75L15 9V4zm3 12H8V4h5v9l3-2.25L19 13V4h1z"></path>
+    </svg>
+  </button>
+  <button id="undo-button" title="Undo last change (Ctrl+Z)">
+    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"></path>
+    </svg>
+  </button>
               <button id="redo-button" title="Redo last undone change (Ctrl+Y)">
                 <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"></path>
@@ -240,7 +245,7 @@ Närvarolista i ankomstordning:
               </button>
               <button id="download-button" title="Download editor content">
                 <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"></path>
+                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
                 </svg>
               </button>
               <button id="show-compiled" title="Toggle precompiled template view" class="toggle-button">
@@ -257,7 +262,7 @@ Närvarolista i ankomstordning:
                       <path d="M12 4c4.41 0 8 3.59 8 8s-3.59 8-8 8-8-3.59-8-8 3.59-8 8-8m0-2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-1 6H9v8h2zm6 4-5-4v8z"></path>
                   </svg>
               </button>
-            </div> <!-- .editor-buttons -->
+            </div> 
             <div id="precompile-container" style="position: relative;">
               <textarea id="precompiled-textarea" style="display: none; width: 100%; height: 200px; margin-top: 10px; padding: 8px; padding-right: 70px; resize: vertical; box-sizing: border-box;"></textarea>
               <div id="precompiled-buttons" style="display: none; position: absolute; right: 24px; top: 18px; z-index: 10; background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; flex-direction: row;">
@@ -336,7 +341,9 @@ Närvarolista i ankomstordning:
       },
       or() {
         return Array.prototype.slice.call(arguments, 0, -1).some(Boolean);
-      }
+      },
+      toLowerCase: (str) => str && str.toLowerCase(),
+      toUpperCase: (str) => str && str.toUpperCase()
     });
 
       // --- Editor initialization ---
@@ -345,7 +352,8 @@ Närvarolista i ankomstordning:
       const outputTextarea = document.getElementById('out');
 
       const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
-      // Get the pre-defined buttons
+
+      // Get the pre-defined buttons  
       const undoButton = document.getElementById('undo-button');
       const redoButton = document.getElementById('redo-button');
       const eraseButton = document.getElementById('erase-button');
@@ -608,6 +616,147 @@ Närvarolista i ankomstordning:
         a.download = filename;
         a.click();
         window.URL.revokeObjectURL(url);
+      };
+
+      // Setup upload button handler
+      const uploadButton = document.getElementById('upload-button');
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt,.hbs,.handlebars';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+
+      uploadButton.onclick = () => {
+        fileInput.click();
+      };
+
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            templateEditor.setValue(e.target.result);
+            // Run conversion if auto-convert is enabled
+            if (autoConvertEnabled) {
+              runConversion();
+            }
+          };
+          reader.readAsText(file);
+        }
+        // Reset file input so the same file can be selected again
+        fileInput.value = '';
+      };
+
+      // Setup load examples button handler
+      const loadExamplesButton = document.getElementById('load-examples-button');
+      loadExamplesButton.onclick = async () => {
+        try {
+          // Fetch list of examples from the server
+          const response = await fetch('example/conversion-scripts/');
+          const html = await response.text();
+          
+          // Create temporary element to parse HTML and extract file links
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const files = Array.from(doc.querySelectorAll('a'))
+            .map(a => a.href)
+            .filter(href => href.endsWith('.hbs') || href.endsWith('.handlebars') || href.endsWith('.txt'));
+
+          // If no examples found, show message
+          if (files.length === 0) {
+            alert('No example templates found in example/conversion-scripts/');
+            return;
+          }
+
+          // Create and show menu
+          const menu = document.createElement('div');
+          menu.className = 'kintegrate-context-menu';
+          menu.style.position = 'fixed';
+          menu.style.zIndex = '1000';
+          menu.style.background = 'white';
+          menu.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+          menu.style.border = '1px solid #ccc';
+          menu.style.borderRadius = '4px';
+          menu.style.padding = '4px 0';
+
+          // Position menu above button
+          const buttonRect = loadExamplesButton.getBoundingClientRect();
+          menu.style.left = buttonRect.left + 'px';
+          // First position it offscreen to get its height
+          menu.style.top = '-1000px';
+          document.body.appendChild(menu);
+          const menuHeight = menu.offsetHeight;
+          // Now position it above the button with 4px gap
+          menu.style.top = (buttonRect.top - menuHeight - 4) + 'px';
+          // If it would go off the top of the viewport, position it below the button instead
+          if (buttonRect.top - menuHeight - 4 < 0) {
+              menu.style.top = (buttonRect.bottom + 4) + 'px';
+          }
+
+          // Add menu items
+          for (const file of files) {
+            const fileName = file.split('/').pop();
+            const item = document.createElement('div');
+            item.className = 'kintegrate-context-option';
+            item.textContent = fileName;
+            item.style.padding = '4px 8px';
+            item.style.cursor = 'pointer';
+            item.style.whiteSpace = 'nowrap';
+            
+            item.onmouseover = () => {
+              item.style.backgroundColor = '#f0f0f0';
+            };
+            item.onmouseout = () => {
+              item.style.backgroundColor = '';
+            };
+            
+            item.onclick = async () => {
+              try {
+                const response = await fetch(file);
+                if (!response.ok) throw new Error('Failed to load example');
+                const content = await response.text();
+                templateEditor.setValue(content);
+                if (autoConvertEnabled) {
+                  runConversion();
+                }
+                menu.remove();
+              } catch (error) {
+                alert('Error loading example: ' + error.message);
+                menu.remove();
+              }
+            };
+            
+            menu.appendChild(item);
+          }
+
+          // Add close option
+          const closeItem = document.createElement('div');
+          closeItem.className = 'kintegrate-context-option';
+          closeItem.textContent = 'Cancel';
+          closeItem.style.padding = '4px 8px';
+          closeItem.style.cursor = 'pointer';
+          closeItem.style.borderTop = '1px solid #ccc';
+          closeItem.style.color = '#666';
+          closeItem.onclick = () => menu.remove();
+          menu.appendChild(closeItem);
+
+          // Add menu to document
+          document.body.appendChild(menu);
+
+          // Close menu when clicking outside
+          const closeMenu = (e) => {
+            if (!menu.contains(e.target) && e.target !== loadExamplesButton) {
+              menu.remove();
+              document.removeEventListener('click', closeMenu);
+            }
+          };
+          // Delay adding click listener to avoid immediate closure
+          setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+          });
+        } catch (error) {
+          alert('Error loading examples: ' + error.message);
+        }
       };
 
       // Set up precompiled view functionality
@@ -1423,27 +1572,348 @@ Närvarolista i ankomstordning:
         }
       });
 
-      // Example selection
-      document.getElementById('exampleSelect').addEventListener('change', function() {
-        const selectedFile = this.value;
-        if (selectedFile) {
-          fetch(`example/instance/${selectedFile}`)
-            .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
-            .then(data => {
-              inputEditor.setValue(data);
-              updateJsonTree(data);
-              // Run conversion immediately if auto-convert is enabled
-              if (autoConvertEnabled) {
-                runConversion();
-              }
-            })
-            .catch(error => {
-              console.error('There was a problem with the fetch operation:', error);
-              const msg = 'Error loading file: ' + selectedFile;
-              inputEditor.setValue(JSON.stringify({ error: msg }, null, 2));
-            });
+      // Bookmark management system
+      class BookmarkManager {
+        constructor(options) {
+          this.options = {
+            buttonId: options.buttonId,
+            storageKey: options.storageKey,
+            title: options.title,
+            onLoad: options.onLoad,
+            defaultPath: options.defaultPath || '',
+            fileFilter: options.fileFilter || (() => true),
+            menuPosition: options.menuPosition || 'up' // 'up' or 'down'
+          };
+          
+          // Load bookmarks from localStorage
+          this.bookmarks = JSON.parse(localStorage.getItem(this.options.storageKey) || '[]');
+          
+          // Setup button click handler
+          const button = document.getElementById(this.options.buttonId);
+          if (button) {
+            button.onclick = () => this.showMenu();
+          }
         }
+
+        async showMenu() {
+          const button = document.getElementById(this.options.buttonId);
+          if (!button) return;
+
+          try {
+            // Create menu wrapper
+            const menu = document.createElement('div');
+            menu.className = 'kintegrate-context-menu';
+            menu.style.position = 'fixed';
+            menu.style.zIndex = '1000';
+            menu.style.background = 'white';
+            menu.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            menu.style.border = '1px solid #ccc';
+            menu.style.borderRadius = '4px';
+            menu.style.padding = '4px 0';
+            menu.style.minWidth = '250px';
+            menu.style.maxWidth = '400px';
+
+            // Add close button at the top right
+            const closeButton = document.createElement('button');
+            closeButton.style.position = 'sticky';
+            closeButton.style.float = 'right';
+            closeButton.style.margin = '4px';
+            closeButton.style.border = 'none';
+            closeButton.style.background = 'none';
+            closeButton.style.padding = '4px';
+            closeButton.style.cursor = 'pointer';
+            closeButton.style.opacity = '0.6';
+            closeButton.style.zIndex = '2';
+            closeButton.title = 'Close menu';
+            closeButton.innerHTML = '<svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>';
+            closeButton.onmouseover = () => closeButton.style.opacity = '1';
+            closeButton.onmouseout = () => closeButton.style.opacity = '0.6';
+            closeButton.onclick = () => menu.remove();
+            menu.appendChild(closeButton);
+
+            // Add bookmarks section if any exist
+            if (this.bookmarks.length > 0) {
+              const bookmarksHeader = document.createElement('div');
+              bookmarksHeader.style.padding = '4px 8px';
+              bookmarksHeader.style.color = '#666';
+              bookmarksHeader.style.fontSize = '0.8em';
+              bookmarksHeader.textContent = 'Bookmarks';
+              menu.appendChild(bookmarksHeader);
+
+              const bookmarkList = document.createElement('ul');
+              bookmarkList.style.margin = '0';
+              bookmarkList.style.padding = '0';
+              bookmarkList.style.listStyle = 'none';
+
+              for (const bookmark of this.bookmarks) {
+                const li = document.createElement('li');
+                li.style.padding = '4px 8px';
+                li.style.cursor = 'pointer';
+                li.style.display = 'flex';
+                li.style.justifyContent = 'space-between';
+                li.style.alignItems = 'center';
+                li.title = bookmark.path; // Show full path on hover
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = bookmark.name;
+                textSpan.style.overflow = 'hidden';
+                textSpan.style.textOverflow = 'ellipsis';
+                textSpan.style.whiteSpace = 'nowrap';
+                li.appendChild(textSpan);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.background = 'none';
+                deleteBtn.style.padding = '2px';
+                deleteBtn.style.marginLeft = '8px';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.style.opacity = '0';
+                deleteBtn.title = 'Remove bookmark';
+
+                li.onmouseover = () => {
+                  li.style.backgroundColor = '#f0f0f0';
+                  deleteBtn.style.opacity = '1';
+                };
+                li.onmouseout = () => {
+                  li.style.backgroundColor = '';
+                  deleteBtn.style.opacity = '0';
+                };
+
+                deleteBtn.onclick = (e) => {
+                  e.stopPropagation();
+                  this.removeBookmark(bookmark.name);
+                  li.remove();
+                  if (bookmarkList.children.length === 0) {
+                    menu.remove();
+                  }
+                };
+
+                li.onclick = async () => {
+                  try {
+                    const response = await fetch(bookmark.path);
+                    if (!response.ok) throw new Error('Failed to load bookmark');
+                    const content = await response.text();
+                    this.options.onLoad(content);
+                    menu.remove();
+                  } catch (error) {
+                    alert('Error loading bookmark: ' + error.message);
+                  }
+                };
+
+                li.appendChild(deleteBtn);
+                bookmarkList.appendChild(li);
+              }
+
+              menu.appendChild(bookmarkList);
+              menu.appendChild(document.createElement('hr'));
+            }
+
+            // Add bookmark from URL section
+            const addUrlSection = document.createElement('div');
+            addUrlSection.style.padding = '4px 8px';
+
+            const urlInput = document.createElement('input');
+            urlInput.type = 'text';
+            urlInput.placeholder = 'Enter URL to bookmark...';
+            urlInput.style.width = '100%';
+            urlInput.style.padding = '4px';
+            urlInput.style.marginBottom = '4px';
+            urlInput.style.boxSizing = 'border-box';
+
+            const addButton = document.createElement('button');
+            addButton.textContent = 'Add Bookmark';
+            addButton.style.width = '100%';
+            addButton.style.padding = '4px';
+            addButton.style.marginBottom = '8px';
+
+            addButton.onclick = async () => {
+              const url = urlInput.value.trim();
+              if (!url) return;
+
+              try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to load URL');
+                const content = await response.text();
+                
+                const fileName = url.split('/').pop() || url;
+                this.addBookmark(fileName, url);
+                this.options.onLoad(content);
+                menu.remove();
+              } catch (error) {
+                alert('Error adding bookmark: ' + error.message);
+              }
+            };
+
+            addUrlSection.appendChild(urlInput);
+            addUrlSection.appendChild(addButton);
+            menu.appendChild(addUrlSection);
+
+            // Add "Browse server" option
+            this.addMenuItem(menu, 'Example from this server...', async () => {
+              try {
+                const response = await fetch(this.options.defaultPath);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const files = Array.from(doc.querySelectorAll('a'))
+                  .map(a => a.href)
+                  .filter(this.options.fileFilter);
+
+                if (files.length === 0) {
+                  alert('No files found in ' + this.options.defaultPath);
+                  return;
+                }
+
+                // Replace current menu items with file list
+                menu.innerHTML = '';
+                const browserHeader = document.createElement('div');
+                browserHeader.style.padding = '4px 8px';
+                browserHeader.style.color = '#666';
+                browserHeader.style.fontSize = '0.8em';
+                browserHeader.textContent = 'Server files';
+                menu.appendChild(browserHeader);
+
+                const fileList = document.createElement('ul');
+                fileList.style.margin = '0';
+                fileList.style.padding = '0';
+                fileList.style.listStyle = 'none';
+
+                for (const file of files) {
+                  const fileName = file.split('/').pop();
+                  const li = document.createElement('li');
+                  li.style.padding = '4px 8px';
+                  li.style.cursor = 'pointer';
+                  li.textContent = fileName;
+                  li.title = file; // Show full path on hover
+
+                  li.onmouseover = () => li.style.backgroundColor = '#f0f0f0';
+                  li.onmouseout = () => li.style.backgroundColor = '';
+                  
+                  li.onclick = async () => {
+                    try {
+                      const response = await fetch(file);
+                      if (!response.ok) throw new Error('Failed to load file');
+                      const content = await response.text();
+                      this.options.onLoad(content);
+
+                      // Add to bookmarks if not already present
+                      if (!this.bookmarks.some(b => b.path === file)) {
+                        this.addBookmark(fileName, file);
+                      }
+                      
+                      menu.remove();
+                    } catch (error) {
+                      alert('Error loading file: ' + error.message);
+                    }
+                  };
+
+                  fileList.appendChild(li);
+                }
+
+                menu.appendChild(fileList);
+                menu.appendChild(document.createElement('hr'));
+              } catch (error) {
+                alert('Error browsing server: ' + error.message);
+              }
+            });
+
+            // Position menu
+            const buttonRect = button.getBoundingClientRect();
+            menu.style.left = buttonRect.left + 'px';
+
+            // First position it offscreen to get its height
+            menu.style.top = '-1000px';
+            document.body.appendChild(menu);
+            const menuHeight = menu.offsetHeight;
+
+            // Position based on option
+            if (this.options.menuPosition === 'up') {
+              menu.style.top = (buttonRect.top - menuHeight - 4) + 'px';
+              // Fall back to down if it would go off screen
+              if (buttonRect.top - menuHeight - 4 < 0) {
+                menu.style.top = (buttonRect.bottom + 4) + 'px';
+              }
+            } else {
+              menu.style.top = (buttonRect.bottom + 4) + 'px';
+            }
+
+            // Close menu when clicking outside
+            const closeMenu = (e) => {
+              if (!menu.contains(e.target) && e.target !== button) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+              }
+            };
+            setTimeout(() => document.addEventListener('click', closeMenu));
+
+          } catch (error) {
+            alert('Error showing menu: ' + error.message);
+          }
+        }
+
+        addMenuItem(menu, text, onClick) {
+          const item = document.createElement('div');
+          item.className = 'kintegrate-context-option';
+          item.style.padding = '4px 8px';
+          item.style.cursor = 'pointer';
+          
+          const textSpan = document.createElement('span');
+          textSpan.textContent = text;
+          item.appendChild(textSpan);
+
+          item.onmouseover = () => item.style.backgroundColor = '#f0f0f0';
+          item.onmouseout = () => item.style.backgroundColor = '';
+          item.onclick = onClick;
+
+          menu.appendChild(item);
+        }
+
+        addBookmark(name, path) {
+          if (!this.bookmarks.some(b => b.path === path)) {
+            this.bookmarks.push({ name, path });
+            localStorage.setItem(this.options.storageKey, JSON.stringify(this.bookmarks));
+          }
+        }
+
+        removeBookmark(name) {
+          this.bookmarks = this.bookmarks.filter(b => b.name !== name);
+          localStorage.setItem(this.options.storageKey, JSON.stringify(this.bookmarks));
+        }
+      }
+
+      // Initialize bookmark managers for input data and conversion scripts
+      const inputBookmarks = new BookmarkManager({
+        buttonId: 'example-select',
+        storageKey: 'kintegrate-input-bookmarks',
+        title: 'Input Data',
+        defaultPath: 'example/instance/',
+        fileFilter: href => href.endsWith('.json'),
+        onLoad: (content) => {
+          inputEditor.setValue(content);
+          updateJsonTree(content);
+          if (autoConvertEnabled) {
+            runConversion();
+          }
+        },
+        menuPosition: 'down'
       });
+
+      const scriptBookmarks = new BookmarkManager({
+        buttonId: 'load-examples-button',
+        storageKey: 'kintegrate-script-bookmarks',
+        title: 'Conversion Scripts',
+        defaultPath: 'src/example/conversion-scripts/',
+        fileFilter: href => href.endsWith('.hbs') || href.endsWith('.handlebars'),
+        onLoad: (content) => {
+          templateEditor.setValue(content);
+          if (autoConvertEnabled) {
+            runConversion();
+          }
+        },
+        menuPosition: 'up'
+      });
+
       document.getElementById('toggle-line-numbers').addEventListener('change', function() {
         const showLineNumbers = this.checked;
         const editors = [inputEditor, templateEditor, outputEditor];
