@@ -108,6 +108,9 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * added functions {{toLowerCase .}} and {{toUpperCase .}}
 * UI tweaks
 
+## 🔜<a id="v0.3.8"></a>version 0.3.8 internal refactoring
+1. Refactor editor () and the buttos below to a separte class
+
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
 * settings: choose tree right-click behaviour

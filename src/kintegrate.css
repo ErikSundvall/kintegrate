@@ -178,11 +178,35 @@ main {
 }
 
 /* CodeMirror customization */
-#conversion-container,
-#output-container {
+/* Update the conversion container to use flex layout */
+#conversion-container {
     display: flex;
     flex-direction: column;
     height: 100%;
+}
+
+/* Make the extended editor (containing CodeMirror) flex and scrollable */
+#extended-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Make the CodeMirror editor fill available space */
+#extended-editor .CodeMirror {
+    flex: 1;
+    height: auto !important;
+}
+
+/* Keep conversion buttons at natural size */
+#conversion-buttons {
+    flex-shrink: 0;
+}
+
+/* Keep precompile container at natural size */
+#precompile-container {
+    flex-shrink: 0;
 }
 
 #conversion-container .CodeMirror,
