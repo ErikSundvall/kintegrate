@@ -22,7 +22,7 @@ Credits:
 
 # Roadmap
 
-## <a id="v0.1"></a>version 0.1 test setup - done!
+## ✅<a id="v0.1"></a>version 0.1 test setup
 * user interface with three rezisable columns
 * The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains the following:
 ** a textarea for stored instance examples as input from either
@@ -33,7 +33,7 @@ Credits:
 * The middle "conversion-container" is where conversion scripts can be created by the user in a text editor, and for certain formalisms (such as Handlebars) the scripts can also be precopmiled for more efficient use at runtime in production environments.
 * The rightmost "output-container" column shows results of running instance examples from input through the conversion script.
 
-## <a id="v0.2"></a>version 0.2 - done!
+## ✅<a id="v0.2"></a>version 0.2
 * Replace the treeviewer with https://github.com/daweilv/treejs (It allows multiple nodes can be selected and the selection is visible by checboxes in front of nodes.)
 * Intelligent generation of conversion script structures based on selected nodes and their paths and hierarchical relationships. Buttons that determine output to be pasted into last cursor position in conversion script from selected:
 ** The ⤡ arrow: generate hierarchical nesting structrure between selected node closest to root to selected node furthest out on a branch (For Handlebars that would be nested {{#each ...}} clauses for things that can be repated and {{#with ...}} for non-repeating things.) 
@@ -51,10 +51,10 @@ Credits:
 ```
 ** The ↔ arrow: produce flat path from each selected subnode to the node closest to root (For Handlebars, if the source contains arrays, that would be a clauses like {{topmost_selected_node.subnode_with_array.0.anothersubnode.yet_another_subnode_with_array.0.['|subnode_with_in_handlebars_illegal_character'].lowest_seclected_node}})
 
-## <a id="v0.2.1"></a>version 0.2.1 website version - done! 
+## ✅<a id="v0.2.1"></a>version 0.2.1 website version
 * make a build step that can publish the html+css+js as a testable in /demo subdirectory of /docs and set up github pages with a short index page describing the project and a link to /demo where the app can be run
 
-### version 0.2.1 — demo build and docs - done!
+## ✅<a id="v0.2.3"></a> version 0.2.3 — demo build and docs
 
 Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The helper copies the `src/` directory into `docs/demo/`, preserving relative paths so the single-page app can be served directly from the `docs/` folder.
 
@@ -69,31 +69,31 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 
 - After building, publish the `docs/` folder via GitHub Pages (set Pages source to the `docs/` folder on the `main` branch, or deploy `docs/` to a `gh-pages` branch if you prefer).
 
-## <a id="v0.3"></a>version 0.3 contexts and inserts directy from tree - done!
+## ✅<a id="v0.3"></a>version 0.3 contexts and inserts directy from tree
 * Add right-click context menu that allows both the ⤡ and ↔ functions directly from any node. Try to keep the cursor blinking/visible or insertation point somehow visible in script editor also when using node tree.
 * Hide the selected paths list by default.
 * Add popup menu choice (prefixed by the symbol combination √⬚) to set a "context boundary" in tree widget that allows setting what is considered the root level when producing ↔ flat paths and ⤡ hierarchies. Mark the selected node in the tree with a dotted line. ALso remember the node and use that as a stop (top level) when climbing path hierarchies in all path generation code.
 
-## <a id="v0.3.1"></a>version 0.3.1 UI tweaks - done!
+## ✅<a id="v0.3.1"></a>version 0.3.1 UI tweaks
 * add undo/redo/clear
 * better error visibility in json pastebox
 
-## <a id="v0.3.2"></a>version 0.3.2 Bug fix & UI tweaks
+## ✅<a id="v0.3.2"></a>version 0.3.2 Bug fix & UI tweaks
 * fix bug in path/tree building when traversing arrays, it does not respect context boundary (only works for traversing objects now)
 
-## <a id="v0.3.3"></a>version 0.3.3 Bug fix & UI tweaks
+## ✅<a id="v0.3.3"></a>version 0.3.3 Bug fix & UI tweaks
 * more useful output generated for most tree structures and for flat paths for individual array elements
 
-## <a id="v0.3.4"></a>version 0.3.4 Bug fix & UI tweaks
+## ✅<a id="v0.3.4"></a>version 0.3.4 Bug fix & UI tweaks
 * Play/pause button for autoconverting to output after change (configurable debounce setting, X seconds after last typing)
 * Copy button for script
 * Bug fixes, e.g. got syntax highlihting working for Handlebars.
 
-## <a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
+## ✅<a id="v0.3.5"></a>version 0.3.5 Bug fix & UI tweaks
 * Cleaning up UI buttons and precompile
 * Simplify insertButton code (inserting all selected nodes) 
 
-## <a id="v0.3.6"></a>version 0.3.6 adding helper functions for if/then etc
+## ✅<a id="v0.3.6"></a>version 0.3.6 adding helper functions for if/then etc
  Example of helper functions for comparisons that can be used (in parenthesis) in e.g. #if/#unless-blocks
 * eq: v1 === v2, equals
 * ne: v1 !== v2, not equals
@@ -104,7 +104,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * and(expression1, expression2, ...expressions) => all expressions must be true
 * or(expression1, expression2, ...expressions) => at least one expression must be true
 
-## <a id="v0.3.7"></a>version 0.3.7 adding helper functions for case shift
+## ✅<a id="v0.3.7"></a>version 0.3.7 adding helper functions for case shift
 * added functions {{toLowerCase .}} and {{toUpperCase .}}
 * UI tweaks
 
