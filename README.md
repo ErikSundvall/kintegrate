@@ -108,8 +108,40 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * added functions {{toLowerCase .}} and {{toUpperCase .}}
 * UI tweaks
 
-## 🔜<a id="v0.3.8"></a>version 0.3.8 internal refactoring
-1. Refactor editor () and the buttos below to a separte class
+## 🔜<a id="v0.3.8"></a>version 0.3.8 Internal refactoring
+1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
+2. Make a new configurator.html file where we add rete.js to the project for easier flexible configuration of connections between example sources, different kinds of editors and different converters. The easiest is likely to set up the project using rete kit as described in https://retejs.org/docs/development/rete-kit/ We want plain vanilla javascript or typescript in this project (not React etc), so using the vite stack in rete-kit is likely best. 
+3. Make new html files as a proper "web components", custom elements, these components should not know of or have any dependency on Rete:
+** <example-target> that can register to recieve events and show the "data" in a textarea - if the data is not a primitive, then first stringify it as json before showing.
+** <example-converter> that can register to both recieve and send events carrying string data. It should have a settings property for selecting filter function for strings, e.g. selecting from an enumeration of javascript's most important built in string manipulation functions such as : toUpperCase(), substring() 
+** <example-source> with a textarea where example text can be pasted. Events should be fired to listners when that text changes. To start with it is filled with tree sentences of Lorem Ipsum text
+4. Check if there is already any publicly available open source rete "wrapper" node implementation (perhaps within the Rete standard API/codebase itself) that fulfill the following criteria, otherwise make such a wrapper:
+** It can be set up with arbitrary web components (custom elements), inspecting their properties + externally available events, and then expose them as sockets on the rete object so that they can be connected to other nodes using the rete graphical editor.
+** For simple primitive properties of the wrapped custom element it should be possible to select (by toggling a swithch in the rete UI of the node) if the property becomes a socket or if the property data is provided by filling out a field inside the rete node
+** data to be used in the component can come both from data-carrying events and from properties exposed as sockets. 
+5. Then wire the components together in an example start configuration in with the data flow setup: <example-source> => <example-converter> => <example-target>
+
+
+## <a id="v0.3.9"></a>version 0.3.9 further internal refactoringiincorporate the build step 
+* since we have itroduced vite, turn the scripts\build_docs.ps1 into vite based dist build instead
+* In a new <editor-base> custom component make a copy of the functionality of #extended-editor (the textarea/codemirror plus all the buttons below in #conversion-buttons) from index.html so that they together form a separate component in a separate file.
+* Add a BroadcastChannel API pub/sub system to the application, starting with the connections to/from the #extended-editor with (data carrying) events for:
+** Code for paths/structures from the tree to be inserted at the editor's cursor position should be sent via the pub/sub system
+** When input content is changed it should also be sent via the pub/sub system to the editor
+** When new converted output is set from the editor it should also be sent via the pub/sub system to the output window
+* Example event structure: 
+```javascript
+// Tree to Editor
+eventBus.emit('tree-selection-output', { content: '{{path}}' });
+
+// Input changed  
+eventBus.emit('input-content-changed', { jsonData: parsedJson });
+
+// Editor conversion result to Output 
+eventBus.emit('converted-output-ready', { output: renderedConverted });
+```
+* Components should be able to register multiple (data carrying) events that they can send and/or receive. Data in the events could be any object type or primitive.
+
 
 ## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
@@ -135,7 +167,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 ## <a id="v0.7"></a>version 0.7 
 * investigate if (another) tree view (column) can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates. 
 * Investigate support for FlatEHR
-* The tree for output format highlights what nodes are mentionend/connected or not especially marks missing mandatory nodes.
+* The tree for output format highlights what nodes are mentiond/connected or not especially marks missing mandatory nodes.
 
 ## <a id="v0.x"></a>version 0.x
 * investigate if it in addition to a web based tool can be built as a VS Code extension so that it is easy to work with: 
