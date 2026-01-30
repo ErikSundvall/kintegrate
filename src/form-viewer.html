@@ -43,6 +43,20 @@
         color: #666;
         font-size: 0.9em;
       }
+      #sync-indicator {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-left: 8px;
+      }
+      #sync-indicator.sync-off {
+        background: #f5f5f5;
+        color: #666;
+      }
+      #sync-indicator.sync-on {
+        background: #4CAF50;
+        color: white;
+      }
       #status {
         margin-left: auto;
         font-size: 0.85em;
@@ -207,6 +221,7 @@
     <div id="header">
       <h1>Form Viewer</h1>
       <span id="form-name">No form loaded</span>
+      <span id="sync-indicator" class="sync-off">⏸ Sync: OFF</span>
       <span id="status">Ready</span>
     </div>
     
@@ -311,6 +326,7 @@
       let serverConnected = false;
       let cachedWebTemplate = null; // For local mode web template loading
       let serverForms = []; // List of forms from server
+      let syncModeEnabled = false; // Phase 4: Sync mode tracking
 
       // Register Service Worker for mock CDR
       async function registerMockCDR() {
@@ -605,6 +621,16 @@
       function hideLoading() {
         loadingEl.style.display = 'none';
       }
+      
+      // Phase 4: Update sync indicator
+      function updateSyncIndicator() {
+        const statusText = syncModeEnabled ? '🔄 Sync: ON' : '⏸ Sync: OFF';
+        const indicator = document.getElementById('sync-indicator');
+        if (indicator) {
+          indicator.textContent = statusText;
+          indicator.className = syncModeEnabled ? 'sync-on' : 'sync-off';
+        }
+      }
 
       // Check if form-renderer is available
       const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
@@ -638,6 +664,20 @@
 
         formRenderer.onValueChange = (payload) => {
           console.log('Value changed:', payload?.data?.path, payload?.data?.value);
+          
+          // Phase 4: Send composition to parent if sync mode is enabled
+          if (syncModeEnabled && parentWindow) {
+            try {
+              const composition = formRenderer.composition;
+              parentWindow.postMessage({
+                type: 'COMPOSITION_CHANGED',
+                payload: { composition }
+              }, window.location.origin);
+              console.log('[Popup] Sent COMPOSITION_CHANGED to parent');
+            } catch (error) {
+              console.error('[Popup] Error sending composition change:', error);
+            }
+          }
         };
 
         formRenderer.onFormError = (error) => {
@@ -710,8 +750,10 @@
             break;
             
           case 'SYNC_MODE_STATUS':
-            console.log('[Popup] Sync mode:', event.data.payload?.enabled ? 'ON' : 'OFF');
-            // Will be used in Phase 3 for real-time sync
+            syncModeEnabled = event.data.payload?.enabled || false;
+            console.log('[Popup] Sync mode:', syncModeEnabled ? 'ON' : 'OFF');
+            // Update visual indicator
+            updateSyncIndicator();
             break;
             
           case 'REQUEST_COMPOSITION':

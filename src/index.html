@@ -40,6 +40,19 @@
       .toggle-button.active:hover {
         border-color: #2e7d32;
       }
+      /* Sync mode button styles */
+      #sync-mode-btn.sync-off {
+        background: #f5f5f5;
+        color: #666;
+      }
+      #sync-mode-btn.sync-on {
+        background: #4CAF50;
+        color: white;
+        border-color: #2e7d32;
+      }
+      #sync-mode-btn.sync-on:hover {
+        background: #43a047;
+      }
     </style>
 
 
@@ -59,6 +72,7 @@
               | <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window" style="padding: 2px 8px;">📋 Form Viewer</button>
               <button id="push-to-form-btn" title="Send current instance to form viewer" style="padding: 2px 8px;">→ Push</button>
               <button id="pull-from-form-btn" title="Get current composition from form viewer" style="padding: 2px 8px;">← Pull</button>
+              <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode - auto-update from form changes" style="padding: 2px 8px;">🔄 Sync: OFF</button>
               <button id="download-instance-btn" title="Download current instance as JSON file" style="padding: 2px 8px;">
                 <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
                   <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
@@ -378,7 +392,7 @@ Närvarolista i ankomstordning:
             // Real-time update from form (sync mode)
             if (syncModeEnabled) {
               console.log('[Main] Received composition change (sync mode)');
-              // updateInputFromComposition(payload.composition); // Will be implemented in Phase 3
+              updateInputFromComposition(payload.composition);
             }
             break;
             
@@ -402,6 +416,30 @@ Närvarolista i ankomstordning:
         } else {
           console.log('[Main] Cannot send message - form viewer not open');
         }
+      }
+      
+      // ============================================
+      // Phase 4: Sync Mode Functions
+      // ============================================
+      
+      function toggleSyncMode() {
+        syncModeEnabled = !syncModeEnabled;
+        
+        const btn = document.getElementById('sync-mode-btn');
+        if (syncModeEnabled) {
+          btn.textContent = '🔄 Sync: ON';
+          btn.classList.remove('sync-off');
+          btn.classList.add('sync-on');
+        } else {
+          btn.textContent = '🔄 Sync: OFF';
+          btn.classList.remove('sync-on');
+          btn.classList.add('sync-off');
+        }
+        
+        // Notify popup of sync mode change
+        sendToFormViewer('SYNC_MODE_STATUS', { enabled: syncModeEnabled });
+        
+        console.log('[Main] Sync mode:', syncModeEnabled ? 'ON' : 'OFF');
       }
 
       // ============================================
@@ -491,6 +529,37 @@ Närvarolista i ankomstordning:
       const outputTextarea = document.getElementById('out');
 
       const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
+
+      // ============================================
+      // Update input from composition (Phase 4: Sync Mode)
+      // This reassigns the global function now that inputEditor is available
+      // ============================================
+      updateInputFromComposition = (composition) => {
+        if (!composition) {
+          console.log('[Main] No composition data received');
+          return;
+        }
+        
+        const jsonStr = JSON.stringify(composition, null, 2);
+        
+        // Update input editor
+        inputEditor.setValue(jsonStr);
+        
+        // Trigger tree update (will be called by change event)
+        // Conversion will also be triggered by change event if auto-convert is on
+        
+        // Brief visual feedback for sync updates
+        const inputCol = document.querySelector('.column-left');
+        if (inputCol) {
+          inputCol.style.transition = 'background-color 0.3s';
+          inputCol.style.backgroundColor = '#e8f5e9';
+          setTimeout(() => {
+            inputCol.style.backgroundColor = '';
+          }, 300);
+        }
+        
+        console.log('[Main] Input updated from composition');
+      };
 
       // Get the pre-defined buttons  
       const undoButton = document.getElementById('undo-button');
@@ -2078,7 +2147,11 @@ Närvarolista i ankomstordning:
       document.getElementById('push-to-form-btn')?.addEventListener('click', () => pushToForm(inputEditor));
       document.getElementById('pull-from-form-btn')?.addEventListener('click', pullFromForm);
       
+      // Phase 4: Wire up sync mode button
+      document.getElementById('sync-mode-btn')?.addEventListener('click', toggleSyncMode);
+      
       // Download button - needs access to inputEditor
+      document.getElementById('download-instance-btn')?.addEventListener('click', () => {
       document.getElementById('download-instance-btn')?.addEventListener('click', () => {
         const content = inputEditor ? inputEditor.getValue() : 
                         document.getElementById('inputInstance').value;
