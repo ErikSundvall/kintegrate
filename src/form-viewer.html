@@ -651,7 +651,8 @@
         };
 
         // Event handlers
-        formRenderer.onFormRendered = (payload) => {
+        // Event handlers - use addEventListener as per Better docs for framework-agnostic JS
+        formRenderer.addEventListener('onFormRendered', (event) => {
           formLoaded = true;
           formRenderer.classList.add('loaded');
           hideLoading();
@@ -660,10 +661,10 @@
           sendToParentBtn.disabled = !parentWindow;
           clearBtn.disabled = false;
           console.log('Form rendered successfully');
-        };
+        });
 
-        formRenderer.onValueChange = (payload) => {
-          console.log('Value changed:', payload?.data?.path, payload?.data?.value);
+        formRenderer.addEventListener('onValueChange', (event) => {
+          console.log('onValueChange event:', event?.detail);
           
           // Phase 4: Send composition to parent if sync mode is enabled
           if (syncModeEnabled && parentWindow) {
@@ -678,14 +679,15 @@
               console.error('[Popup] Error sending composition change:', error);
             }
           }
-        };
+        });
 
-        formRenderer.onFormError = (error) => {
+        formRenderer.addEventListener('onFormError', (event) => {
+          const error = event?.detail;
           console.error('[Popup] Form error object:', error);
-          console.error('[Popup] Form error details:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+          console.error('[Popup] Form error details:', JSON.stringify(error, Object.getOwnPropertyNames(error || {}), 2));
           const errorMsg = error?.message || error?.error || error?.detail || 'Unknown error (check console)';
           showError('Form error: ' + errorMsg);
-        };
+        });
       }
 
       // Load form from message
