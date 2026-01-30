@@ -6,6 +6,13 @@ dist/
 src/vendor/
 trash/
 
+# Cached documentation (downloaded, not committed)
+docs-cache/
+
+# NPM authentication (keep auth tokens secret)
+# The .npmrc file itself is tracked, but actual auth should be via environment variable
+# Never commit actual auth tokens!
+
 # Python venvs that might be left behind
 venv/
 .venv/
@@ -13,3 +20,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment files with secrets
+.env
+.env.local
+.env*.local

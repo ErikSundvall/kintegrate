@@ -56,6 +56,7 @@
                   <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-3 2v5l-1-.75L15 9V4zm3 12H8V4h5v9l3-2.25L19 13V4h1z"></path>
                 </svg>
               </button>, upload <input type="file" id="fileInput" style="display: inline-block; width: 12em;" />
+              | <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window" style="padding: 2px 8px;">📋 Form Viewer</button>
               <br>or just paste input into the box below<br>
               <textarea id="inputInstance">Input example goes here</textarea>
               <hr>
@@ -324,6 +325,78 @@ Närvarolista i ankomstordning:
     <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
     <script>
+      // ============================================
+      // Form Viewer Popup Management
+      // ============================================
+      let formViewerWindow = null;
+      let syncModeEnabled = false;
+
+      function openFormViewer() {
+        // Focus existing if open
+        if (formViewerWindow && !formViewerWindow.closed) {
+          formViewerWindow.focus();
+          return;
+        }
+        
+        // Open new popup (position to the right of main window)
+        const width = 900;
+        const height = 700;
+        const left = window.screenX + window.innerWidth - 50;
+        const top = window.screenY + 50;
+        
+        formViewerWindow = window.open(
+          'form-viewer.html',
+          'FormViewer',
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+        
+        console.log('[Main] Opened form viewer popup');
+      }
+
+      // Listen for messages from popup
+      window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        
+        const { type, payload } = event.data || {};
+        console.log('[Main] Received message:', type, payload);
+        
+        switch (type) {
+          case 'FORM_VIEWER_READY':
+            console.log('[Main] Form viewer is ready');
+            // Notify popup of current sync mode
+            sendToFormViewer('SYNC_MODE_STATUS', { enabled: syncModeEnabled });
+            break;
+            
+          case 'COMPOSITION_CHANGED':
+            // Real-time update from form (sync mode)
+            if (syncModeEnabled) {
+              console.log('[Main] Received composition change (sync mode)');
+              // updateInputFromComposition(payload.composition); // Will be implemented in Phase 3
+            }
+            break;
+            
+          case 'COMPOSITION_DATA':
+            // Response to explicit REQUEST_COMPOSITION
+            console.log('[Main] Received composition data');
+            // updateInputFromComposition(payload.composition); // Will be implemented in Phase 3
+            break;
+            
+          case 'REQUEST_PING':
+            console.log('[Main] Received ping request, sending pong');
+            sendToFormViewer('PONG', { timestamp: Date.now() });
+            break;
+        }
+      });
+
+      function sendToFormViewer(type, payload) {
+        if (formViewerWindow && !formViewerWindow.closed) {
+          formViewerWindow.postMessage({ type, payload }, window.location.origin);
+          console.log('[Main] Sent message:', type);
+        } else {
+          console.log('[Main] Cannot send message - form viewer not open');
+        }
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
       // Set version in footer
       document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
@@ -1930,6 +2003,11 @@ Närvarolista i ankomstordning:
           debounce(runConversion, delay)();
         }
       });
+
+      // ============================================
+      // Form Viewer Button Wiring
+      // ============================================
+      document.getElementById('open-form-viewer-btn')?.addEventListener('click', openFormViewer);
 
       }); // DOMContentLoaded
     </script>

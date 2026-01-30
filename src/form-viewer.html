@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kintegrate - Form Viewer</title>
+    <!-- Better Form Renderer styles -->
+    <link rel="stylesheet" href="vendor/styles.css">
+    <link rel="stylesheet" href="vendor/styles-theme.css">
+    <!-- Better Form Renderer script -->
+    <script src="vendor/form-renderer.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+      #header {
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      #header h1 {
+        margin: 0;
+        font-size: 1.2em;
+        font-weight: 500;
+      }
+      #form-name {
+        color: #666;
+        font-size: 0.9em;
+      }
+      #status {
+        margin-left: auto;
+        font-size: 0.85em;
+        color: #666;
+      }
+      #status.error {
+        color: #c00;
+      }
+      #status.success {
+        color: #080;
+      }
+      #toolbar {
+        background: #fafafa;
+        border-bottom: 1px solid #eee;
+        padding: 8px 16px;
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      #toolbar button {
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+      #toolbar button:hover {
+        background: #f0f0f0;
+        border-color: #999;
+      }
+      #toolbar button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      #form-container {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+        background: #fff;
+      }
+      form-renderer {
+        display: block;
+        width: 100%;
+        min-height: 100%;
+      }
+      #loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #666;
+      }
+      #error-message {
+        padding: 20px;
+        margin: 20px;
+        background: #fee;
+        border: 1px solid #c00;
+        border-radius: 4px;
+        color: #800;
+        display: none;
+      }
+      /* Hide form-renderer until loaded */
+      form-renderer:not(.loaded) {
+        visibility: hidden;
+        height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <h1>Form Viewer</h1>
+      <span id="form-name">No form loaded</span>
+      <span id="status">Ready</span>
+    </div>
+    <div id="toolbar">
+      <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">📋 Get Data</button>
+      <button id="send-to-parent-btn" disabled title="Send form data back to main window">↩ Send to Kintegrate</button>
+      <button id="clear-btn" disabled title="Clear form values">🗑 Clear</button>
+    </div>
+    <div id="form-container">
+      <div id="loading">Waiting for form data...</div>
+      <div id="error-message"></div>
+      <form-renderer id="form-renderer"></form-renderer>
+    </div>
+
+    <script>
+      const formRenderer = document.getElementById('form-renderer');
+      const formNameEl = document.getElementById('form-name');
+      const statusEl = document.getElementById('status');
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error-message');
+      const getDataBtn = document.getElementById('get-data-btn');
+      const sendToParentBtn = document.getElementById('send-to-parent-btn');
+      const clearBtn = document.getElementById('clear-btn');
+
+      let formLoaded = false;
+      let parentWindow = window.opener;
+
+      function setStatus(message, type = '') {
+        statusEl.textContent = message;
+        statusEl.className = type;
+      }
+
+      function showError(message) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        loadingEl.style.display = 'none';
+        setStatus('Error', 'error');
+      }
+
+      function hideLoading() {
+        loadingEl.style.display = 'none';
+      }
+
+      // Check if form-renderer is available
+      const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
+      
+      if (!isFormRendererAvailable) {
+        showError('Better Form Renderer is not available. Please ensure vendor/form-renderer.js is present.');
+      } else {
+        // Initialize form renderer
+        formRenderer.ehrServerUrl = 'http://localhost/offline-mode';
+        formRenderer.context = {
+          language: 'sv',
+          territory: 'SE',
+          readonly: false,
+          validationDisabled: true
+        };
+
+        // Event handlers
+        formRenderer.onFormRendered = (payload) => {
+          formLoaded = true;
+          formRenderer.classList.add('loaded');
+          hideLoading();
+          setStatus('Form loaded', 'success');
+          getDataBtn.disabled = false;
+          sendToParentBtn.disabled = !parentWindow;
+          clearBtn.disabled = false;
+          console.log('Form rendered successfully');
+        };
+
+        formRenderer.onValueChange = (payload) => {
+          console.log('Value changed:', payload?.data?.path, payload?.data?.value);
+        };
+
+        formRenderer.onFormError = (error) => {
+          showError('Form error: ' + (error?.message || 'Unknown error'));
+          console.error('Form error:', error);
+        };
+      }
+
+      // Load form from message
+      function loadForm(formData) {
+        if (!isFormRendererAvailable) {
+          showError('Form Renderer not available');
+          return;
+        }
+
+        try {
+          // Extract name from various sources
+          const formName = formData.name || 
+                          formData.manifest?.resource?.name || 
+                          'Unnamed form';
+          formNameEl.textContent = formName;
+          document.title = `Form: ${formName} - Kintegrate`;
+          setStatus('Loading...', '');
+
+          // Notify parent that we're loading
+          if (parentWindow) {
+            parentWindow.postMessage({ type: 'formLoaded', formName: formName }, '*');
+          }
+
+          // Set form environment if available
+          if (formData.formEnvironment) {
+            formRenderer.formEnvironment = formData.formEnvironment;
+          }
+
+          // Load the form definition
+          if (formData.formDescription) {
+            console.log('Loading form:', formName, formData.formDescription);
+            
+            // Use requestAnimationFrame to ensure proper initialization
+            requestAnimationFrame(() => {
+              formRenderer.webTemplate = formData.formDescription;
+            });
+          } else {
+            showError('No form description provided');
+          }
+        } catch (error) {
+          showError('Error loading form: ' + error.message);
+          console.error('Load error:', error);
+          if (parentWindow) {
+            parentWindow.postMessage({ type: 'formError', error: error.message }, '*');
+          }
+        }
+      }
+
+      // Listen for messages from parent window
+      window.addEventListener('message', (event) => {
+        // Basic origin check - in production you'd want stricter validation
+        if (!event.data?.type) return;
+        
+        console.log('[Popup] Received message:', event.data.type);
+
+        switch (event.data.type) {
+          // === New Protocol Messages ===
+          case 'PONG':
+            console.log('[Popup] Received PONG from parent:', event.data.payload);
+            setStatus('Connected to Kintegrate', 'success');
+            setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+            break;
+            
+          case 'SYNC_MODE_STATUS':
+            console.log('[Popup] Sync mode:', event.data.payload?.enabled ? 'ON' : 'OFF');
+            // Will be used in Phase 3 for real-time sync
+            break;
+            
+          case 'REQUEST_COMPOSITION':
+            // Parent is requesting composition data (manual pull)
+            if (formLoaded && parentWindow) {
+              try {
+                const composition = formRenderer.composition;
+                parentWindow.postMessage({
+                  type: 'COMPOSITION_DATA',
+                  payload: { composition }
+                }, window.location.origin);
+                console.log('[Popup] Sent COMPOSITION_DATA to parent');
+                setStatus('Data sent', 'success');
+                setTimeout(() => setStatus('Form loaded', 'success'), 1500);
+              } catch (error) {
+                console.error('[Popup] Error getting composition:', error);
+              }
+            }
+            break;
+            
+          case 'LOAD_COMPOSITION':
+            // Parent is pushing composition data to form
+            if (isFormRendererAvailable && event.data.payload?.composition) {
+              console.log('[Popup] Loading composition from parent');
+              try {
+                formRenderer.composition = event.data.payload.composition;
+                setStatus('Composition loaded', 'success');
+              } catch (error) {
+                console.error('[Popup] Error loading composition:', error);
+                setStatus('Error loading composition', 'error');
+              }
+            }
+            break;
+
+          // === Legacy Protocol Messages (keep for compatibility) ===
+          case 'loadForm':
+            if (event.data.formData) {
+              console.log('Received form data from parent');
+              // Merge formData properties with optional top-level name
+              const formDataWithName = {
+                ...event.data.formData,
+                name: event.data.formName || event.data.formData.manifest?.resource?.name || 'Unnamed form'
+              };
+              loadForm(formDataWithName);
+            }
+            break;
+          
+          case 'getComposition':
+            // Parent is requesting the composition data
+            if (formLoaded && parentWindow) {
+              try {
+                const composition = formRenderer.composition;
+                parentWindow.postMessage({
+                  type: 'formComposition',
+                  composition: composition
+                }, '*');
+                setStatus('Data sent', 'success');
+                setTimeout(() => setStatus('Form loaded', 'success'), 1500);
+              } catch (error) {
+                console.error('Error getting composition:', error);
+                parentWindow.postMessage({
+                  type: 'formError',
+                  error: 'Failed to get composition: ' + error.message
+                }, '*');
+              }
+            }
+            break;
+        }
+      });
+
+      // Button handlers
+      getDataBtn.addEventListener('click', () => {
+        if (!formLoaded) return;
+        try {
+          const composition = formRenderer.composition;
+          if (composition) {
+            const json = JSON.stringify(composition, null, 2);
+            navigator.clipboard.writeText(json).then(() => {
+              setStatus('Copied to clipboard!', 'success');
+              setTimeout(() => setStatus('Form loaded', 'success'), 2000);
+            }).catch(() => {
+              // Fallback: show in console
+              console.log('Composition:', json);
+              setStatus('Data logged to console', '');
+            });
+          } else {
+            setStatus('No data in form', '');
+          }
+        } catch (error) {
+          console.error('Error getting composition:', error);
+          setStatus('Error getting data', 'error');
+        }
+      });
+
+      sendToParentBtn.addEventListener('click', () => {
+        if (!formLoaded || !parentWindow) return;
+        try {
+          const composition = formRenderer.composition;
+          parentWindow.postMessage({
+            type: 'formComposition',
+            composition: composition
+          }, '*');
+          setStatus('Sent to Kintegrate', 'success');
+          setTimeout(() => setStatus('Form loaded', 'success'), 2000);
+        } catch (error) {
+          console.error('Error sending to parent:', error);
+          setStatus('Error sending data', 'error');
+        }
+      });
+
+      clearBtn.addEventListener('click', () => {
+        if (!formLoaded) return;
+        try {
+          // Try to get ScriptApi for clearing
+          const api = formRenderer.getScriptApi?.();
+          if (api?.clearValues) {
+            api.clearValues();
+            setStatus('Form cleared', 'success');
+          } else {
+            // Fallback: reload the form
+            formRenderer.composition = null;
+            setStatus('Form reset', 'success');
+          }
+        } catch (error) {
+          console.error('Error clearing form:', error);
+        }
+      });
+
+      // Notify parent that we're ready
+      if (parentWindow) {
+        parentWindow.postMessage({ type: 'FORM_VIEWER_READY', payload: {} }, window.location.origin);
+        console.log('[Popup] Sent FORM_VIEWER_READY to parent');
+        
+        // Send a ping to test communication
+        setTimeout(() => {
+          parentWindow.postMessage({ type: 'REQUEST_PING', payload: {} }, window.location.origin);
+          console.log('[Popup] Sent REQUEST_PING to test communication');
+        }, 500);
+      }
+
+      // Handle window close
+      window.addEventListener('beforeunload', () => {
+        if (parentWindow) {
+          parentWindow.postMessage({ type: 'FORM_VIEWER_CLOSED', payload: {} }, window.location.origin);
+        }
+      });
+    </script>
+  </body>
+</html>

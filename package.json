@@ -1,0 +1,33 @@
+{
+  "name": "kintegrate",
+  "version": "0.3.7-beta",
+  "description": "Prototype of integration builder tool for open-minded people with wide screens",
+  "main": "src/index.html",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:full": "node scripts/build.js --include-vendor",
+    "serve": "npx serve docs/demo",
+    "dev": "npx serve src",
+    "setup:vendor": "node -e \"const fs=require('fs'); fs.cpSync('node_modules/@better/form-renderer', 'src/vendor', {recursive:true}); console.log('Vendor files copied');\"",
+    "download:docs": "node scripts/download-docs.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikSundvall/kintegrate.git"
+  },
+  "keywords": [
+    "integration",
+    "handlebars",
+    "transformation",
+    "openEHR"
+  ],
+  "author": "Erik Sundvall",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "fs-extra": "^11.2.0"
+  },
+  "dependencies": {
+    "@better/form-renderer": "^3.14.5",
+    "codemirror": "^5.65.16"
+  }
+}
