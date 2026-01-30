@@ -530,37 +530,6 @@ Närvarolista i ankomstordning:
 
       const inputEditor = CodeMirror.fromTextArea(inputTextarea, { mode: 'application/json', lineNumbers: true, tabSize: 2 });
 
-      // ============================================
-      // Update input from composition (Phase 4: Sync Mode)
-      // This reassigns the global function now that inputEditor is available
-      // ============================================
-      updateInputFromComposition = (composition) => {
-        if (!composition) {
-          console.log('[Main] No composition data received');
-          return;
-        }
-        
-        const jsonStr = JSON.stringify(composition, null, 2);
-        
-        // Update input editor
-        inputEditor.setValue(jsonStr);
-        
-        // Trigger tree update (will be called by change event)
-        // Conversion will also be triggered by change event if auto-convert is on
-        
-        // Brief visual feedback for sync updates
-        const inputCol = document.querySelector('.column-left');
-        if (inputCol) {
-          inputCol.style.transition = 'background-color 0.3s';
-          inputCol.style.backgroundColor = '#e8f5e9';
-          setTimeout(() => {
-            inputCol.style.backgroundColor = '';
-          }, 300);
-        }
-        
-        console.log('[Main] Input updated from composition');
-      };
-
       // Get the pre-defined buttons  
       const undoButton = document.getElementById('undo-button');
       const redoButton = document.getElementById('redo-button');
@@ -2190,6 +2159,16 @@ Närvarolista i ankomstordning:
           inputEditor.setValue(jsonStr);
         } else {
           document.getElementById('inputInstance').value = jsonStr;
+        }
+        
+        // Brief visual feedback for sync updates
+        const inputCol = document.querySelector('.column-left');
+        if (inputCol) {
+          inputCol.style.transition = 'background-color 0.3s';
+          inputCol.style.backgroundColor = '#e8f5e9';
+          setTimeout(() => {
+            inputCol.style.backgroundColor = '';
+          }, 300);
         }
         
         // The existing inputEditor.on('change') handler will trigger:
