@@ -344,7 +344,7 @@ Instead of setting `webTemplate` directly (which doesn't work), the solution:
 
 ---
 
-## Phase 4: Sync Mode (Real-time Updates) ✅ COMPLETE
+## Phase 4: Sync Mode (Real-time Updates) ⬅️ CURRENT
 
 ### Step 4.1: Add Sync Mode Toggle
 
@@ -465,11 +465,11 @@ formRenderer.onValueChange = (event) => {
 };
 ```
 
-**Checkpoint:** ✅ Sync mode toggle works, form changes flow to input in real-time
+**Checkpoint:** Sync mode toggle works, form changes flow to input in real-time
 
 ---
 
-## Phase 5: Polish and Full Integration ⬅️ NEXT
+## Phase 5: Polish and Full Integration
 
 ### Step 5.1: Group Form Controls in Input Column
 
