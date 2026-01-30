@@ -82,12 +82,22 @@ self.addEventListener('fetch', (event) => {
 async function handleFormRequest(url, request) {
   console.log('[SW] Form request:', url.pathname, 'Query:', url.search);
   
-  // Handle special environment requests
+  // Handle special environment requests (for global variables/APIs)
   if (url.pathname.includes('ZZ__environment_global_variables__ZZ')) {
     console.log('[SW] Returning global variables');
-    // Return variables from form-environment or empty array
+    // Return CDR format: { form: { resources: [...] } }
     const variables = cachedFormEnvironment?.variables || [];
-    return new Response(JSON.stringify(variables), {
+    const response = {
+      form: {
+        name: 'ZZ__environment_global_variables__ZZ',
+        version: '1.0.0',
+        resources: [{
+          name: 'global-variables',
+          content: variables
+        }]
+      }
+    };
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -98,9 +108,19 @@ async function handleFormRequest(url, request) {
   
   if (url.pathname.includes('ZZ__environment_global_apis__ZZ')) {
     console.log('[SW] Returning global APIs');
-    // Return external APIs from form-environment or empty array
+    // Return CDR format: { form: { resources: [...] } }
     const apis = cachedFormEnvironment?.externalApis || [];
-    return new Response(JSON.stringify(apis), {
+    const response = {
+      form: {
+        name: 'ZZ__environment_global_apis__ZZ',
+        version: '1.0.0',
+        resources: [{
+          name: 'global-apis',
+          content: apis
+        }]
+      }
+    };
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -119,41 +139,76 @@ async function handleFormRequest(url, request) {
   // Check if this is a resources=ALL request
   const hasResourcesAll = url.searchParams.get('resources') === 'ALL';
   
-  if (hasResourcesAll) {
-    // Return form with all resources bundled (CDR format with ?resources=ALL)
-    console.log('[SW] Returning form with ALL resources for:', cachedFormName);
-    
-    // The CDR returns a specific structure when ?resources=ALL is used
-    const response = {
-      name: cachedFormName,
-      version: cachedFormVersion,
-      templateId: cachedTemplateId,
-      // The form-description is the main form definition
-      formDescription: cachedFormData,
-      // Include environment data
-      formEnvironment: cachedFormEnvironment || { variables: [], externalApis: [] },
-      // Include templates (mapping of template instances)
-      templates: cachedTemplates || [],
-      // Include layout if available
-      formLayout: cachedFormLayout,
-      // Status
-      status: 'active'
-    };
-    
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+  console.log('[SW] Returning form with ALL resources for:', cachedFormName, 'resources=ALL:', hasResourcesAll);
+  
+  // Build resources array in CDR format
+  // Each resource has: { name: "resource-name", content: {...} }
+  const resources = [];
+  
+  // form-description is the main form definition (MUST have rmType: "FORM_DEFINITION")
+  resources.push({
+    name: 'form-description',
+    content: cachedFormData
+  });
+  
+  // form-environment contains variables and external APIs
+  if (cachedFormEnvironment) {
+    resources.push({
+      name: 'form-environment',
+      content: cachedFormEnvironment
     });
   }
   
-  // For requests without ?resources=ALL, return the form-description directly
-  // But also include templates if available since renderer might need them
-  console.log('[SW] Returning form-description for:', cachedFormName);
+  // templates contains template instance mappings
+  if (cachedTemplates && cachedTemplates.length > 0) {
+    resources.push({
+      name: 'templates',
+      content: cachedTemplates
+    });
+  }
   
-  return new Response(JSON.stringify(cachedFormData), {
+  // form-layout contains grid/visual layout
+  if (cachedFormLayout) {
+    resources.push({
+      name: 'form-layout', 
+      content: cachedFormLayout
+    });
+  }
+  
+  // app-pages contains page definitions (try to extract from formData if present)
+  // The CDR expects this for multi-page forms
+  if (cachedFormData?.pages) {
+    resources.push({
+      name: 'app-pages',
+      content: cachedFormData.pages
+    });
+  }
+  
+  // The CDR V1 API returns this structure for GET /form/{name}/{version}?resources=ALL
+  // IMPORTANT: The response must have a "form" wrapper!
+  const response = {
+    meta: {
+      href: `/mock-cdr/form/${cachedFormName}/${cachedFormVersion}`
+    },
+    form: {
+      name: cachedFormName,
+      version: cachedFormVersion || '1.0.0',
+      templateId: cachedTemplateId,
+      status: 'active',
+      resources: resources
+    }
+  };
+  
+  console.log('[SW] Response structure:', {
+    hasFormWrapper: !!response.form,
+    name: response.form.name,
+    version: response.form.version,
+    templateId: response.form.templateId,
+    resourceCount: resources.length,
+    resourceNames: resources.map(r => r.name)
+  });
+  
+  return new Response(JSON.stringify(response), {
     status: 200,
     headers: {
       'Content-Type': 'application/json',

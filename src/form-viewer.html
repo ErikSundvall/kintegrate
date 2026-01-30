@@ -1092,6 +1092,8 @@
           }
           
           // Now trigger the renderer's internal flow
+          // IMPORTANT: Do NOT set webTemplate - it extracts children and breaks parsing
+          // Instead, just set formMetadata and let the renderer fetch from CDR (mocked by SW)
           console.log('[Popup] Setting formMetadata to trigger renderer initialization...');
           
           // Create form metadata object
@@ -1103,18 +1105,14 @@
           console.log('[Popup] Form metadata:', formMeta);
           
           try {
-            // Set webTemplate first (which sets internal formDescription)
-            console.log('[Popup] Step 1: Setting webTemplate with form-description...');
-            formRenderer.webTemplate = formDescription;
-            
-            // Then set formMetadata to trigger createFormDefinition
-            // The renderer will try to fetch from CDR - SW will intercept and return cached data
-            console.log('[Popup] Step 2: Setting formMetadata...');
+            // Just set formMetadata - the renderer will fetch from CDR
+            // The Service Worker will intercept the request and return our cached form data
+            console.log('[Popup] Setting formMetadata (SW will intercept CDR fetch)...');
             formRenderer.formMetadata = formMeta;
             
-            console.log('[Popup] Both set, renderer should now initialize...');
-          } catch (wtError) {
-            console.error('[Popup] Error setting webTemplate/formMetadata:', wtError);
+            console.log('[Popup] formMetadata set, waiting for renderer to fetch from mock CDR...');
+          } catch (metaError) {
+            console.error('[Popup] Error setting formMetadata:', metaError);
           }
           
           // If we have a cached openEHR web template, log it but don't use it yet
