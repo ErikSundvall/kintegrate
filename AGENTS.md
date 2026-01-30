@@ -6,6 +6,8 @@ This document contains information for AI agents working with this project.
 
 **Primary reference:** `docs-cache/BETTER-FORM-RENDERER-REFERENCE.md` - Comprehensive API reference covering installation, configuration, events, ScriptApi, and form package structure.
 
+**Offline rendering analysis:** `docs-cache/OFFLINE-FORM-RENDERING.md` - Technical investigation of running Form Renderer without a CDR server.
+
 **Additional cached docs** (not in Git):
 - `docs-cache/form-renderer/` - Original HTML docs from Better Platform
 - `docs-cache/tietoevry-cdr/` - TietoEvry Better JSON Schema specs
@@ -36,6 +38,22 @@ The project uses Node.js for building:
 - `/docs-cache/` - Cached documentation (not in Git)
 - `/src/vendor/` - Proprietary libraries (not in Git)
 - `/scripts/` - Build and utility scripts
+
+## openEHR Web Template Format
+
+The Better Form Renderer's `webTemplate` property expects the **openEHR Web Template format**, not the Better Studio form-description. Key resources:
+
+- **Specification:** https://specifications.openehr.org/releases/ITS-REST/development/simplified_formats.html#_web_template_metadata
+- **Better Web Template Library:** https://github.com/better-care/web-template/tree/4.0
+- **Documentation & MCP:** https://deepwiki.com/better-care/web-template
+
+### Form Package Structure (Better Studio .zip)
+
+Better Studio form packages contain:
+- **Outer ZIP:** `package-manifest.json`, inner form ZIP, `.opt` file (openEHR Operational Template)
+- **Inner ZIP:** `manifest.json`, `form-description`, `form-environment`, `form-layout`, etc.
+
+The `.opt` file is an openEHR Operational Template. Web template format can be **generated from OPT** using the Better web-template library. The form-description is Better Studio's proprietary UI definition format.
 
 ## Useful Resources
 
