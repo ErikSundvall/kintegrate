@@ -4,15 +4,19 @@ This document contains information for AI agents working with this project.
 
 ## Better Form Renderer Documentation
 
-**Primary reference:** `docs-cache/BETTER-FORM-RENDERER-REFERENCE.md` - Comprehensive API reference covering installation, configuration, events, ScriptApi, and form package structure.
+**Version-controlled docs** (in Git):
+- `docs/FORM-RENDERER-REFERENCE.md` - Quick API reference for Kintegrate integration
+- `docs/OFFLINE-FORM-RENDERING.md` - Working solution for offline form loading via Service Worker
 
-**Offline rendering analysis:** `docs-cache/OFFLINE-FORM-RENDERING.md` - Technical investigation of running Form Renderer without a CDR server.
+**Official online documentation:**
+- **Form Renderer:** https://docs.better.care/studio/form-renderer/
+- **openEHR Web Template:** https://specifications.openehr.org/releases/ITS-REST/development/simplified_formats.html
 
-**Additional cached docs** (not in Git):
+**Cached docs** (not in Git, for offline reference):
 - `docs-cache/form-renderer/` - Original HTML docs from Better Platform
 - `docs-cache/tietoevry-cdr/` - TietoEvry Better JSON Schema specs
 
-To refresh/download cached documentation, see `FETCHING-DOCS.md`.
+To download cached documentation, see `FETCHING-DOCS.md`.
 
 ## Form Renderer Integration
 

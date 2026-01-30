@@ -292,121 +292,61 @@ document.getElementById('pull-from-form-btn')?.addEventListener('click', pullFro
 
 *Moved earlier because we need a form loaded to properly test Push/Pull and Sync features.*
 
-### Step 3.1: Add JSZip Library to Popup
+### Solution Overview
+
+Form loading uses a **Service Worker mock CDR** approach that intercepts API requests and returns locally-cached form data. This allows the Form Renderer to work fully offline.
+
+**Key files:**
+- `src/form-viewer.html` - Popup with form loading UI and dual-mode support
+- `src/form-mock-sw.js` - Service Worker that mocks CDR API responses
+
+**Technical documentation:** See [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md)
+
+### Step 3.1: Add Dependencies
 
 **File:** `src/form-viewer.html` (head section)
 
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-```
+- JSZip for extracting ZIP packages
+- Service Worker registration for CDR mocking
 
-### Step 3.2: Add Form Loading UI to Popup Toolbar
+### Step 3.2: Implement Service Worker Mock CDR
+
+**File:** `src/form-mock-sw.js`
+
+The Service Worker:
+1. Receives form data via `postMessage` from the form viewer
+2. Intercepts requests to `/mock-cdr/*`
+3. Returns CDR-format JSON responses with proper structure:
+   ```json
+   { "meta": {...}, "form": { "name": "...", "resources": [...] } }
+   ```
+
+### Step 3.3: Implement ZIP Package Extraction
 
 **File:** `src/form-viewer.html`
 
-**Changes:** Add file input button in popup toolbar
-
-**Code to add in toolbar:**
-```html
-<input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
-<button id="load-form-btn" title="Load Better Studio form package">
-  📦 Load Form
-</button>
+Better Studio exports nested ZIP packages:
+```
+Outer ZIP → Inner ZIP → form-description, form-environment, etc.
 ```
 
-### Step 3.3: Implement Form Package Loading
+The loader extracts all resources and caches them in the Service Worker.
 
-**File:** `src/form-viewer.html` (script section)
+### Step 3.4: Trigger Form Rendering
 
-```javascript
-// Wire up load button
-document.getElementById('load-form-btn')?.addEventListener('click', () => {
-  document.getElementById('form-package-input')?.click();
-});
+Instead of setting `webTemplate` directly (which doesn't work), the solution:
+1. Caches form data in Service Worker
+2. Sets `formMetadata` with name and version
+3. Renderer fetches from CDR (intercepted by SW)
+4. SW returns cached data in proper format
 
-document.getElementById('form-package-input')?.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  
-  try {
-    setStatus('Loading form package...', '');
-    
-    if (file.name.endsWith('.zip')) {
-      await loadFormPackageZip(file);
-    } else if (file.name.endsWith('.json')) {
-      await loadFormPackageJson(file);
-    }
-  } catch (err) {
-    console.error('[Popup] Error loading form package:', err);
-    setStatus('Failed to load: ' + err.message, 'error');
-  }
-});
-
-async function loadFormPackageZip(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const outerZip = await JSZip.loadAsync(arrayBuffer);
-  
-  // Better Studio exports nested ZIP structure
-  let innerZipFile = null;
-  for (const filename of Object.keys(outerZip.files)) {
-    if (filename.endsWith('.zip') && !outerZip.files[filename].dir) {
-      innerZipFile = outerZip.files[filename];
-      break;
-    }
-  }
-  
-  let packageZip = innerZipFile 
-    ? await JSZip.loadAsync(await innerZipFile.async('arraybuffer'))
-    : outerZip;
-  
-  // Read package-manifest.json
-  const manifestFile = packageZip.file('package-manifest.json');
-  if (!manifestFile) {
-    throw new Error('No package-manifest.json found');
-  }
-  
-  const manifest = JSON.parse(await manifestFile.async('text'));
-  console.log('[Popup] Manifest:', manifest);
-  
-  // Read main form definition
-  const formDefFile = packageZip.file(manifest.main);
-  if (!formDefFile) {
-    throw new Error(`Form file not found: ${manifest.main}`);
-  }
-  
-  const formDefinition = JSON.parse(await formDefFile.async('text'));
-  
-  // Load into renderer
-  loadFormDefinitionIntoRenderer(formDefinition, manifest);
-}
-
-async function loadFormPackageJson(file) {
-  const text = await file.text();
-  const formDefinition = JSON.parse(text);
-  loadFormDefinitionIntoRenderer(formDefinition, { name: file.name, version: '1.0.0' });
-}
-
-function loadFormDefinitionIntoRenderer(formDefinition, manifest) {
-  console.log('[Popup] Loading form definition:', manifest.name);
-  
-  // The form renderer uses webTemplate property for the form definition
-  formRenderer.webTemplate = formDefinition;
-  
-  // Update UI
-  formNameEl.textContent = `${manifest.name} v${manifest.version}`;
-  document.title = `Form: ${manifest.name} - Kintegrate`;
-  
-  console.log('[Popup] Form loaded:', manifest.name);
-}
-```
-
-**Checkpoint:** ✅ Can load .zip/.json form packages in popup, form renders
+**Checkpoint:** ✅ Can load .zip form packages in popup, form renders via SW mock CDR
 
 ---
 
 ## Phase 4: Sync Mode (Real-time Updates) ⬅️ CURRENT
 
-### Step 3.1: Add Sync Mode Toggle
+### Step 4.1: Add Sync Mode Toggle
 
 **File:** `src/index.html`
 
@@ -431,7 +371,7 @@ function loadFormDefinitionIntoRenderer(formDefinition, manifest) {
 }
 ```
 
-### Step 3.2: Implement Sync Mode Toggle
+### Step 4.2: Implement Sync Mode Toggle
 
 **File:** `src/index.html` (script section)
 
@@ -459,7 +399,7 @@ function toggleSyncMode() {
 document.getElementById('sync-mode-btn')?.addEventListener('click', toggleSyncMode);
 ```
 
-### Step 3.3: Update Input from Composition (shared function)
+### Step 4.3: Update Input from Composition (shared function)
 
 **File:** `src/index.html` (script section)
 
@@ -485,14 +425,14 @@ function updateInputFromComposition(composition) {
 }
 ```
 
-### Step 3.4: Update form-viewer.html to Send Changes
+### Step 4.4: Update form-viewer.html to Send Changes
 
 **File:** `src/form-viewer.html`
 
 The popup needs to:
 1. Listen for `SYNC_MODE_STATUS` messages
 2. When sync is ON, send `COMPOSITION_CHANGED` on every form change
-3. Use form-renderer's `valueChange` event
+3. Use form-renderer's `onValueChange` event
 
 **Code to add/update in form-viewer.html:**
 ```javascript
@@ -514,22 +454,18 @@ window.addEventListener('message', (event) => {
 });
 
 // When form renderer emits valueChange
-formRenderer.addEventListener('valueChange', (event) => {
-  if (syncModeEnabled) {
-    const composition = formRenderer.getComposition();
+formRenderer.onValueChange = (event) => {
+  if (syncModeEnabled && window.opener) {
+    const composition = formRenderer.composition;
     window.opener.postMessage({
       type: 'COMPOSITION_CHANGED',
       payload: { composition }
     }, window.location.origin);
   }
-});
+};
 ```
 
-**Checkpoint:** ✅ Sync mode toggle works, form changes flow to input in real-time
-
----
-
-## ~~Phase 4: Form Loading in Popup (Decoupled)~~ *MOVED TO PHASE 3*
+**Checkpoint:** Sync mode toggle works, form changes flow to input in real-time
 
 ---
 
