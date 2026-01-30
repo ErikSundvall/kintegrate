@@ -57,6 +57,13 @@
                 </svg>
               </button>, upload <input type="file" id="fileInput" style="display: inline-block; width: 12em;" />
               | <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window" style="padding: 2px 8px;">📋 Form Viewer</button>
+              <button id="push-to-form-btn" title="Send current instance to form viewer" style="padding: 2px 8px;">→ Push</button>
+              <button id="pull-from-form-btn" title="Get current composition from form viewer" style="padding: 2px 8px;">← Pull</button>
+              <button id="download-instance-btn" title="Download current instance as JSON file" style="padding: 2px 8px;">
+                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
+                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
+                </svg>
+              </button>
               <br>or just paste input into the box below<br>
               <textarea id="inputInstance">Input example goes here</textarea>
               <hr>
@@ -376,9 +383,9 @@ Närvarolista i ankomstordning:
             break;
             
           case 'COMPOSITION_DATA':
-            // Response to explicit REQUEST_COMPOSITION
+            // Response to explicit REQUEST_COMPOSITION (manual pull)
             console.log('[Main] Received composition data');
-            // updateInputFromComposition(payload.composition); // Will be implemented in Phase 3
+            updateInputFromComposition(payload.composition);
             break;
             
           case 'REQUEST_PING':
@@ -396,6 +403,64 @@ Närvarolista i ankomstordning:
           console.log('[Main] Cannot send message - form viewer not open');
         }
       }
+
+      // ============================================
+      // Phase 2: Composition Handling Functions
+      // ============================================
+      
+      // Download current instance as JSON file
+      function downloadCurrentInstance() {
+        // inputEditor is defined in DOMContentLoaded, access via closure won't work here
+        // We'll wire this up inside DOMContentLoaded instead
+      }
+      
+      // Push instance from input to form viewer
+      function pushToForm(inputEditor) {
+        const content = inputEditor ? inputEditor.getValue() : 
+                        document.getElementById('inputInstance').value;
+        
+        if (!content || content.trim() === '') {
+          alert('No instance data to push');
+          return;
+        }
+        
+        try {
+          const composition = JSON.parse(content);
+          
+          // Open form viewer if not open
+          if (!formViewerWindow || formViewerWindow.closed) {
+            openFormViewer();
+            // Wait for window to load, then send
+            setTimeout(() => {
+              sendToFormViewer('LOAD_COMPOSITION', { composition });
+            }, 1500);
+          } else {
+            sendToFormViewer('LOAD_COMPOSITION', { composition });
+          }
+          console.log('[Main] Pushed composition to form');
+        } catch (e) {
+          alert('Instance is not valid JSON: ' + e.message);
+        }
+      }
+      
+      // Pull composition from form viewer to input
+      function pullFromForm() {
+        if (!formViewerWindow || formViewerWindow.closed) {
+          alert('Form viewer is not open');
+          return;
+        }
+        
+        // Request composition from popup
+        sendToFormViewer('REQUEST_COMPOSITION', {});
+        // Response will be handled by message listener (COMPOSITION_DATA)
+        console.log('[Main] Requested composition from form');
+      }
+      
+      // Update input editor with composition data (used by pull and sync)
+      // Note: inputEditor reference will be passed when called from DOMContentLoaded scope
+      let updateInputFromComposition = (composition) => {
+        console.log('[Main] updateInputFromComposition called but inputEditor not yet available');
+      };
 
       document.addEventListener('DOMContentLoaded', () => {
       // Set version in footer
@@ -2008,6 +2073,58 @@ Närvarolista i ankomstordning:
       // Form Viewer Button Wiring
       // ============================================
       document.getElementById('open-form-viewer-btn')?.addEventListener('click', openFormViewer);
+      
+      // Phase 2: Wire up composition handling buttons
+      document.getElementById('push-to-form-btn')?.addEventListener('click', () => pushToForm(inputEditor));
+      document.getElementById('pull-from-form-btn')?.addEventListener('click', pullFromForm);
+      
+      // Download button - needs access to inputEditor
+      document.getElementById('download-instance-btn')?.addEventListener('click', () => {
+        const content = inputEditor ? inputEditor.getValue() : 
+                        document.getElementById('inputInstance').value;
+        
+        if (!content || content.trim() === '') {
+          alert('No instance data to download');
+          return;
+        }
+        
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const filename = `composition-${timestamp}.json`;
+        
+        // Create download
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        console.log('[Main] Downloaded instance as:', filename);
+      });
+      
+      // Override updateInputFromComposition with access to inputEditor
+      updateInputFromComposition = (composition) => {
+        if (!composition) {
+          console.log('[Main] No composition data received');
+          return;
+        }
+        
+        const jsonStr = JSON.stringify(composition, null, 2);
+        
+        // Update input editor
+        if (inputEditor) {
+          inputEditor.setValue(jsonStr);
+        } else {
+          document.getElementById('inputInstance').value = jsonStr;
+        }
+        
+        // The existing inputEditor.on('change') handler will trigger:
+        // - updateJsonTree()
+        // - runConversion() if autoConvertEnabled
+        
+        console.log('[Main] Input updated from composition');
+      };
 
       }); // DOMContentLoaded
     </script>

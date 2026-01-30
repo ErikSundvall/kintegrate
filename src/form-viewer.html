@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="vendor/styles-theme.css">
     <!-- Better Form Renderer script -->
     <script src="vendor/form-renderer.js"></script>
+    <!-- JSZip for loading form packages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
       * {
         box-sizing: border-box;
@@ -117,6 +119,9 @@
       <span id="status">Ready</span>
     </div>
     <div id="toolbar">
+      <input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
+      <button id="load-form-btn" title="Load Better Studio form package (.zip or .json)">📦 Load Form</button>
+      <span style="border-left: 1px solid #ddd; margin: 0 8px;"></span>
       <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">📋 Get Data</button>
       <button id="send-to-parent-btn" disabled title="Send form data back to main window">↩ Send to Kintegrate</button>
       <button id="clear-btn" disabled title="Clear form values">🗑 Clear</button>
@@ -261,18 +266,28 @@
             
           case 'REQUEST_COMPOSITION':
             // Parent is requesting composition data (manual pull)
-            if (formLoaded && parentWindow) {
+            if (parentWindow) {
               try {
                 const composition = formRenderer.composition;
-                parentWindow.postMessage({
-                  type: 'COMPOSITION_DATA',
-                  payload: { composition }
-                }, window.location.origin);
-                console.log('[Popup] Sent COMPOSITION_DATA to parent');
-                setStatus('Data sent', 'success');
-                setTimeout(() => setStatus('Form loaded', 'success'), 1500);
+                if (composition) {
+                  parentWindow.postMessage({
+                    type: 'COMPOSITION_DATA',
+                    payload: { composition }
+                  }, window.location.origin);
+                  console.log('[Popup] Sent COMPOSITION_DATA to parent');
+                  setStatus('Data sent', 'success');
+                  setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+                } else {
+                  console.log('[Popup] No composition data available to send');
+                  setStatus('No data to send', 'error');
+                  setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+                }
               } catch (error) {
                 console.error('[Popup] Error getting composition:', error);
+                parentWindow.postMessage({
+                  type: 'COMPOSITION_DATA',
+                  payload: { composition: null, error: error.message }
+                }, window.location.origin);
               }
             }
             break;
@@ -283,11 +298,15 @@
               console.log('[Popup] Loading composition from parent');
               try {
                 formRenderer.composition = event.data.payload.composition;
+                console.log('[Popup] Composition set on form renderer:', formRenderer.composition ? 'OK' : 'null');
                 setStatus('Composition loaded', 'success');
               } catch (error) {
                 console.error('[Popup] Error loading composition:', error);
                 setStatus('Error loading composition', 'error');
               }
+            } else {
+              console.log('[Popup] Cannot load composition - renderer available:', isFormRendererAvailable, 
+                          'composition provided:', !!event.data.payload?.composition);
             }
             break;
 
@@ -384,6 +403,147 @@
           console.error('Error clearing form:', error);
         }
       });
+
+      // ============================================
+      // Phase 3: Form Package Loading
+      // ============================================
+      
+      const loadFormBtn = document.getElementById('load-form-btn');
+      const formPackageInput = document.getElementById('form-package-input');
+      
+      loadFormBtn?.addEventListener('click', () => {
+        formPackageInput?.click();
+      });
+      
+      formPackageInput?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        try {
+          setStatus('Loading form package...', '');
+          loadingEl.style.display = 'flex';
+          loadingEl.textContent = 'Loading form package...';
+          
+          if (file.name.endsWith('.zip')) {
+            await loadFormPackageZip(file);
+          } else if (file.name.endsWith('.json')) {
+            await loadFormPackageJson(file);
+          } else {
+            throw new Error('Unsupported file type. Please use .zip or .json');
+          }
+        } catch (err) {
+          console.error('[Popup] Error loading form package:', err);
+          showError('Failed to load: ' + err.message);
+        }
+        
+        // Reset file input so same file can be loaded again
+        formPackageInput.value = '';
+      });
+      
+      async function loadFormPackageZip(file) {
+        console.log('[Popup] Loading ZIP file:', file.name);
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const outerZip = await JSZip.loadAsync(arrayBuffer);
+        
+        console.log('[Popup] Outer ZIP contents:', Object.keys(outerZip.files));
+        
+        // Better Studio package structure:
+        // - Outer ZIP: package-manifest.json (package index) + inner form ZIP + optional .opt template
+        // - Inner ZIP: manifest.json (form metadata) + form-description + other resources
+        
+        // Find inner ZIP (the actual form package)
+        let innerZip = null;
+        let innerZipName = null;
+        for (const filename of Object.keys(outerZip.files)) {
+          if (filename.endsWith('.zip') && !outerZip.files[filename].dir) {
+            innerZipName = filename;
+            console.log('[Popup] Found inner ZIP:', filename);
+            break;
+          }
+        }
+        
+        // Read package-manifest.json from outer ZIP (package index)
+        const packageManifestFile = outerZip.file('package-manifest.json');
+        let packageManifest = null;
+        if (packageManifestFile) {
+          packageManifest = JSON.parse(await packageManifestFile.async('text'));
+          console.log('[Popup] Package manifest:', packageManifest);
+        }
+        
+        // Load the inner ZIP which contains the actual form
+        if (innerZipName) {
+          const innerData = await outerZip.files[innerZipName].async('arraybuffer');
+          innerZip = await JSZip.loadAsync(innerData);
+          console.log('[Popup] Inner ZIP contents:', Object.keys(innerZip.files));
+        }
+        
+        // The form ZIP (inner or outer if no nesting) should have manifest.json
+        const formZip = innerZip || outerZip;
+        const formManifestFile = formZip.file('manifest.json');
+        
+        if (!formManifestFile) {
+          throw new Error('No manifest.json found in form package');
+        }
+        
+        const formManifest = JSON.parse(await formManifestFile.async('text'));
+        console.log('[Popup] Form manifest:', formManifest);
+        
+        // The form definition is in 'form-description' file (listed in resource.files)
+        const formDescFile = formZip.file('form-description');
+        if (!formDescFile) {
+          throw new Error('No form-description found in form package');
+        }
+        
+        const formDefinition = JSON.parse(await formDescFile.async('text'));
+        console.log('[Popup] Form definition loaded, templateId:', formManifest.resource?.templateId);
+        
+        // Extract form name/version from form manifest
+        const formName = formManifest.resource?.name || formManifest.name || file.name.replace('.zip', '');
+        const formVersion = formManifest.resource?.version || formManifest.version || '1.0.0';
+        
+        // Load into renderer
+        loadFormDefinitionIntoRenderer(formDefinition, { name: formName, version: formVersion });
+      }
+      
+      async function loadFormPackageJson(file) {
+        console.log('[Popup] Loading JSON file:', file.name);
+        
+        const text = await file.text();
+        const formDefinition = JSON.parse(text);
+        
+        // Extract form name from definition or filename
+        const formName = formDefinition.templateId || file.name.replace('.json', '');
+        
+        loadFormDefinitionIntoRenderer(formDefinition, { name: formName, version: '1.0.0' });
+      }
+      
+      function loadFormDefinitionIntoRenderer(formDefinition, manifest) {
+        console.log('[Popup] Loading form definition into renderer:', manifest.name);
+        
+        if (!isFormRendererAvailable) {
+          showError('Form Renderer not available');
+          return;
+        }
+        
+        try {
+          // Update UI
+          formNameEl.textContent = `${manifest.name} v${manifest.version}`;
+          document.title = `Form: ${manifest.name} - Kintegrate`;
+          setStatus('Rendering form...', '');
+          
+          // The form renderer uses webTemplate property for the form definition
+          // Use requestAnimationFrame to ensure proper initialization
+          requestAnimationFrame(() => {
+            formRenderer.webTemplate = formDefinition;
+            console.log('[Popup] webTemplate set on form renderer');
+          });
+          
+        } catch (error) {
+          console.error('[Popup] Error loading form:', error);
+          showError('Error loading form: ' + error.message);
+        }
+      }
 
       // Notify parent that we're ready
       if (parentWindow) {

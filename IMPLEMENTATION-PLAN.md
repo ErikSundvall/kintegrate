@@ -1,6 +1,8 @@
-# Implementation Plan: Form Renderer Popup Integration (v2)
+# Implementation Plan: Form Renderer Popup Integration (v3)
 
 **Goal:** Add Better Form Renderer functionality to Kintegrate using a popup window approach, with real-time sync mode for instant feedback loop.
+
+**Status:** Phases 1, 2 & 3 ✅ COMPLETE
 
 ## Overview
 
@@ -50,9 +52,9 @@
 
 ---
 
-## Phase 1: Basic Popup Infrastructure (Test Communication)
+## Phase 1: Basic Popup Infrastructure (Test Communication) ✅ COMPLETE
 
-### Step 1.1: Add "Open Form Viewer" Button to Main App
+### Step 1.1: Add "Open Form Viewer" Button to Main App ✅
 
 **File:** `src/index.html`
 
@@ -160,9 +162,9 @@ document.getElementById('open-form-viewer-btn')?.addEventListener('click', openF
 
 ---
 
-## Phase 2: Input Column Enhancements (Composition Handling)
+## Phase 2: Input Column Enhancements (Composition Handling) ✅ COMPLETE
 
-### Step 2.1: Add Download Button for Current Instance
+### Step 2.1: Add Download Button for Current Instance ✅
 
 **File:** `src/index.html`
 
@@ -286,7 +288,123 @@ document.getElementById('pull-from-form-btn')?.addEventListener('click', pullFro
 
 ---
 
-## Phase 3: Sync Mode (Real-time Updates)
+## Phase 3: Form Loading in Popup (Decoupled) ✅ COMPLETE
+
+*Moved earlier because we need a form loaded to properly test Push/Pull and Sync features.*
+
+### Step 3.1: Add JSZip Library to Popup
+
+**File:** `src/form-viewer.html` (head section)
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+```
+
+### Step 3.2: Add Form Loading UI to Popup Toolbar
+
+**File:** `src/form-viewer.html`
+
+**Changes:** Add file input button in popup toolbar
+
+**Code to add in toolbar:**
+```html
+<input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
+<button id="load-form-btn" title="Load Better Studio form package">
+  📦 Load Form
+</button>
+```
+
+### Step 3.3: Implement Form Package Loading
+
+**File:** `src/form-viewer.html` (script section)
+
+```javascript
+// Wire up load button
+document.getElementById('load-form-btn')?.addEventListener('click', () => {
+  document.getElementById('form-package-input')?.click();
+});
+
+document.getElementById('form-package-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  try {
+    setStatus('Loading form package...', '');
+    
+    if (file.name.endsWith('.zip')) {
+      await loadFormPackageZip(file);
+    } else if (file.name.endsWith('.json')) {
+      await loadFormPackageJson(file);
+    }
+  } catch (err) {
+    console.error('[Popup] Error loading form package:', err);
+    setStatus('Failed to load: ' + err.message, 'error');
+  }
+});
+
+async function loadFormPackageZip(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const outerZip = await JSZip.loadAsync(arrayBuffer);
+  
+  // Better Studio exports nested ZIP structure
+  let innerZipFile = null;
+  for (const filename of Object.keys(outerZip.files)) {
+    if (filename.endsWith('.zip') && !outerZip.files[filename].dir) {
+      innerZipFile = outerZip.files[filename];
+      break;
+    }
+  }
+  
+  let packageZip = innerZipFile 
+    ? await JSZip.loadAsync(await innerZipFile.async('arraybuffer'))
+    : outerZip;
+  
+  // Read package-manifest.json
+  const manifestFile = packageZip.file('package-manifest.json');
+  if (!manifestFile) {
+    throw new Error('No package-manifest.json found');
+  }
+  
+  const manifest = JSON.parse(await manifestFile.async('text'));
+  console.log('[Popup] Manifest:', manifest);
+  
+  // Read main form definition
+  const formDefFile = packageZip.file(manifest.main);
+  if (!formDefFile) {
+    throw new Error(`Form file not found: ${manifest.main}`);
+  }
+  
+  const formDefinition = JSON.parse(await formDefFile.async('text'));
+  
+  // Load into renderer
+  loadFormDefinitionIntoRenderer(formDefinition, manifest);
+}
+
+async function loadFormPackageJson(file) {
+  const text = await file.text();
+  const formDefinition = JSON.parse(text);
+  loadFormDefinitionIntoRenderer(formDefinition, { name: file.name, version: '1.0.0' });
+}
+
+function loadFormDefinitionIntoRenderer(formDefinition, manifest) {
+  console.log('[Popup] Loading form definition:', manifest.name);
+  
+  // The form renderer uses webTemplate property for the form definition
+  formRenderer.webTemplate = formDefinition;
+  
+  // Update UI
+  formNameEl.textContent = `${manifest.name} v${manifest.version}`;
+  document.title = `Form: ${manifest.name} - Kintegrate`;
+  
+  console.log('[Popup] Form loaded:', manifest.name);
+}
+```
+
+**Checkpoint:** ✅ Can load .zip/.json form packages in popup, form renders
+
+---
+
+## Phase 4: Sync Mode (Real-time Updates) ⬅️ CURRENT
 
 ### Step 3.1: Add Sync Mode Toggle
 
@@ -411,116 +529,7 @@ formRenderer.addEventListener('valueChange', (event) => {
 
 ---
 
-## Phase 4: Form Loading in Popup (Decoupled)
-
-### Step 4.1: Add Form Loading UI to Popup
-
-**File:** `src/form-viewer.html`
-
-**Changes:** Add file input and JSZip in popup (NOT in main app)
-
-**Code to add in popup header/toolbar:**
-```html
-<input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
-<button id="load-form-btn" title="Load Better Studio form package">
-  📦 Load Form
-</button>
-<span id="form-name-display">No form loaded</span>
-```
-
-### Step 4.2: Add JSZip to Popup
-
-**File:** `src/form-viewer.html` (head section)
-
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-```
-
-### Step 4.3: Implement Form Loading in Popup
-
-**File:** `src/form-viewer.html` (script section)
-
-```javascript
-document.getElementById('load-form-btn')?.addEventListener('click', () => {
-  document.getElementById('form-package-input')?.click();
-});
-
-document.getElementById('form-package-input')?.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  
-  try {
-    setStatus('Loading form package...', 'info');
-    
-    if (file.name.endsWith('.zip')) {
-      await loadFormPackageZip(file);
-    } else if (file.name.endsWith('.json')) {
-      await loadFormPackageJson(file);
-    }
-    
-    setStatus('Form loaded successfully', 'success');
-  } catch (err) {
-    console.error('Error loading form package:', err);
-    setStatus('Failed to load: ' + err.message, 'error');
-  }
-});
-
-async function loadFormPackageZip(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const outerZip = await JSZip.loadAsync(arrayBuffer);
-  
-  // Better Studio exports nested ZIP structure
-  let innerZipFile = null;
-  for (const filename of Object.keys(outerZip.files)) {
-    if (filename.endsWith('.zip') && !outerZip.files[filename].dir) {
-      innerZipFile = outerZip.files[filename];
-      break;
-    }
-  }
-  
-  let packageZip = innerZipFile 
-    ? await JSZip.loadAsync(await innerZipFile.async('arraybuffer'))
-    : outerZip;
-  
-  // Read package-manifest.json
-  const manifestFile = packageZip.file('package-manifest.json');
-  if (!manifestFile) {
-    throw new Error('No package-manifest.json found');
-  }
-  
-  const manifest = JSON.parse(await manifestFile.async('text'));
-  
-  // Read main form definition
-  const formDefFile = packageZip.file(manifest.main);
-  if (!formDefFile) {
-    throw new Error(`Form file not found: ${manifest.main}`);
-  }
-  
-  const formDefinition = JSON.parse(await formDefFile.async('text'));
-  
-  // Load into renderer
-  loadFormDefinition(formDefinition, manifest);
-}
-
-async function loadFormPackageJson(file) {
-  const text = await file.text();
-  const formDefinition = JSON.parse(text);
-  loadFormDefinition(formDefinition, { name: file.name, version: '1.0.0' });
-}
-
-function loadFormDefinition(formDefinition, manifest) {
-  const renderer = document.getElementById('better-form-renderer');
-  renderer.formDefinition = formDefinition;
-  
-  // Update UI
-  document.getElementById('form-name-display').textContent = 
-    `${manifest.name} v${manifest.version}`;
-  
-  console.log('[Popup] Form loaded:', manifest.name);
-}
-```
-
-**Checkpoint:** ✅ Form loading works entirely within popup, main app unchanged
+## ~~Phase 4: Form Loading in Popup (Decoupled)~~ *MOVED TO PHASE 3*
 
 ---
 
