@@ -273,6 +273,16 @@
       
       <span class="separator"></span>
       
+      <!-- Vendor Library Upload (for offline use) -->
+      <div id="vendor-controls">
+        <input type="file" id="vendor-upload-input" accept=".js,.css" multiple style="display: none;">
+        <button id="upload-vendor-btn" title="Upload Better Form Renderer library files (form-renderer.js, styles.css, styles-theme.css)">📚 Upload Renderer</button>
+        <button id="clear-vendor-btn" title="Clear cached renderer library">🗑 Clear Renderer</button>
+        <span id="vendor-status" style="font-size: 0.8em; color: #666;"></span>
+      </div>
+      
+      <span class="separator"></span>
+      
       <!-- Common Controls -->
       <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">📋 Get Data</button>
       <button id="send-to-parent-btn" disabled title="Send form data back to main window">↩ Send to Kintegrate</button>
@@ -1200,6 +1210,193 @@
           showError('Error loading form: ' + error.message);
         }
       }
+
+      // ============================================
+      // Vendor Library Upload Handlers
+      // ============================================
+      
+      const uploadVendorBtn = document.getElementById('upload-vendor-btn');
+      const vendorUploadInput = document.getElementById('vendor-upload-input');
+      const clearVendorBtn = document.getElementById('clear-vendor-btn');
+      const vendorStatus = document.getElementById('vendor-status');
+      
+      // Check for cached vendor files on load
+      async function checkVendorCache() {
+        if (!navigator.serviceWorker.controller) {
+          vendorStatus.textContent = 'SW not ready';
+          return;
+        }
+        
+        navigator.serviceWorker.controller.postMessage({ type: 'GET_VENDOR_FILES' });
+        
+        // Wait for response
+        const response = await new Promise((resolve) => {
+          const handler = (event) => {
+            if (event.data.type === 'VENDOR_FILES_LIST') {
+              navigator.serviceWorker.removeEventListener('message', handler);
+              resolve(event.data.files);
+            }
+          };
+          navigator.serviceWorker.addEventListener('message', handler);
+          
+          // Timeout after 2 seconds
+          setTimeout(() => {
+            navigator.serviceWorker.removeEventListener('message', handler);
+            resolve([]);
+          }, 2000);
+        });
+        
+        if (response && response.length > 0) {
+          vendorStatus.textContent = `✅ ${response.length} file${response.length > 1 ? 's' : ''} cached`;
+          vendorStatus.style.color = '#080';
+        } else {
+          vendorStatus.textContent = 'No renderer cached';
+          vendorStatus.style.color = '#666';
+        }
+      }
+      
+      uploadVendorBtn?.addEventListener('click', () => {
+        vendorUploadInput?.click();
+      });
+      
+      vendorUploadInput?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        
+        if (!navigator.serviceWorker.controller) {
+          alert('Service Worker is not active. Please reload the page and try again.');
+          return;
+        }
+        
+        try {
+          vendorStatus.textContent = 'Uploading...';
+          vendorStatus.style.color = '#666';
+          
+          let successCount = 0;
+          let errorCount = 0;
+          
+          for (const file of files) {
+            try {
+              const content = await file.arrayBuffer();
+              const contentType = file.type || getContentType(file.name);
+              
+              console.log(`[Popup] Caching vendor file: ${file.name} (${contentType})`);
+              
+              // Send to service worker
+              navigator.serviceWorker.controller.postMessage({
+                type: 'CACHE_VENDOR_FILE',
+                filename: file.name,
+                content: content,
+                contentType: contentType
+              });
+              
+              // Wait for confirmation
+              await new Promise((resolve, reject) => {
+                const handler = (event) => {
+                  if (event.data.type === 'VENDOR_FILE_CACHED' && event.data.filename === file.name) {
+                    navigator.serviceWorker.removeEventListener('message', handler);
+                    resolve();
+                  } else if (event.data.type === 'VENDOR_FILE_CACHE_ERROR') {
+                    navigator.serviceWorker.removeEventListener('message', handler);
+                    reject(new Error(event.data.error));
+                  }
+                };
+                navigator.serviceWorker.addEventListener('message', handler);
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                  navigator.serviceWorker.removeEventListener('message', handler);
+                  resolve(); // Don't fail on timeout
+                }, 5000);
+              });
+              
+              successCount++;
+            } catch (fileError) {
+              console.error(`[Popup] Error uploading ${file.name}:`, fileError);
+              errorCount++;
+            }
+          }
+          
+          if (errorCount === 0) {
+            vendorStatus.textContent = `✅ ${successCount} file${successCount > 1 ? 's' : ''} uploaded`;
+            vendorStatus.style.color = '#080';
+            alert(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}.\n\nYou can now use the form renderer offline.\n\nNote: Reload this page for the renderer to load from cache.`);
+          } else {
+            vendorStatus.textContent = `⚠ ${successCount} ok, ${errorCount} failed`;
+            vendorStatus.style.color = '#c60';
+            alert(`Uploaded ${successCount} file(s), but ${errorCount} failed.\nCheck console for details.`);
+          }
+          
+          // Refresh cache status
+          setTimeout(checkVendorCache, 500);
+        } catch (err) {
+          console.error('[Popup] Error uploading vendor files:', err);
+          vendorStatus.textContent = '❌ Upload failed';
+          vendorStatus.style.color = '#c00';
+          alert('Upload failed: ' + err.message);
+        }
+        
+        // Reset file input
+        vendorUploadInput.value = '';
+      });
+      
+      clearVendorBtn?.addEventListener('click', async () => {
+        if (!confirm('Clear all cached vendor library files?\n\nYou will need to upload them again to use the form renderer offline.')) {
+          return;
+        }
+        
+        if (!navigator.serviceWorker.controller) {
+          alert('Service Worker is not active.');
+          return;
+        }
+        
+        try {
+          vendorStatus.textContent = 'Clearing...';
+          vendorStatus.style.color = '#666';
+          
+          navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_VENDOR_CACHE' });
+          
+          // Wait for confirmation
+          await new Promise((resolve) => {
+            const handler = (event) => {
+              if (event.data.type === 'VENDOR_CACHE_CLEARED') {
+                navigator.serviceWorker.removeEventListener('message', handler);
+                resolve();
+              }
+            };
+            navigator.serviceWorker.addEventListener('message', handler);
+            
+            setTimeout(() => {
+              navigator.serviceWorker.removeEventListener('message', handler);
+              resolve();
+            }, 2000);
+          });
+          
+          vendorStatus.textContent = 'Cache cleared';
+          vendorStatus.style.color = '#666';
+          
+          alert('Vendor cache cleared.\n\nThe page will reload to use the network version (if available).');
+          window.location.reload();
+        } catch (err) {
+          console.error('[Popup] Error clearing vendor cache:', err);
+          vendorStatus.textContent = '❌ Clear failed';
+          vendorStatus.style.color = '#c00';
+        }
+      });
+      
+      function getContentType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const types = {
+          'js': 'application/javascript',
+          'css': 'text/css',
+          'json': 'application/json',
+          'html': 'text/html'
+        };
+        return types[ext] || 'application/octet-stream';
+      }
+      
+      // Check vendor cache on load
+      setTimeout(checkVendorCache, 1000);
 
       // Notify parent that we're ready
       if (parentWindow) {

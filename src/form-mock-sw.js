@@ -2,7 +2,13 @@
  * Service Worker to mock CDR server responses for offline form loading.
  * 
  * This intercepts requests to /mock-cdr/* and returns locally-loaded form data.
+ * Also handles caching and serving of vendor libraries (Better Form Renderer).
  */
+
+// Cache names
+const VENDOR_CACHE = 'kintegrate-vendor-v1';
+const VENDOR_DB = 'kintegrate-vendor-db';
+const VENDOR_STORE = 'vendor-files';
 
 // Cache for form data that gets passed from the main page
 let cachedFormData = null;
@@ -14,7 +20,7 @@ let cachedFormLayout = null;
 let cachedTemplateId = null;
 
 // Listen for messages from the main page to cache form data
-self.addEventListener('message', (event) => {
+self.addEventListener('message', async (event) => {
   if (event.data.type === 'CACHE_FORM') {
     cachedFormData = event.data.formDescription;
     cachedFormEnvironment = event.data.formEnvironment || { variables: [], externalApis: [] };
@@ -40,6 +46,49 @@ self.addEventListener('message', (event) => {
     // Take control of all clients immediately
     self.clients.claim();
     console.log('[SW] Claimed all clients');
+  } else if (event.data.type === 'CACHE_VENDOR_FILE') {
+    // Cache a vendor library file
+    try {
+      const { filename, content, contentType } = event.data;
+      const cache = await caches.open(VENDOR_CACHE);
+      const url = `/vendor/${filename}`;
+      const response = new Response(content, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000'
+        }
+      });
+      await cache.put(url, response);
+      console.log('[SW] Cached vendor file:', filename);
+      event.source.postMessage({ type: 'VENDOR_FILE_CACHED', filename });
+    } catch (error) {
+      console.error('[SW] Error caching vendor file:', error);
+      event.source.postMessage({ type: 'VENDOR_FILE_CACHE_ERROR', error: error.message });
+    }
+  } else if (event.data.type === 'CLEAR_VENDOR_CACHE') {
+    // Clear vendor cache
+    try {
+      await caches.delete(VENDOR_CACHE);
+      console.log('[SW] Vendor cache cleared');
+      event.source.postMessage({ type: 'VENDOR_CACHE_CLEARED' });
+    } catch (error) {
+      console.error('[SW] Error clearing vendor cache:', error);
+    }
+  } else if (event.data.type === 'GET_VENDOR_FILES') {
+    // List cached vendor files
+    try {
+      const cache = await caches.open(VENDOR_CACHE);
+      const requests = await cache.keys();
+      const files = requests.map(req => {
+        const url = new URL(req.url);
+        return url.pathname.replace('/vendor/', '');
+      });
+      event.source.postMessage({ type: 'VENDOR_FILES_LIST', files });
+    } catch (error) {
+      console.error('[SW] Error getting vendor files:', error);
+      event.source.postMessage({ type: 'VENDOR_FILES_LIST', files: [] });
+    }
   }
 });
 
@@ -55,6 +104,12 @@ self.addEventListener('fetch', (event) => {
   
   // Log ALL requests for debugging
   console.log('[SW] Request:', event.request.method, url.pathname, url.search);
+  
+  // Handle vendor file requests from cache
+  if (url.pathname.startsWith('/vendor/')) {
+    event.respondWith(handleVendorRequest(url, event.request));
+    return;
+  }
   
   // Only intercept requests to our mock CDR path
   if (!url.pathname.startsWith('/mock-cdr/')) {
@@ -256,6 +311,50 @@ async function handleCompositionRequest(url, request) {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
+}
+
+/**
+ * Handle requests for vendor files from cache
+ */
+async function handleVendorRequest(url, request) {
+  console.log('[SW] Vendor file request:', url.pathname);
+  
+  try {
+    const cache = await caches.open(VENDOR_CACHE);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      console.log('[SW] Serving cached vendor file:', url.pathname);
+      return cachedResponse;
+    }
+    
+    // If not in cache, try to fetch from network (for development)
+    console.log('[SW] Vendor file not cached, trying network:', url.pathname);
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        // Cache the network response for future use
+        const responseClone = networkResponse.clone();
+        await cache.put(request, responseClone);
+        return networkResponse;
+      }
+    } catch (networkError) {
+      console.log('[SW] Network fetch failed:', networkError.message);
+    }
+    
+    // Return 404 if file not found in cache or network
+    return new Response('Vendor file not found. Please upload the Better Form Renderer library.', {
+      status: 404,
+      statusText: 'Not Found',
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  } catch (error) {
+    console.error('[SW] Error handling vendor request:', error);
+    return new Response('Error loading vendor file: ' + error.message, {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 }
 
 // Activate immediately
