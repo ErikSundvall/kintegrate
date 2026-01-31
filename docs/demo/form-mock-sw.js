@@ -7,8 +7,6 @@
 
 // Cache names
 const VENDOR_CACHE = 'kintegrate-vendor-v1';
-const VENDOR_DB = 'kintegrate-vendor-db';
-const VENDOR_STORE = 'vendor-files';
 
 // Cache for form data that gets passed from the main page
 let cachedFormData = null;

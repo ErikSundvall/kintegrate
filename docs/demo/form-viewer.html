@@ -1223,7 +1223,7 @@
       // Check for cached vendor files on load
       async function checkVendorCache() {
         if (!navigator.serviceWorker.controller) {
-          vendorStatus.textContent = 'SW not ready';
+          vendorStatus.textContent = 'Initializing...';
           return;
         }
         
