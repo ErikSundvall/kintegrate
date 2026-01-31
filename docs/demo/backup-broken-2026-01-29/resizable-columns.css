@@ -46,7 +46,8 @@ main {
 /* Styling for the columns */
 .column {
     /* flex-basis sets the initial size. We use percentages for a responsive start. */
-    flex-basis: 33.33%;
+    /* With 4 columns + 3 resizers (6px each = 18px), we need ~24% per column */
+    flex-basis: 24%;
     
     /* These are important: they prevent flexbox from automatically growing or shrinking columns */
     flex-grow: 0;
@@ -56,6 +57,11 @@ main {
     box-sizing: border-box;
     overflow: auto; /* Add scrollbars if content overflows the column */
     min-width: 75px; /* Prevent columns from becoming too small */
+}
+
+/* Form column starts smaller since it's often a placeholder */
+.column-form {
+    flex-basis: 15%;
 }
 
 
@@ -72,16 +78,27 @@ main {
 }
 
 /* Different background colors for clarity */
-.column-left { background-color: #eef2f3; }
+.column-form {
+    background-color: #e8eef2;
+    display: flex;
+    flex-direction: column;
+}
+.column-left {
+    background-color: #eef2f3;
+    flex-basis: 27%; /* Input column slightly larger */
+}
 .column-center {
     background-color: #f6f7f8;
     display: flex;
     flex-direction: column; /* Arrange items vertically */
+    flex-basis: 30%; /* Editor column largest */
 }
 .column-right {
     background-color: #eef2f3;
     display: flex;
     flex-direction: column; /* Arrange items vertically */
+    flex-basis: 24%; /* Output column */
+    flex-grow: 1; /* Fill any remaining space on wide screens */
 }
 
 /* Make CodeMirror editor fill its container */

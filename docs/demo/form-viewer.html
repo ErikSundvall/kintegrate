@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="vendor/styles-theme.css">
     <!-- Better Form Renderer script -->
     <script src="vendor/form-renderer.js"></script>
+    <!-- JSZip for loading form packages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
       * {
         box-sizing: border-box;
@@ -41,6 +43,20 @@
         color: #666;
         font-size: 0.9em;
       }
+      #sync-indicator {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-left: 8px;
+      }
+      #sync-indicator.sync-off {
+        background: #f5f5f5;
+        color: #666;
+      }
+      #sync-indicator.sync-on {
+        background: #4CAF50;
+        color: white;
+      }
       #status {
         margin-left: auto;
         font-size: 0.85em;
@@ -59,8 +75,10 @@
         display: flex;
         gap: 8px;
         flex-shrink: 0;
+        flex-wrap: wrap;
+        align-items: center;
       }
-      #toolbar button {
+      #toolbar button, #toolbar select {
         padding: 6px 12px;
         border: 1px solid #ccc;
         border-radius: 4px;
@@ -68,13 +86,102 @@
         cursor: pointer;
         font-size: 0.9em;
       }
-      #toolbar button:hover {
+      #toolbar button:hover:not(:disabled), #toolbar select:hover:not(:disabled) {
         background: #f0f0f0;
         border-color: #999;
       }
-      #toolbar button:disabled {
+      #toolbar button:disabled, #toolbar select:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+      }
+      #toolbar input[type="text"], #toolbar input[type="password"] {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      #toolbar .separator {
+        border-left: 1px solid #ddd;
+        height: 24px;
+        margin: 0 8px;
+      }
+      .mode-section {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .mode-section.hidden {
+        display: none;
+      }
+      #mode-tabs {
+        display: flex;
+        gap: 0;
+        margin-right: 8px;
+      }
+      #mode-tabs button {
+        border-radius: 0;
+        margin: 0;
+      }
+      #mode-tabs button:first-child {
+        border-radius: 4px 0 0 4px;
+      }
+      #mode-tabs button:last-child {
+        border-radius: 0 4px 4px 0;
+        margin-left: -1px;
+      }
+      #mode-tabs button.active {
+        background: #4a90d9;
+        color: #fff;
+        border-color: #4a90d9;
+      }
+      #server-config {
+        background: #f0f7ff;
+        border-bottom: 1px solid #d0e0f0;
+        padding: 12px 16px;
+        display: none;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      #server-config.visible {
+        display: flex;
+      }
+      #server-config label {
+        font-size: 0.85em;
+        color: #555;
+      }
+      #server-config input[type="text"], #server-config input[type="password"] {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      #server-config select {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background: #fff;
+      }
+      #server-url {
+        width: 300px;
+      }
+      #oauth-token {
+        width: 250px;
+      }
+      #basic-username, #basic-password {
+        width: 120px;
+      }
+      .auth-section {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .auth-section.hidden {
+        display: none;
+      }
+      #form-list {
+        min-width: 200px;
       }
       #form-container {
         flex: 1;
@@ -114,15 +221,66 @@
     <div id="header">
       <h1>Form Viewer</h1>
       <span id="form-name">No form loaded</span>
+      <span id="sync-indicator" class="sync-off">⏸ Sync: OFF</span>
       <span id="status">Ready</span>
     </div>
+    
+    <!-- Server Configuration Panel (shown in server mode) -->
+    <div id="server-config">
+      <label>CDR Server:</label>
+      <input type="text" id="server-url" placeholder="https://your-cdr.example.com/rest/v1" value="">
+      
+      <label>Auth:</label>
+      <select id="auth-type">
+        <option value="oauth">OAuth Token</option>
+        <option value="basic">Basic Auth</option>
+      </select>
+      
+      <div id="oauth-auth" class="auth-section">
+        <input type="password" id="oauth-token" placeholder="Bearer token...">
+      </div>
+      
+      <div id="basic-auth" class="auth-section hidden">
+        <input type="text" id="basic-username" placeholder="Username">
+        <input type="password" id="basic-password" placeholder="Password">
+      </div>
+      
+      <button id="connect-btn">🔌 Connect</button>
+      <span class="separator"></span>
+      
+      <label>Form:</label>
+      <select id="form-list" disabled>
+        <option value="">-- Connect to load forms --</option>
+      </select>
+      <button id="load-server-form-btn" disabled>📥 Load Form</button>
+    </div>
+    
     <div id="toolbar">
+      <!-- Mode Tabs -->
+      <div id="mode-tabs">
+        <button id="local-mode-btn" class="active" title="Load forms from local files">📁 Local</button>
+        <button id="server-mode-btn" title="Connect to a Better CDR server">🌐 Server</button>
+      </div>
+      
+      <!-- Local Mode Controls -->
+      <div id="local-controls" class="mode-section">
+        <input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
+        <button id="load-form-btn" title="Load Better Studio form package (.zip or .json)">📦 Load Form</button>
+        <input type="file" id="web-template-input" accept=".json" style="display: none;">
+        <button id="load-template-btn" title="Load openEHR Web Template (JSON) - optional for offline mode">🧬 Load Web Template</button>
+        <span id="template-status" style="font-size: 0.8em; color: #666;"></span>
+      </div>
+      
+      <span class="separator"></span>
+      
+      <!-- Common Controls -->
       <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">📋 Get Data</button>
       <button id="send-to-parent-btn" disabled title="Send form data back to main window">↩ Send to Kintegrate</button>
       <button id="clear-btn" disabled title="Clear form values">🗑 Clear</button>
     </div>
+    
     <div id="form-container">
-      <div id="loading">Waiting for form data...</div>
+      <div id="loading">Select a mode and load a form to begin...</div>
       <div id="error-message"></div>
       <form-renderer id="form-renderer"></form-renderer>
     </div>
@@ -137,8 +295,316 @@
       const sendToParentBtn = document.getElementById('send-to-parent-btn');
       const clearBtn = document.getElementById('clear-btn');
 
+      // Mode switching elements
+      const localModeBtn = document.getElementById('local-mode-btn');
+      const serverModeBtn = document.getElementById('server-mode-btn');
+      const localControls = document.getElementById('local-controls');
+      const serverConfig = document.getElementById('server-config');
+      
+      // Server mode elements
+      const serverUrlInput = document.getElementById('server-url');
+      const authTypeSelect = document.getElementById('auth-type');
+      const oauthAuthSection = document.getElementById('oauth-auth');
+      const basicAuthSection = document.getElementById('basic-auth');
+      const oauthTokenInput = document.getElementById('oauth-token');
+      const basicUsernameInput = document.getElementById('basic-username');
+      const basicPasswordInput = document.getElementById('basic-password');
+      const connectBtn = document.getElementById('connect-btn');
+      const formListSelect = document.getElementById('form-list');
+      const loadServerFormBtn = document.getElementById('load-server-form-btn');
+      
+      // Local mode elements
+      const loadTemplateBtn = document.getElementById('load-template-btn');
+      const webTemplateInput = document.getElementById('web-template-input');
+      const templateStatus = document.getElementById('template-status');
+
       let formLoaded = false;
       let parentWindow = window.opener;
+      let serviceWorkerReady = false;
+      let swRegistration = null;
+      let currentMode = 'local'; // 'local' or 'server'
+      let serverConnected = false;
+      let cachedWebTemplate = null; // For local mode web template loading
+      let serverForms = []; // List of forms from server
+      let syncModeEnabled = false; // Phase 4: Sync mode tracking
+
+      // Register Service Worker for mock CDR
+      async function registerMockCDR() {
+        if ('serviceWorker' in navigator) {
+          try {
+            swRegistration = await navigator.serviceWorker.register('form-mock-sw.js', { scope: '/' });
+            console.log('[Popup] Service Worker registered:', swRegistration.scope);
+            
+            // Wait for SW to be ready
+            await navigator.serviceWorker.ready;
+            
+            // Ensure there's an active controller
+            // If this is first load, SW won't control until reload
+            if (!navigator.serviceWorker.controller) {
+              console.log('[Popup] Service Worker registered but not controlling yet - requesting reload control');
+              // Ask SW to take control immediately
+              if (swRegistration.active) {
+                swRegistration.active.postMessage({ type: 'CLAIM_CLIENTS' });
+              }
+              // Wait a bit for claim to take effect
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            serviceWorkerReady = !!navigator.serviceWorker.controller;
+            console.log('[Popup] Service Worker ready:', serviceWorkerReady, 'controller:', !!navigator.serviceWorker.controller);
+            
+            // Listen for messages from SW
+            navigator.serviceWorker.addEventListener('message', (event) => {
+              if (event.data.type === 'FORM_CACHED') {
+                console.log('[Popup] SW confirmed form cached:', event.data.formName);
+                // Resolve any pending promise
+                if (window._formCachedResolve) {
+                  window._formCachedResolve(event.data.formName);
+                  window._formCachedResolve = null;
+                }
+              }
+            });
+            
+            return serviceWorkerReady;
+          } catch (error) {
+            console.error('[Popup] Service Worker registration failed:', error);
+            return false;
+          }
+        } else {
+          console.warn('[Popup] Service Workers not supported');
+          return false;
+        }
+      }
+      
+      // Initialize SW immediately
+      registerMockCDR();
+
+      // ============================================================
+      // MODE SWITCHING
+      // ============================================================
+      
+      function switchToLocalMode() {
+        currentMode = 'local';
+        localModeBtn.classList.add('active');
+        serverModeBtn.classList.remove('active');
+        localControls.classList.remove('hidden');
+        serverConfig.classList.remove('visible');
+        
+        // Reset renderer to use local mock CDR
+        if (isFormRendererAvailable) {
+          formRenderer.ehrServerUrl = window.location.origin + '/mock-cdr';
+          formRenderer.credentials = { username: 'offline', password: 'offline' };
+        }
+        console.log('[Popup] Switched to Local mode');
+      }
+      
+      function switchToServerMode() {
+        currentMode = 'server';
+        serverModeBtn.classList.add('active');
+        localModeBtn.classList.remove('active');
+        localControls.classList.add('hidden');
+        serverConfig.classList.add('visible');
+        console.log('[Popup] Switched to Server mode');
+      }
+      
+      localModeBtn.addEventListener('click', switchToLocalMode);
+      serverModeBtn.addEventListener('click', switchToServerMode);
+      
+      // ============================================================
+      // AUTH TYPE SWITCHING
+      // ============================================================
+      
+      authTypeSelect.addEventListener('change', () => {
+        if (authTypeSelect.value === 'oauth') {
+          oauthAuthSection.classList.remove('hidden');
+          basicAuthSection.classList.add('hidden');
+        } else {
+          oauthAuthSection.classList.add('hidden');
+          basicAuthSection.classList.remove('hidden');
+        }
+      });
+      
+      // ============================================================
+      // SERVER CONNECTION
+      // ============================================================
+      
+      async function connectToServer() {
+        const serverUrl = serverUrlInput.value.trim();
+        if (!serverUrl) {
+          showError('Please enter a CDR server URL');
+          return;
+        }
+        
+        setStatus('Connecting...', '');
+        connectBtn.disabled = true;
+        
+        try {
+          // Build credentials based on auth type
+          let credentials;
+          if (authTypeSelect.value === 'oauth') {
+            const token = oauthTokenInput.value.trim();
+            if (!token) {
+              throw new Error('Please enter an OAuth token');
+            }
+            credentials = { authType: 'oauth2', token: token };
+          } else {
+            const username = basicUsernameInput.value.trim();
+            const password = basicPasswordInput.value.trim();
+            if (!username || !password) {
+              throw new Error('Please enter username and password');
+            }
+            credentials = { username, password };
+          }
+          
+          // Configure renderer with server settings
+          formRenderer.ehrServerUrl = serverUrl;
+          formRenderer.credentials = credentials;
+          
+          // Fetch list of forms from server
+          const formsUrl = `${serverUrl}/form`;
+          const headers = buildAuthHeaders(credentials);
+          
+          console.log('[Popup] Fetching forms from:', formsUrl);
+          const response = await fetch(formsUrl, { headers });
+          
+          if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+          }
+          
+          serverForms = await response.json();
+          console.log('[Popup] Received forms:', serverForms);
+          
+          // Populate form dropdown
+          formListSelect.innerHTML = '<option value="">-- Select a form --</option>';
+          
+          // Handle both array and object responses
+          const formArray = Array.isArray(serverForms) ? serverForms : (serverForms.forms || []);
+          
+          formArray.forEach(form => {
+            const option = document.createElement('option');
+            const formName = form.name || form.formId || form.id;
+            const formVersion = form.version || form.latestVersion || '';
+            option.value = JSON.stringify({ name: formName, version: formVersion });
+            option.textContent = formVersion ? `${formName} (v${formVersion})` : formName;
+            formListSelect.appendChild(option);
+          });
+          
+          formListSelect.disabled = false;
+          loadServerFormBtn.disabled = false;
+          serverConnected = true;
+          setStatus('Connected', 'success');
+          
+        } catch (error) {
+          console.error('[Popup] Connection failed:', error);
+          showError('Connection failed: ' + error.message);
+          serverConnected = false;
+        } finally {
+          connectBtn.disabled = false;
+        }
+      }
+      
+      function buildAuthHeaders(credentials) {
+        const headers = new Headers();
+        headers.set('Accept', 'application/json');
+        
+        if (credentials.authType === 'oauth2') {
+          headers.set('Authorization', `Bearer ${credentials.token}`);
+        } else if (credentials.username && credentials.password) {
+          const basic = btoa(`${credentials.username}:${credentials.password}`);
+          headers.set('Authorization', `Basic ${basic}`);
+        }
+        
+        return headers;
+      }
+      
+      async function loadFormFromServer() {
+        const selected = formListSelect.value;
+        if (!selected) {
+          showError('Please select a form');
+          return;
+        }
+        
+        const formInfo = JSON.parse(selected);
+        console.log('[Popup] Loading form from server:', formInfo);
+        
+        setStatus('Loading form...', '');
+        loadingEl.style.display = 'flex';
+        loadingEl.textContent = 'Loading form from server...';
+        errorEl.style.display = 'none';
+        
+        try {
+          // Use formMetadata to let renderer fetch the form
+          formRenderer.formMetadata = {
+            name: formInfo.name,
+            version: formInfo.version || undefined
+          };
+          
+          formNameEl.textContent = `${formInfo.name}${formInfo.version ? ' v' + formInfo.version : ''}`;
+          document.title = `Form: ${formInfo.name} - Kintegrate`;
+          
+        } catch (error) {
+          console.error('[Popup] Error loading form from server:', error);
+          showError('Failed to load form: ' + error.message);
+        }
+      }
+      
+      connectBtn.addEventListener('click', connectToServer);
+      loadServerFormBtn.addEventListener('click', loadFormFromServer);
+      
+      // ============================================================
+      // LOCAL MODE - WEB TEMPLATE LOADING
+      // ============================================================
+      
+      loadTemplateBtn.addEventListener('click', () => {
+        webTemplateInput.click();
+      });
+      
+      webTemplateInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        try {
+          const text = await file.text();
+          let parsed = JSON.parse(text);
+          
+          // Handle wrapped format { webTemplate: {...} }
+          if (parsed.webTemplate && typeof parsed.webTemplate === 'object') {
+            console.log('[Popup] Unwrapping nested webTemplate object');
+            parsed = parsed.webTemplate;
+          }
+          
+          cachedWebTemplate = parsed;
+          
+          // Validate it looks like a web template (check various common properties)
+          const hasTemplateId = cachedWebTemplate.templateId;
+          const hasTree = cachedWebTemplate.tree;
+          const hasVersion = cachedWebTemplate.version;
+          const hasDefaultLanguage = cachedWebTemplate.defaultLanguage;
+          
+          const validIndicators = [hasTemplateId, hasTree, hasVersion, hasDefaultLanguage].filter(Boolean).length;
+          
+          if (validIndicators >= 2) {
+            templateStatus.textContent = `✓ ${cachedWebTemplate.templateId || file.name}`;
+            templateStatus.style.color = '#080';
+            console.log('[Popup] Web template loaded:', cachedWebTemplate.templateId, 'tree:', !!hasTree);
+          } else if (validIndicators === 1) {
+            templateStatus.textContent = `⚠ ${file.name} (partial)`;
+            templateStatus.style.color = '#880';
+            console.warn('[Popup] Web template may be incomplete. Found:', { hasTemplateId, hasTree, hasVersion, hasDefaultLanguage });
+          } else {
+            templateStatus.textContent = `⚠ ${file.name} (unknown format)`;
+            templateStatus.style.color = '#880';
+            console.warn('[Popup] File does not look like a standard web template. Keys:', Object.keys(cachedWebTemplate).slice(0, 10));
+          }
+        } catch (error) {
+          console.error('[Popup] Error loading web template:', error);
+          templateStatus.textContent = '✗ Invalid JSON';
+          templateStatus.style.color = '#c00';
+          cachedWebTemplate = null;
+        }
+        
+        webTemplateInput.value = '';
+      });
 
       function setStatus(message, type = '') {
         statusEl.textContent = message;
@@ -155,6 +621,16 @@
       function hideLoading() {
         loadingEl.style.display = 'none';
       }
+      
+      // Phase 4: Update sync indicator
+      function updateSyncIndicator() {
+        const statusText = syncModeEnabled ? '🔄 Sync: ON' : '⏸ Sync: OFF';
+        const indicator = document.getElementById('sync-indicator');
+        if (indicator) {
+          indicator.textContent = statusText;
+          indicator.className = syncModeEnabled ? 'sync-on' : 'sync-off';
+        }
+      }
 
       // Check if form-renderer is available
       const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
@@ -162,17 +638,21 @@
       if (!isFormRendererAvailable) {
         showError('Better Form Renderer is not available. Please ensure vendor/form-renderer.js is present.');
       } else {
-        // Initialize form renderer
-        formRenderer.ehrServerUrl = 'http://localhost/offline-mode';
+        // Initialize form renderer with mock CDR URL
+        // The service worker will intercept requests to /mock-cdr/
+        formRenderer.ehrServerUrl = window.location.origin + '/mock-cdr';
+        formRenderer.credentials = { username: 'offline', password: 'offline' };
         formRenderer.context = {
           language: 'sv',
           territory: 'SE',
           readonly: false,
-          validationDisabled: true
+          validationDisabled: true,
+          formDataFormat: 'FLAT'
         };
 
         // Event handlers
-        formRenderer.onFormRendered = (payload) => {
+        // Event handlers - use addEventListener as per Better docs for framework-agnostic JS
+        formRenderer.addEventListener('onFormRendered', (event) => {
           formLoaded = true;
           formRenderer.classList.add('loaded');
           hideLoading();
@@ -181,16 +661,33 @@
           sendToParentBtn.disabled = !parentWindow;
           clearBtn.disabled = false;
           console.log('Form rendered successfully');
-        };
+        });
 
-        formRenderer.onValueChange = (payload) => {
-          console.log('Value changed:', payload?.data?.path, payload?.data?.value);
-        };
+        formRenderer.addEventListener('onValueChange', (event) => {
+          console.log('onValueChange event:', event?.detail);
+          
+          // Phase 4: Send composition to parent if sync mode is enabled
+          if (syncModeEnabled && parentWindow) {
+            try {
+              const composition = formRenderer.composition;
+              parentWindow.postMessage({
+                type: 'COMPOSITION_CHANGED',
+                payload: { composition }
+              }, window.location.origin);
+              console.log('[Popup] Sent COMPOSITION_CHANGED to parent');
+            } catch (error) {
+              console.error('[Popup] Error sending composition change:', error);
+            }
+          }
+        });
 
-        formRenderer.onFormError = (error) => {
-          showError('Form error: ' + (error?.message || 'Unknown error'));
-          console.error('Form error:', error);
-        };
+        formRenderer.addEventListener('onFormError', (event) => {
+          const error = event?.detail;
+          console.error('[Popup] Form error object:', error);
+          console.error('[Popup] Form error details:', JSON.stringify(error, Object.getOwnPropertyNames(error || {}), 2));
+          const errorMsg = error?.message || error?.error || error?.detail || 'Unknown error (check console)';
+          showError('Form error: ' + errorMsg);
+        });
       }
 
       // Load form from message
@@ -243,8 +740,71 @@
       window.addEventListener('message', (event) => {
         // Basic origin check - in production you'd want stricter validation
         if (!event.data?.type) return;
+        
+        console.log('[Popup] Received message:', event.data.type);
 
         switch (event.data.type) {
+          // === New Protocol Messages ===
+          case 'PONG':
+            console.log('[Popup] Received PONG from parent:', event.data.payload);
+            setStatus('Connected to Kintegrate', 'success');
+            setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+            break;
+            
+          case 'SYNC_MODE_STATUS':
+            syncModeEnabled = event.data.payload?.enabled || false;
+            console.log('[Popup] Sync mode:', syncModeEnabled ? 'ON' : 'OFF');
+            // Update visual indicator
+            updateSyncIndicator();
+            break;
+            
+          case 'REQUEST_COMPOSITION':
+            // Parent is requesting composition data (manual pull)
+            if (parentWindow) {
+              try {
+                const composition = formRenderer.composition;
+                if (composition) {
+                  parentWindow.postMessage({
+                    type: 'COMPOSITION_DATA',
+                    payload: { composition }
+                  }, window.location.origin);
+                  console.log('[Popup] Sent COMPOSITION_DATA to parent');
+                  setStatus('Data sent', 'success');
+                  setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+                } else {
+                  console.log('[Popup] No composition data available to send');
+                  setStatus('No data to send', 'error');
+                  setTimeout(() => setStatus(formLoaded ? 'Form loaded' : 'Ready'), 1500);
+                }
+              } catch (error) {
+                console.error('[Popup] Error getting composition:', error);
+                parentWindow.postMessage({
+                  type: 'COMPOSITION_DATA',
+                  payload: { composition: null, error: error.message }
+                }, window.location.origin);
+              }
+            }
+            break;
+            
+          case 'LOAD_COMPOSITION':
+            // Parent is pushing composition data to form
+            if (isFormRendererAvailable && event.data.payload?.composition) {
+              console.log('[Popup] Loading composition from parent');
+              try {
+                formRenderer.composition = event.data.payload.composition;
+                console.log('[Popup] Composition set on form renderer:', formRenderer.composition ? 'OK' : 'null');
+                setStatus('Composition loaded', 'success');
+              } catch (error) {
+                console.error('[Popup] Error loading composition:', error);
+                setStatus('Error loading composition', 'error');
+              }
+            } else {
+              console.log('[Popup] Cannot load composition - renderer available:', isFormRendererAvailable, 
+                          'composition provided:', !!event.data.payload?.composition);
+            }
+            break;
+
+          // === Legacy Protocol Messages (keep for compatibility) ===
           case 'loadForm':
             if (event.data.formData) {
               console.log('Received form data from parent');
@@ -338,15 +898,325 @@
         }
       });
 
+      // ============================================
+      // Phase 3: Form Package Loading
+      // ============================================
+      
+      const loadFormBtn = document.getElementById('load-form-btn');
+      const formPackageInput = document.getElementById('form-package-input');
+      
+      loadFormBtn?.addEventListener('click', () => {
+        formPackageInput?.click();
+      });
+      
+      formPackageInput?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        try {
+          setStatus('Loading form package...', '');
+          loadingEl.style.display = 'flex';
+          loadingEl.textContent = 'Loading form package...';
+          
+          if (file.name.endsWith('.zip')) {
+            await loadFormPackageZip(file);
+          } else if (file.name.endsWith('.json')) {
+            await loadFormPackageJson(file);
+          } else {
+            throw new Error('Unsupported file type. Please use .zip or .json');
+          }
+        } catch (err) {
+          console.error('[Popup] Error loading form package:', err);
+          showError('Failed to load: ' + err.message);
+        }
+        
+        // Reset file input so same file can be loaded again
+        formPackageInput.value = '';
+      });
+      
+      async function loadFormPackageZip(file) {
+        console.log('[Popup] Loading ZIP file:', file.name);
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const outerZip = await JSZip.loadAsync(arrayBuffer);
+        
+        console.log('[Popup] Outer ZIP contents:', Object.keys(outerZip.files));
+        
+        // Better Studio package structure:
+        // - Outer ZIP: package-manifest.json (package index) + inner form ZIP + optional .opt template
+        // - Inner ZIP: manifest.json (form metadata) + form-description + other resources
+        
+        // Find inner ZIP (the actual form package)
+        let innerZip = null;
+        let innerZipName = null;
+        for (const filename of Object.keys(outerZip.files)) {
+          if (filename.endsWith('.zip') && !outerZip.files[filename].dir) {
+            innerZipName = filename;
+            console.log('[Popup] Found inner ZIP:', filename);
+            break;
+          }
+        }
+        
+        // Read package-manifest.json from outer ZIP (package index)
+        const packageManifestFile = outerZip.file('package-manifest.json');
+        let packageManifest = null;
+        if (packageManifestFile) {
+          packageManifest = JSON.parse(await packageManifestFile.async('text'));
+          console.log('[Popup] Package manifest:', packageManifest);
+        }
+        
+        // Load the inner ZIP which contains the actual form
+        if (innerZipName) {
+          const innerData = await outerZip.files[innerZipName].async('arraybuffer');
+          innerZip = await JSZip.loadAsync(innerData);
+          console.log('[Popup] Inner ZIP contents:', Object.keys(innerZip.files));
+        }
+        
+        // The form ZIP (inner or outer if no nesting) should have manifest.json
+        const formZip = innerZip || outerZip;
+        const formManifestFile = formZip.file('manifest.json');
+        
+        if (!formManifestFile) {
+          throw new Error('No manifest.json found in form package');
+        }
+        
+        const formManifest = JSON.parse(await formManifestFile.async('text'));
+        console.log('[Popup] Form manifest:', formManifest);
+        
+        // Read all form resource files and bundle them
+        const formBundle = {
+          manifest: formManifest
+        };
+        
+        // List of expected resource files in a form package
+        const resourceFiles = [
+          'form-description',
+          'form-environment', 
+          'form-layout',
+          'form-metadata',
+          'app-pages',
+          'summary-pages',
+          'templates',
+          'widget-configuration'
+        ];
+        
+        for (const resourceName of resourceFiles) {
+          const resourceFile = formZip.file(resourceName);
+          if (resourceFile) {
+            try {
+              const content = await resourceFile.async('text');
+              formBundle[resourceName] = JSON.parse(content);
+            } catch (e) {
+              // Some files might not be valid JSON (e.g., templates)
+              formBundle[resourceName] = await resourceFile.async('text');
+            }
+          }
+        }
+        
+        console.log('[Popup] Form bundle assembled with resources:', Object.keys(formBundle));
+        
+        // Extract form name/version from form manifest
+        const formName = formManifest.resource?.name || formManifest.name || file.name.replace('.zip', '');
+        const formVersion = formManifest.resource?.version || formManifest.version || '1.0.0';
+        const templateId = formManifest.resource?.templateId;
+        
+        // Load into renderer
+        loadFormDefinitionIntoRenderer(formBundle, { name: formName, version: formVersion, templateId });
+      }
+      
+      async function loadFormPackageJson(file) {
+        console.log('[Popup] Loading JSON file:', file.name);
+        
+        const text = await file.text();
+        const formDefinition = JSON.parse(text);
+        
+        // Extract form name from definition or filename
+        const formName = formDefinition.templateId || file.name.replace('.json', '');
+        
+        loadFormDefinitionIntoRenderer(formDefinition, { name: formName, version: '1.0.0' });
+      }
+      
+      async function loadFormDefinitionIntoRenderer(formBundle, manifest) {
+        console.log('[Popup] Loading form definition into renderer:', manifest.name);
+        
+        if (!isFormRendererAvailable) {
+          showError('Form Renderer not available');
+          return;
+        }
+        
+        try {
+          // Update UI
+          formNameEl.textContent = `${manifest.name} v${manifest.version}`;
+          document.title = `Form: ${manifest.name} - Kintegrate`;
+          setStatus('Rendering form...', '');
+          
+          // Get the form-description (the actual form definition)
+          let formDescription;
+          let formEnvironment = null;
+          let templates = null;
+          let formLayout = null;
+          
+          if (formBundle['form-description']) {
+            formDescription = formBundle['form-description'];
+            formEnvironment = formBundle['form-environment'] || null;
+            templates = formBundle['templates'] || null;
+            formLayout = formBundle['form-layout'] || null;
+          } else {
+            // Direct JSON (already the form definition)
+            formDescription = formBundle;
+          }
+          
+          // Parse templates if it's a string (JSON array)
+          if (typeof templates === 'string') {
+            try {
+              templates = JSON.parse(templates);
+            } catch (e) {
+              console.warn('[Popup] Could not parse templates:', e);
+              templates = [];
+            }
+          }
+          
+          console.log('[Popup] Form description structure:', {
+            id: formDescription?.id || formDescription?.formId,
+            hasChildren: !!formDescription?.children,
+            childrenCount: formDescription?.children?.length,
+            topLevelKeys: Object.keys(formDescription || {}).slice(0, 10)
+          });
+          console.log('[Popup] TemplateId:', manifest.templateId);
+          console.log('[Popup] Templates:', templates);
+          
+          // IMPORTANT: The renderer's webTemplate setter actually expects form-description format!
+          // From analyzing form-renderer.js:
+          //   set webTemplate(e) {
+          //     Array.isArray(i) → this.formDescription = i
+          //     i?.children?.length → this.formDescription = i.children  
+          //     i?.webTemplate?.tree?.children → this.formDescription = i.webTemplate.tree.children
+          //   }
+          // So webTemplate setter converts input to formDescription internally.
+          
+          // Set formEnvironment first if available
+          if (formEnvironment) {
+            console.log('[Popup] Setting formEnvironment:', Object.keys(formEnvironment));
+            formRenderer.formEnvironment = formEnvironment;
+          }
+          
+          // First, cache the form in Service Worker so CDR fetch returns our data
+          if (serviceWorkerReady && navigator.serviceWorker.controller) {
+            console.log('[Popup] Caching form in Service Worker before triggering load...');
+            
+            // Create a promise to wait for SW to confirm caching
+            const cachePromise = new Promise((resolve, reject) => {
+              window._formCachedResolve = resolve;
+              setTimeout(() => {
+                if (window._formCachedResolve) {
+                  window._formCachedResolve = null;
+                  reject(new Error('SW cache timeout'));
+                }
+              }, 2000);
+            });
+            
+            // Send form data to the service worker to cache
+            navigator.serviceWorker.controller.postMessage({
+              type: 'CACHE_FORM',
+              formDescription: formDescription,
+              formEnvironment: formEnvironment,
+              formName: manifest.name,
+              formVersion: manifest.version,
+              templates: templates,
+              formLayout: formLayout,
+              templateId: manifest.templateId
+            });
+            
+            try {
+              await cachePromise;
+              console.log('[Popup] SW confirmed form cached');
+            } catch (swErr) {
+              console.warn('[Popup] SW cache warning:', swErr.message);
+            }
+          }
+          
+          // Now trigger the renderer's internal flow
+          // IMPORTANT: Do NOT set webTemplate - it extracts children and breaks parsing
+          // Instead, just set formMetadata and let the renderer fetch from CDR (mocked by SW)
+          console.log('[Popup] Setting formMetadata to trigger renderer initialization...');
+          
+          // Create form metadata object
+          const formMeta = {
+            name: manifest.name,
+            version: manifest.version,
+            templateId: manifest.templateId
+          };
+          console.log('[Popup] Form metadata:', formMeta);
+          
+          try {
+            // Just set formMetadata - the renderer will fetch from CDR
+            // The Service Worker will intercept the request and return our cached form data
+            console.log('[Popup] Setting formMetadata (SW will intercept CDR fetch)...');
+            formRenderer.formMetadata = formMeta;
+            
+            console.log('[Popup] formMetadata set, waiting for renderer to fetch from mock CDR...');
+          } catch (metaError) {
+            console.error('[Popup] Error setting formMetadata:', metaError);
+          }
+          
+          // If we have a cached openEHR web template, log it but don't use it yet
+          // (future: may be needed for data binding/validation)
+          if (cachedWebTemplate) {
+            console.log('[Popup] Note: openEHR web template also loaded:', cachedWebTemplate.templateId);
+            console.log('[Popup] This may be needed for data model validation in future.');
+          }
+          
+          // NOTE: Service Worker approach disabled - using direct webTemplate property instead
+          // The webTemplate setter in form-renderer.js handles form-description format directly
+          
+          // Fallback: if onFormRendered doesn't fire, check after a delay
+          setTimeout(() => {
+            if (!formLoaded) {
+              console.log('[Popup] onFormRendered not fired after 3s, checking form state...');
+              // Check if form has rendered content
+              const hasContent = formRenderer.shadowRoot?.querySelector('form') || 
+                                 formRenderer.querySelector('form') ||
+                                 formRenderer.innerHTML.length > 100;
+              console.log('[Popup] Form has content:', hasContent, 'innerHTML length:', formRenderer.innerHTML?.length);
+              
+              if (hasContent || formRenderer.innerHTML?.length > 100) {
+                formLoaded = true;
+                formRenderer.classList.add('loaded');
+                hideLoading();
+                setStatus('Form loaded (fallback)', 'success');
+                getDataBtn.disabled = false;
+                sendToParentBtn.disabled = !parentWindow;
+                clearBtn.disabled = false;
+                console.log('[Popup] Form loaded via fallback detection');
+              } else {
+                console.log('[Popup] Form content not detected - check console for errors');
+                setStatus('Form may not have loaded', 'error');
+              }
+            }
+          }, 3000);
+          
+        } catch (error) {
+          console.error('[Popup] Error loading form:', error);
+          showError('Error loading form: ' + error.message);
+        }
+      }
+
       // Notify parent that we're ready
       if (parentWindow) {
-        parentWindow.postMessage({ type: 'formViewerReady' }, '*');
+        parentWindow.postMessage({ type: 'FORM_VIEWER_READY', payload: {} }, window.location.origin);
+        console.log('[Popup] Sent FORM_VIEWER_READY to parent');
+        
+        // Send a ping to test communication
+        setTimeout(() => {
+          parentWindow.postMessage({ type: 'REQUEST_PING', payload: {} }, window.location.origin);
+          console.log('[Popup] Sent REQUEST_PING to test communication');
+        }, 500);
       }
 
       // Handle window close
       window.addEventListener('beforeunload', () => {
         if (parentWindow) {
-          parentWindow.postMessage({ type: 'formViewerClosed' }, '*');
+          parentWindow.postMessage({ type: 'FORM_VIEWER_CLOSED', payload: {} }, window.location.origin);
         }
       });
     </script>

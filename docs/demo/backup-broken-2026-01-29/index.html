@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.3.7';
+      const APP_VERSION = 'v0.3.7b';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
     <link rel="stylesheet" href="tree.min.css">
-    <!-- CodeMirror 5 CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <!-- CodeMirror 5 CSS (local) -->
+    <link rel="stylesheet" href="vendor/codemirror/codemirror.css">
+    <!-- Better Form Renderer (proprietary - loaded from vendor if available) -->
+    <link rel="stylesheet" href="vendor/styles.css" onerror="this.remove()">
+    <link rel="stylesheet" href="vendor/styles-theme.css" onerror="this.remove()">
+    <script src="vendor/form-renderer.js" onerror="console.log('Better form-renderer not available - using placeholder')"></script>
+    <!-- JSZip for handling form bundle ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Application styles -->
     <link rel="stylesheet" href="kintegrate.css">
     <style>
@@ -40,19 +46,6 @@
       .toggle-button.active:hover {
         border-color: #2e7d32;
       }
-      /* Sync mode button styles */
-      #sync-mode-btn.sync-off {
-        background: #f5f5f5;
-        color: #666;
-      }
-      #sync-mode-btn.sync-on {
-        background: #4CAF50;
-        color: white;
-        border-color: #2e7d32;
-      }
-      #sync-mode-btn.sync-on:hover {
-        background: #43a047;
-      }
     </style>
 
 
@@ -60,7 +53,41 @@
   <body>
     <main>
       <div class="fullheight-container" id="main-container">
-        <!-- div id="input-wrapper" -->
+        <!-- Form renderer column (leftmost) -->
+        <div class="column column-form">
+          <div id="form-container">
+            <label for="form-name" style="font-weight: bold;">Form to be tested:</label>
+            <input type="text" id="form-name" placeholder="Enter form name..." style="width: 100%; margin-top: 8px; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px;">
+            <div id="form-config" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="ehr-server-url" placeholder="EHR Server URL" style="flex: 1; min-width: 150px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+              <button id="load-form-btn" title="Load form from server">Load from Server</button>
+              <span style="color: #666;">or</span>
+              <label style="display: inline-flex; align-items: center; cursor: pointer;">
+                <input type="file" id="form-file-input" accept=".json,.zip" style="display: none;">
+                <button id="load-form-file-btn" title="Load form definition from local JSON or ZIP bundle file" onclick="document.getElementById('form-file-input').click(); return false;">Load from File</button>
+              </label>
+            </div>
+            <div id="form-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="get-composition-btn" title="Get composition data from form">Get Data →</button>
+              <button id="open-form-window-btn" title="Open form in separate popup window (for CSS isolation)">🔲 Popup</button>
+              <button id="clear-form-btn" title="Clear form and reset">Clear</button>
+            </div>
+            <div id="form-renderer-wrapper" style="margin-top: 16px; flex: 1; min-height: 200px; border: 1px solid #ddd; border-radius: 4px; overflow: auto; background: #fff;">
+              <!-- Better form-renderer web component -->
+              <form-renderer id="better-form-renderer" style="display: block; width: 100%; min-height: 100%;"></form-renderer>
+              <!-- Fallback message shown when form-renderer is not available -->
+              <div id="form-renderer-fallback" style="padding: 16px; text-align: center; color: #666; display: none;">
+                <p>Better Form Renderer is not loaded.</p>
+                <p><small>Copy <code>form-renderer.js</code> from <code>node_modules/@better/form-renderer/</code><br>to <code>src/vendor/</code> to enable form rendering.</small></p>
+              </div>
+            </div>
+          </div>
+          <div id="form-footer" class="column-footer">
+            Form column | <span id="form-status">Ready</span>
+          </div>
+        </div>
+        <div class="resizer"></div>
+        <!-- Input column (was leftmost) -->
           <div class="column column-left">
             <div id="input-container">
               Pick 
@@ -69,15 +96,6 @@
                   <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-3 2v5l-1-.75L15 9V4zm3 12H8V4h5v9l3-2.25L19 13V4h1z"></path>
                 </svg>
               </button>, upload <input type="file" id="fileInput" style="display: inline-block; width: 12em;" />
-              | <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window" style="padding: 2px 8px;">📋 Form Viewer</button>
-              <button id="push-to-form-btn" title="Send current instance to form viewer" style="padding: 2px 8px;">→ Push</button>
-              <button id="pull-from-form-btn" title="Get current composition from form viewer" style="padding: 2px 8px;">← Pull</button>
-              <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode - auto-update from form changes" style="padding: 2px 8px;">🔄 Sync: OFF</button>
-              <button id="download-instance-btn" title="Download current instance as JSON file" style="padding: 2px 8px;">
-                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
-                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
-                </svg>
-              </button>
               <br>or just paste input into the box below<br>
               <textarea id="inputInstance">Input example goes here</textarea>
               <hr>
@@ -325,16 +343,14 @@ Närvarolista i ankomstordning:
           | <label style="cursor: pointer;"><input type="checkbox" id="toggle-column-footers" checked>Show column footers</label>
      </footer>
  
-    <!-- CodeMirror 5 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <!-- CodeMirror 5 JS (local) -->
+    <script src="vendor/codemirror/codemirror.js"></script>
     <!-- Add simple mode addon first, required by handlebars mode -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/handlebars/handlebars.min.js"></script>
-    <!-- Add undo/redo addon -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/undo/undo.min.js"></script>
+    <script src="vendor/codemirror/addon/mode/simple.js"></script>
+    <script src="vendor/codemirror/mode/xml/xml.js"></script>
+    <script src="vendor/codemirror/mode/javascript/javascript.js"></script>
+    <script src="vendor/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="vendor/codemirror/mode/handlebars/handlebars.js"></script>
 
     <!-- Tree widget and Handlebars runtime (local) -->
     <script src="tree.min.js"></script>
@@ -346,163 +362,458 @@ Närvarolista i ankomstordning:
     <!-- Other scripts -->
     <script src="resizable-columns.js"></script>
     <script>
-      // ============================================
-      // Form Viewer Popup Management
-      // ============================================
-      let formViewerWindow = null;
-      let syncModeEnabled = false;
+      document.addEventListener('DOMContentLoaded', () => {
+      // Set version in footer
+      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
 
-      function openFormViewer() {
-        // Focus existing if open
-        if (formViewerWindow && !formViewerWindow.closed) {
-          formViewerWindow.focus();
+      // --- Better Form Renderer initialization ---
+      const formRenderer = document.getElementById('better-form-renderer');
+      const formRendererFallback = document.getElementById('form-renderer-fallback');
+      const formNameInput = document.getElementById('form-name');
+      const ehrServerUrlInput = document.getElementById('ehr-server-url');
+      const loadFormBtn = document.getElementById('load-form-btn');
+      const getCompositionBtn = document.getElementById('get-composition-btn');
+      const openFormWindowBtn = document.getElementById('open-form-window-btn');
+      const clearFormBtn = document.getElementById('clear-form-btn');
+      const formStatus = document.getElementById('form-status');
+
+      // State for the form viewer popup
+      let formViewerWindow = null;
+      let currentFormData = null;
+      let currentFormName = '';
+
+      // Check if form-renderer web component is available
+      const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
+      
+      if (!isFormRendererAvailable) {
+        formRendererFallback.style.display = 'block';
+        if (formRenderer) formRenderer.style.display = 'none';
+        formStatus.textContent = 'Form renderer not loaded';
+      } else {
+        formStatus.textContent = 'Form renderer ready';
+        
+        // Initialize form renderer for offline use
+        formRenderer.ehrServerUrl = 'http://localhost/offline-mode';
+        formRenderer.context = {
+          language: 'sv',
+          territory: 'SE',
+          readonly: false,
+          validationDisabled: true
+        };
+        
+        // Set up form renderer event listeners
+        formRenderer.onFormRendered = (payload) => {
+          formStatus.textContent = 'Form loaded';
+          console.log('Form rendered, ScriptApi available:', payload?.source?.getScriptApi?.());
+        };
+        
+        formRenderer.onValueChange = (payload) => {
+          console.log('Value change:', payload?.data?.path, payload?.data?.value);
+        };
+        
+        formRenderer.onFormError = (error) => {
+          formStatus.textContent = 'Error: ' + (error?.message || 'Unknown error');
+          console.error('Form renderer error:', error);
+        };
+      }
+
+      /**
+       * Load form data into the embedded Better Form Renderer
+       */
+      function loadFormIntoRenderer(formData) {
+        if (!isFormRendererAvailable || !formRenderer) {
+          console.warn('Form renderer not available');
           return;
         }
         
-        // Open new popup (position to the right of main window)
+        // Clear any existing form first
+        formRenderer.webTemplate = null;
+        formRenderer.formMetadata = null;
+        formRenderer.composition = null;
+        
+        // Ensure ehrServerUrl is set
+        if (!formRenderer.ehrServerUrl) {
+          formRenderer.ehrServerUrl = 'http://localhost/offline-mode';
+        }
+        
+        // Set context for offline mode
+        formRenderer.context = {
+          language: 'sv',
+          territory: 'SE',
+          readonly: false,
+          validationDisabled: true
+        };
+        
+        // Load the form definition
+        if (formData.formDescription) {
+          console.log('Loading form via webTemplate property...', formData.formDescription);
+          requestAnimationFrame(() => {
+            formRenderer.webTemplate = formData.formDescription;
+          });
+        }
+        
+        // Set form environment if available
+        if (formData.formEnvironment) {
+          formRenderer.formEnvironment = formData.formEnvironment;
+        }
+      }
+
+      /**
+       * Open the form viewer in a separate popup window
+       */
+      function openFormViewerWindow() {
+        if (!currentFormData) {
+          formStatus.textContent = 'No form loaded';
+          return;
+        }
+
+        if (formViewerWindow && !formViewerWindow.closed) {
+          formViewerWindow.focus();
+          formViewerWindow.postMessage({
+            type: 'loadForm',
+            formData: currentFormData,
+            formName: currentFormName
+          }, '*');
+          return;
+        }
+
         const width = 900;
         const height = 700;
-        const left = window.screenX + window.innerWidth - 50;
-        const top = window.screenY + 50;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
         
         formViewerWindow = window.open(
           'form-viewer.html',
-          'FormViewer',
+          'formViewer',
           `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
-        
-        console.log('[Main] Opened form viewer popup');
+
+        if (!formViewerWindow) {
+          alert('Popup blocked! Please allow popups for this site.');
+          formStatus.textContent = 'Popup blocked';
+        }
       }
 
-      // Listen for messages from popup
+      // Handle messages from the form viewer popup window
       window.addEventListener('message', (event) => {
-        if (event.origin !== window.location.origin) return;
-        
-        const { type, payload } = event.data || {};
-        console.log('[Main] Received message:', type, payload);
-        
-        switch (type) {
-          case 'FORM_VIEWER_READY':
-            console.log('[Main] Form viewer is ready');
-            // Notify popup of current sync mode
-            sendToFormViewer('SYNC_MODE_STATUS', { enabled: syncModeEnabled });
-            break;
-            
-          case 'COMPOSITION_CHANGED':
-            // Real-time update from form (sync mode)
-            if (syncModeEnabled) {
-              console.log('[Main] Received composition change (sync mode)');
-              updateInputFromComposition(payload.composition);
+        if (!event.data || typeof event.data !== 'object') return;
+
+        switch (event.data.type) {
+          case 'formViewerReady':
+            if (formViewerWindow && currentFormData) {
+              formViewerWindow.postMessage({
+                type: 'loadForm',
+                formData: currentFormData,
+                formName: currentFormName
+              }, '*');
             }
             break;
-            
-          case 'COMPOSITION_DATA':
-            // Response to explicit REQUEST_COMPOSITION (manual pull)
-            console.log('[Main] Received composition data');
-            updateInputFromComposition(payload.composition);
+
+          case 'formComposition':
+            if (event.data.composition) {
+              const inputEditor = document.querySelector('.CodeMirror')?.CodeMirror;
+              if (inputEditor) {
+                inputEditor.setValue(JSON.stringify(event.data.composition, null, 2));
+                formStatus.textContent = 'Composition loaded to input';
+              }
+            }
             break;
-            
-          case 'REQUEST_PING':
-            console.log('[Main] Received ping request, sending pong');
-            sendToFormViewer('PONG', { timestamp: Date.now() });
+
+          case 'formViewerClosed':
+            formViewerWindow = null;
             break;
         }
       });
 
-      function sendToFormViewer(type, payload) {
-        if (formViewerWindow && !formViewerWindow.closed) {
-          formViewerWindow.postMessage({ type, payload }, window.location.origin);
-          console.log('[Main] Sent message:', type);
-        } else {
-          console.log('[Main] Cannot send message - form viewer not open');
-        }
-      }
-      
-      // ============================================
-      // Phase 4: Sync Mode Functions
-      // ============================================
-      
-      function toggleSyncMode() {
-        syncModeEnabled = !syncModeEnabled;
-        
-        const btn = document.getElementById('sync-mode-btn');
-        if (syncModeEnabled) {
-          btn.textContent = '🔄 Sync: ON';
-          btn.classList.remove('sync-off');
-          btn.classList.add('sync-on');
-        } else {
-          btn.textContent = '🔄 Sync: OFF';
-          btn.classList.remove('sync-on');
-          btn.classList.add('sync-off');
-        }
-        
-        // Notify popup of sync mode change
-        sendToFormViewer('SYNC_MODE_STATUS', { enabled: syncModeEnabled });
-        
-        console.log('[Main] Sync mode:', syncModeEnabled ? 'ON' : 'OFF');
-      }
+      // Open Form Window button handler (popup)
+      openFormWindowBtn.addEventListener('click', () => {
+        openFormViewerWindow();
+      });
 
-      // ============================================
-      // Phase 2: Composition Handling Functions
-      // ============================================
-      
-      // Download current instance as JSON file
-      function downloadCurrentInstance() {
-        // inputEditor is defined in DOMContentLoaded, access via closure won't work here
-        // We'll wire this up inside DOMContentLoaded instead
-      }
-      
-      // Push instance from input to form viewer
-      function pushToForm(inputEditor) {
-        const content = inputEditor ? inputEditor.getValue() : 
-                        document.getElementById('inputInstance').value;
+      // Clear Form button handler
+      clearFormBtn.addEventListener('click', () => {
+        currentFormData = null;
+        currentFormName = '';
         
-        if (!content || content.trim() === '') {
-          alert('No instance data to push');
+        if (formViewerWindow && !formViewerWindow.closed) {
+          formViewerWindow.close();
+        }
+        formViewerWindow = null;
+        
+        // Clear embedded renderer
+        if (formRenderer) {
+          formRenderer.webTemplate = null;
+          formRenderer.composition = null;
+        }
+        
+        formNameInput.value = '';
+        formStatus.textContent = 'Form cleared';
+      });
+
+      // Get Composition button handler - get data from embedded renderer
+      getCompositionBtn.addEventListener('click', async () => {
+        if (!isFormRendererAvailable) {
+          alert('Better Form Renderer is not loaded.');
           return;
         }
         
         try {
-          const composition = JSON.parse(content);
+          formStatus.textContent = 'Getting composition...';
+          const composition = formRenderer.composition;
           
-          // Open form viewer if not open
-          if (!formViewerWindow || formViewerWindow.closed) {
-            openFormViewer();
-            // Wait for window to load, then send
-            setTimeout(() => {
-              sendToFormViewer('LOAD_COMPOSITION', { composition });
-            }, 1500);
+          const inputEditor = document.querySelector('.CodeMirror')?.CodeMirror;
+          if (inputEditor && composition) {
+            inputEditor.setValue(JSON.stringify(composition, null, 2));
+            formStatus.textContent = 'Composition loaded to input';
           } else {
-            sendToFormViewer('LOAD_COMPOSITION', { composition });
+            formStatus.textContent = 'No composition data available';
           }
-          console.log('[Main] Pushed composition to form');
-        } catch (e) {
-          alert('Instance is not valid JSON: ' + e.message);
+        } catch (error) {
+          formStatus.textContent = 'Error getting composition';
+          console.error('Error getting composition:', error);
         }
-      }
+      });
       
-      // Pull composition from form viewer to input
-      function pullFromForm() {
-        if (!formViewerWindow || formViewerWindow.closed) {
-          alert('Form viewer is not open');
+      // Load form from server button handler
+      loadFormBtn.addEventListener('click', () => {
+        if (!isFormRendererAvailable) {
+          alert('Better Form Renderer is not loaded.');
           return;
         }
         
-        // Request composition from popup
-        sendToFormViewer('REQUEST_COMPOSITION', {});
-        // Response will be handled by message listener (COMPOSITION_DATA)
-        console.log('[Main] Requested composition from form');
+        const formName = formNameInput.value.trim();
+        const ehrServerUrl = ehrServerUrlInput.value.trim();
+        
+        if (!formName) {
+          alert('Please enter a form name');
+          return;
+        }
+        
+        formStatus.textContent = 'Loading form...';
+        
+        if (ehrServerUrl) {
+          formRenderer.ehrServerUrl = ehrServerUrl;
+        }
+        
+        formRenderer.formMetadata = {
+          name: formName
+        };
+      });
+
+      // Load form definition from local file (JSON or ZIP bundle)
+      const formFileInput = document.getElementById('form-file-input');
+      formFileInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+          formStatus.textContent = 'Loading form from file...';
+          
+          let formData;
+          let fileName = file.name.replace(/\.(json|zip)$/i, '');
+          
+          if (file.name.toLowerCase().endsWith('.zip')) {
+            formData = await loadFormFromZip(file);
+            if (!formData) {
+              formStatus.textContent = 'No form definition found in ZIP';
+              return;
+            }
+          } else {
+            const text = await file.text();
+            formData = { formDescription: JSON.parse(text) };
+          }
+          
+          // Extract form name from manifest or filename
+          if (formData.manifest?.resource?.name) {
+            fileName = formData.manifest.resource.name;
+            if (formData.manifest.resource.version) {
+              fileName += ` v${formData.manifest.resource.version}`;
+            }
+          }
+          formNameInput.value = fileName;
+          
+          // Store the form data
+          currentFormData = formData;
+          currentFormName = fileName;
+          
+          // Load into embedded renderer
+          if (isFormRendererAvailable) {
+            loadFormIntoRenderer(formData);
+          }
+          
+          formStatus.textContent = `Loaded: ${fileName}`;
+          console.log('Form data loaded:', formData);
+          
+        } catch (error) {
+          formStatus.textContent = 'Error loading file';
+          console.error('Error loading form file:', error);
+          alert('Error loading form file: ' + error.message);
+        }
+        
+        // Reset the file input
+        event.target.value = '';
+      });
+      
+      /**
+       * Load form definition from a Better Studio form package (ZIP bundle)
+       * 
+       * Better Studio form packages have a nested structure:
+       * - package-manifest.json (package index with entryFile pointing to inner ZIP)
+       * - FormName_VERSION_FORM.zip (nested ZIP with actual form files)
+       * - TemplateName_TEMPLATE.opt (optional openEHR template)
+       * 
+       * The inner FORM.zip contains:
+       * - manifest.json (form metadata)
+       * - form-description (UI element definitions - this is the main form definition)
+       * - form-environment (variables, APIs, dependencies)
+       * - form-layout, app-pages, templates, widget-configuration, etc.
+       */
+      async function loadFormFromZip(file) {
+        const zip = await JSZip.loadAsync(file);
+        const fileNames = Object.keys(zip.files);
+        
+        // Check if this is a Better Studio package (has package-manifest.json)
+        const hasPackageManifest = fileNames.includes('package-manifest.json');
+        
+        if (hasPackageManifest) {
+          return await loadBetterFormPackage(zip);
+        } else {
+          // Fall back to legacy/simple ZIP handling
+          return await loadSimpleFormZip(zip);
+        }
       }
       
-      // Update input editor with composition data (used by pull and sync)
-      // Note: inputEditor reference will be passed when called from DOMContentLoaded scope
-      let updateInputFromComposition = (composition) => {
-        console.log('[Main] updateInputFromComposition called but inputEditor not yet available');
-      };
-
-      document.addEventListener('DOMContentLoaded', () => {
-      // Set version in footer
-      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+      /**
+       * Load a Better Studio form package with nested structure
+       */
+      async function loadBetterFormPackage(zip) {
+        // Read the package manifest
+        const manifestContent = await zip.files['package-manifest.json'].async('string');
+        const packageManifest = JSON.parse(manifestContent);
+        
+        formStatus.textContent = `Loading package: ${packageManifest.name}...`;
+        
+        // Find the form entry (entryFile or first FORM type item)
+        let formZipName = packageManifest.entryFile;
+        if (!formZipName) {
+          const formItem = packageManifest.items?.find(item => item.type === 'FORM');
+          formZipName = formItem?.fileName;
+        }
+        
+        if (!formZipName || !zip.files[formZipName]) {
+          throw new Error('No form ZIP found in package. Expected: ' + (formZipName || 'FORM entry'));
+        }
+        
+        // Extract the nested FORM.zip
+        const innerZipData = await zip.files[formZipName].async('arraybuffer');
+        const innerZip = await JSZip.loadAsync(innerZipData);
+        
+        // Load form components from inner ZIP
+        return await loadFormFromInnerZip(innerZip, packageManifest);
+      }
+      
+      /**
+       * Load form definition files from the inner FORM.zip
+       */
+      async function loadFormFromInnerZip(innerZip, packageManifest) {
+        const files = Object.keys(innerZip.files);
+        
+        // Check for form-description (Better Studio format)
+        if (files.includes('form-description')) {
+          const formDescription = await innerZip.files['form-description'].async('string');
+          const formDef = JSON.parse(formDescription);
+          
+          // Optionally load additional components for a complete form metadata object
+          const result = {
+            formDescription: formDef
+          };
+          
+          // Load manifest.json for form metadata
+          if (files.includes('manifest.json')) {
+            const manifestContent = await innerZip.files['manifest.json'].async('string');
+            result.manifest = JSON.parse(manifestContent);
+          }
+          
+          // Load form-environment for variables
+          if (files.includes('form-environment')) {
+            const envContent = await innerZip.files['form-environment'].async('string');
+            result.formEnvironment = JSON.parse(envContent);
+          }
+          
+          // Load form-layout
+          if (files.includes('form-layout')) {
+            const layoutContent = await innerZip.files['form-layout'].async('string');
+            result.formLayout = JSON.parse(layoutContent);
+          }
+          
+          // Load app-pages
+          if (files.includes('app-pages')) {
+            const pagesContent = await innerZip.files['app-pages'].async('string');
+            result.appPages = JSON.parse(pagesContent);
+          }
+          
+          // Load widget-configuration
+          if (files.includes('widget-configuration')) {
+            const widgetContent = await innerZip.files['widget-configuration'].async('string');
+            result.widgetConfiguration = JSON.parse(widgetContent);
+          }
+          
+          // Load summary-pages
+          if (files.includes('summary-pages')) {
+            const summaryContent = await innerZip.files['summary-pages'].async('string');
+            result.summaryPages = JSON.parse(summaryContent);
+          }
+          
+          // Store package info
+          if (packageManifest) {
+            result.packageManifest = packageManifest;
+          }
+          
+          console.log('Loaded Better form package:', result);
+          return result;
+        }
+        
+        // Fallback: look for any JSON file
+        return await loadSimpleFormZip(innerZip);
+      }
+      
+      /**
+       * Legacy/simple ZIP handling - looks for JSON files directly
+       */
+      async function loadSimpleFormZip(zip) {
+        const jsonFiles = Object.keys(zip.files).filter(name => 
+          name.toLowerCase().endsWith('.json') && !zip.files[name].dir
+        );
+        
+        if (jsonFiles.length === 0) {
+          throw new Error('No JSON files found in ZIP bundle');
+        }
+        
+        // Try to find the form definition file
+        let formFile = jsonFiles.find(f => f.toLowerCase() === 'form.json')
+          || jsonFiles.find(f => f.toLowerCase() === 'formdescription.json')
+          || jsonFiles.find(f => f.toLowerCase().includes('form-description'))
+          || jsonFiles.find(f => f.toLowerCase().includes('form'))
+          || jsonFiles[0];
+        
+        formStatus.textContent = `Loading ${formFile} from ZIP...`;
+        const content = await zip.files[formFile].async('string');
+        return { formDescription: JSON.parse(content) };
+      }
+      
+      // Clear form button handler
+      const clearFormBtn = document.getElementById('clear-form-btn');
+      clearFormBtn.addEventListener('click', () => {
+        if (isFormRendererAvailable) {
+          // Reset form renderer by clearing its properties
+          formRenderer.formDescription = null;
+          formRenderer.formMetadata = null;
+          formRenderer.composition = null;
+          formRenderer.compositionId = null;
+        }
+        formNameInput.value = '';
+        formStatus.textContent = 'Form cleared';
+      });
 
       //handlebars helper from https://stackoverflow.com/a/31632215
 
@@ -2106,76 +2417,6 @@ Närvarolista i ankomstordning:
           debounce(runConversion, delay)();
         }
       });
-
-      // ============================================
-      // Form Viewer Button Wiring
-      // ============================================
-      document.getElementById('open-form-viewer-btn')?.addEventListener('click', openFormViewer);
-      
-      // Phase 2: Wire up composition handling buttons
-      document.getElementById('push-to-form-btn')?.addEventListener('click', () => pushToForm(inputEditor));
-      document.getElementById('pull-from-form-btn')?.addEventListener('click', pullFromForm);
-      
-      // Phase 4: Wire up sync mode button
-      document.getElementById('sync-mode-btn')?.addEventListener('click', toggleSyncMode);
-      
-      // Download button - needs access to inputEditor
-      document.getElementById('download-instance-btn')?.addEventListener('click', () => {
-        const content = inputEditor ? inputEditor.getValue() : 
-                        document.getElementById('inputInstance').value;
-        
-        if (!content || content.trim() === '') {
-          alert('No instance data to download');
-          return;
-        }
-        
-        // Generate filename with timestamp
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-        const filename = `composition-${timestamp}.json`;
-        
-        // Create download
-        const blob = new Blob([content], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        console.log('[Main] Downloaded instance as:', filename);
-      });
-      
-      // Override updateInputFromComposition with access to inputEditor
-      updateInputFromComposition = (composition) => {
-        if (!composition) {
-          console.log('[Main] No composition data received');
-          return;
-        }
-        
-        const jsonStr = JSON.stringify(composition, null, 2);
-        
-        // Update input editor
-        if (inputEditor) {
-          inputEditor.setValue(jsonStr);
-        } else {
-          document.getElementById('inputInstance').value = jsonStr;
-        }
-        
-        // Brief visual feedback for sync updates
-        const inputCol = document.querySelector('.column-left');
-        if (inputCol) {
-          inputCol.style.transition = 'background-color 0.3s';
-          inputCol.style.backgroundColor = '#e8f5e9';
-          setTimeout(() => {
-            inputCol.style.backgroundColor = '';
-          }, 300);
-        }
-        
-        // The existing inputEditor.on('change') handler will trigger:
-        // - updateJsonTree()
-        // - runConversion() if autoConvertEnabled
-        
-        console.log('[Main] Input updated from composition');
-      };
 
       }); // DOMContentLoaded
     </script>

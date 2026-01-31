@@ -14,11 +14,52 @@ from user's local files (upload button)
 Technology stack: Vanilla JavaScript + HTML + CSS  
 Licensed under Apache-2.0. See `LICENSE` file for details.
 
-Credits:
+## Credits
 * Icons: https://mui.com/material-ui/material-icons/
 * Editor Widget: https://codemirror.net
 * Tree widget: https://github.com/daweilv/treejs
 * Initial coding, Erik Sundvall & AI helpers...
+
+## Build commands
+```bash
+# Install dependencies (first time)
+npm install
+
+# Build docs for GitHub Pages
+npm run build
+
+# Serve docs locally
+npm run serve
+
+# Development server from src
+npm run dev
+```
+
+## Setting up the NPM_BETTER_AUTH environment variable
+
+The `.npmrc` file references `${NPM_BETTER_AUTH}` for authentication. To set this:
+
+**Windows (PowerShell):**
+```powershell
+# Temporary (current session only)
+$env:NPM_BETTER_AUTH = "your-base64-encoded-auth-token"
+
+# Permanent (user level)
+[System.Environment]::SetEnvironmentVariable("NPM_BETTER_AUTH", "your-base64-encoded-auth-token", "User")
+```
+
+**Windows (Command Prompt):**
+```cmd
+setx NPM_BETTER_AUTH "your-base64-encoded-auth-token"
+```
+
+**Linux/macOS:**
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export NPM_BETTER_AUTH="your-base64-encoded-auth-token"
+```
+
+The auth token should be base64 encoded `username:password`. This keeps secrets out of version control.
 
 # Roadmap
 
@@ -118,46 +159,8 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
   - Authentication uses the `NPM_BETTER_AUTH` environment variable (see setup instructions below)
 - Converted the PowerShell build script to Node.js (`scripts/build.js`)
 
-### Setting up the NPM_BETTER_AUTH environment variable
 
-The `.npmrc` file references `${NPM_BETTER_AUTH}` for authentication. To set this:
 
-**Windows (PowerShell):**
-```powershell
-# Temporary (current session only)
-$env:NPM_BETTER_AUTH = "your-base64-encoded-auth-token"
-
-# Permanent (user level)
-[System.Environment]::SetEnvironmentVariable("NPM_BETTER_AUTH", "your-base64-encoded-auth-token", "User")
-```
-
-**Windows (Command Prompt):**
-```cmd
-setx NPM_BETTER_AUTH "your-base64-encoded-auth-token"
-```
-
-**Linux/macOS:**
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-export NPM_BETTER_AUTH="your-base64-encoded-auth-token"
-```
-
-The auth token should be base64 encoded `username:password`. This keeps secrets out of version control.
-
-### Build commands
-```bash
-# Install dependencies (first time)
-npm install
-
-# Build docs for GitHub Pages
-npm run build
-
-# Serve docs locally
-npm run serve
-
-# Development server from src
-npm run dev
-```
 
 ## 🔜<a id="v0.3.8"></a>version 0.3.8 Internal refactoring
 1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
