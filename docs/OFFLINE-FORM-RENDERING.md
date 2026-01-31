@@ -2,15 +2,33 @@
 
 > **Status:** ✅ Working  
 > **Form Renderer Version:** v3.14.5  
-> **Last Updated:** January 30, 2026
+> **Last Updated:** January 31, 2026
 
 ## Overview
 
 This document describes how Kintegrate achieves offline rendering of Better Studio forms without requiring a live CDR (Clinical Data Repository) server connection.
 
-## Solution: Service Worker Mock CDR
+## Solution: Service Worker Mock CDR + Vendor Library Caching
 
-The working solution uses a **Service Worker** to intercept CDR API requests and return locally-loaded form data. This allows the Form Renderer to function normally while being completely offline.
+The working solution uses a **Service Worker** to:
+1. Intercept CDR API requests and return locally-loaded form data
+2. Cache and serve the proprietary Better Form Renderer library files
+3. Enable completely offline operation without version control of proprietary code
+
+This allows the Form Renderer to function normally while being completely offline, and allows users to upload the proprietary renderer library to their browser cache for offline use.
+
+## Key Features
+
+### 1. CDR API Mocking
+The service worker intercepts requests to `/mock-cdr/*` and returns form data that has been loaded by the user.
+
+### 2. Vendor Library Caching (NEW)
+The service worker caches and serves vendor library files from `/vendor/*`:
+- Users can upload the Better Form Renderer files via the UI
+- Files are cached in the browser's Cache API
+- The service worker serves cached files when requested
+- Falls back to network in development mode
+- No proprietary code needs to be committed to version control
 
 ### Architecture
 
@@ -36,6 +54,7 @@ The working solution uses a **Service Worker** to intercept CDR API requests and
 
 ### How It Works
 
+#### Form Loading Flow
 1. **User loads a form package** (ZIP from Better Studio export)
 2. **Form Viewer extracts resources** (form-description, form-environment, etc.)
 3. **Data sent to Service Worker** via `postMessage`
@@ -44,6 +63,56 @@ The working solution uses a **Service Worker** to intercept CDR API requests and
 6. **Service Worker intercepts** the request
 7. **Service Worker returns cached form data** in CDR API format
 8. **Renderer parses and displays** the form
+
+#### Vendor Library Upload Flow (NEW)
+1. **User clicks "📚 Upload Renderer"** in form-viewer.html
+2. **User selects vendor files** (form-renderer.js, styles.css, styles-theme.css)
+3. **Files are sent to Service Worker** via `postMessage` with type `CACHE_VENDOR_FILE`
+4. **Service Worker caches files** in Cache API under `kintegrate-vendor-v1`
+5. **When page requests `/vendor/form-renderer.js`**, Service Worker serves from cache
+6. **Form Renderer loads** from cached files, enabling offline operation
+
+This approach keeps proprietary code out of version control while allowing users to run the application completely offline.
+
+## Using the Vendor Upload Feature
+
+### For End Users
+
+If you're using the GitHub Pages hosted version and want to work offline:
+
+1. **Obtain the Better Form Renderer library files** (requires Better Platform license):
+   - `form-renderer.js` (main library)
+   - `styles.css` (base styles)
+   - `styles-theme.css` (theme styles)
+
+2. **Open the Form Viewer** in Kintegrate
+
+3. **Click "📚 Upload Renderer"** button in the toolbar
+
+4. **Select all three files** when prompted
+
+5. **Wait for upload confirmation** - you'll see "✅ 3 files uploaded"
+
+6. **Reload the page** - the renderer will now load from browser cache
+
+7. **You can now work completely offline!** The uploaded files persist in your browser's cache.
+
+### Clearing the Cache
+
+If you need to update the renderer or clear space:
+
+1. Click **"🗑 Clear Renderer"** button
+2. Confirm the action
+3. The page will reload and use network files (if available)
+
+### For Developers
+
+When developing locally with the proprietary library:
+
+1. Install the Better Form Renderer: `npm install @better/form-renderer`
+2. Copy to vendor folder: `npm run setup:vendor`
+3. The service worker will serve files from the network (local file system)
+4. End users can upload their own copy via the UI
 
 ## Implementation Details
 
@@ -57,6 +126,68 @@ await navigator.serviceWorker.ready;
 // Request immediate control
 if (swRegistration.active) {
   swRegistration.active.postMessage({ type: 'CLAIM_CLIENTS' });
+}
+```
+
+### Caching Vendor Libraries
+
+```javascript
+// Upload vendor file to Service Worker
+const fileContent = await file.arrayBuffer();
+navigator.serviceWorker.controller.postMessage({
+  type: 'CACHE_VENDOR_FILE',
+  filename: 'form-renderer.js',
+  content: fileContent,
+  contentType: 'application/javascript'
+});
+
+// Service Worker stores in Cache API
+const cache = await caches.open('kintegrate-vendor-v1');
+const response = new Response(content, {
+  status: 200,
+  headers: {
+    'Content-Type': contentType,
+    'Cache-Control': 'public, max-age=31536000'
+  }
+});
+await cache.put(`/vendor/${filename}`, response);
+```
+
+### Serving Vendor Files from Cache
+
+```javascript
+// Service Worker intercepts vendor file requests
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  if (url.pathname.startsWith('/vendor/')) {
+    event.respondWith(handleVendorRequest(url, event.request));
+    return;
+  }
+  // ... other handlers
+});
+
+async function handleVendorRequest(url, request) {
+  const cache = await caches.open('kintegrate-vendor-v1');
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse; // Serve from cache
+  }
+  
+  // Fallback to network (for development)
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      // Cache for future use
+      await cache.put(request, networkResponse.clone());
+      return networkResponse;
+    }
+  } catch (error) {
+    // Network failed
+  }
+  
+  return new Response('Vendor file not found', { status: 404 });
 }
 ```
 
