@@ -22,7 +22,7 @@ This allows the Form Renderer to function normally while being completely offlin
 ### 1. CDR API Mocking
 The service worker intercepts requests to `/mock-cdr/*` and returns form data that has been loaded by the user.
 
-### 2. Vendor Library Caching (NEW)
+### 2. Vendor Library Caching
 The service worker caches and serves vendor library files from `/vendor/*`:
 - Users can upload the Better Form Renderer files via the UI
 - Files are cached in the browser's Cache API
