@@ -4,11 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate - Form Viewer</title>
-    <!-- Better Form Renderer styles -->
-    <link rel="stylesheet" href="vendor/styles.css">
-    <link rel="stylesheet" href="vendor/styles-theme.css">
-    <!-- Better Form Renderer script -->
-    <script src="vendor/form-renderer.js"></script>
+    <!-- Better Form Renderer files are loaded dynamically after Service Worker is ready -->
     <!-- JSZip for loading form packages -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" 
             crossorigin="anonymous"></script>
@@ -390,8 +386,26 @@
         }
       }
       
-      // Initialize SW immediately
-      registerMockCDR();
+      // Initialize SW and then load vendor files
+      async function initializeApp() {
+        const swReady = await registerMockCDR();
+        console.log('[Popup] SW registration complete, ready:', swReady);
+        
+        // Try to load vendor files (from cache via SW or from disk in dev)
+        const rendererLoaded = await loadVendorFiles();
+        console.log('[Popup] Vendor files load result:', rendererLoaded);
+        
+        // Initialize renderer if available
+        initializeFormRenderer();
+        
+        // Check vendor cache status
+        if (swReady) {
+          checkVendorCache();
+        }
+      }
+      
+      // Start initialization
+      initializeApp();
 
       // ============================================================
       // MODE SWITCHING
@@ -631,6 +645,10 @@
         loadingEl.style.display = 'none';
         setStatus('Error', 'error');
       }
+      
+      function hideError() {
+        errorEl.style.display = 'none';
+      }
 
       function hideLoading() {
         loadingEl.style.display = 'none';
@@ -646,12 +664,53 @@
         }
       }
 
-      // Check if form-renderer is available
-      const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
-      
-      if (!isFormRendererAvailable) {
-        showError('Better Form Renderer is not available. Click "📚 Upload Renderer" to upload the library files (requires license from Better Platform).');
-      } else {
+      // Track if form renderer is available (updated after dynamic load)
+      let isFormRendererAvailable = false;
+
+      // Dynamically load vendor files from cache via Service Worker
+      async function loadVendorFiles() {
+        console.log('[Popup] Attempting to load vendor files...');
+        
+        // Load CSS files
+        const cssFiles = ['styles.css', 'styles-theme.css'];
+        for (const file of cssFiles) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'vendor/' + file;
+          document.head.appendChild(link);
+          console.log('[Popup] Added CSS link:', file);
+        }
+        
+        // Load JS file and wait for it
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'vendor/form-renderer.js';
+          script.onload = () => {
+            console.log('[Popup] form-renderer.js loaded successfully');
+            // Give custom element time to register
+            setTimeout(() => {
+              isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
+              console.log('[Popup] Form renderer available:', isFormRendererAvailable);
+              resolve(isFormRendererAvailable);
+            }, 100);
+          };
+          script.onerror = () => {
+            console.log('[Popup] form-renderer.js failed to load');
+            resolve(false);
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      // Initialize form renderer after it's loaded
+      function initializeFormRenderer() {
+        if (!isFormRendererAvailable) {
+          showError('Better Form Renderer is not available. Click "📚 Upload Renderer" to upload the library files (requires license from Better Platform).');
+          return;
+        }
+        
+        hideError();
+        
         // Initialize form renderer with mock CDR URL
         // The service worker will intercept requests to /mock-cdr/
         formRenderer.ehrServerUrl = window.location.origin + '/mock-cdr';
@@ -664,7 +723,6 @@
           formDataFormat: 'FLAT'
         };
 
-        // Event handlers
         // Event handlers - use addEventListener as per Better docs for framework-agnostic JS
         formRenderer.addEventListener('onFormRendered', (event) => {
           formLoaded = true;
@@ -702,6 +760,8 @@
           const errorMsg = error?.message || error?.error || error?.detail || 'Unknown error (check console)';
           showError('Form error: ' + errorMsg);
         });
+        
+        console.log('[Popup] Form renderer initialized');
       }
 
       // Load form from message
@@ -1279,19 +1339,23 @@
           let successCount = 0;
           let errorCount = 0;
           
+          // Get base path for GitHub Pages compatibility
+          const basePath = window.location.pathname.replace(/\/[^/]*$/, '/') || '/';
+          
           for (const file of files) {
             try {
               const content = await file.arrayBuffer();
               const contentType = file.type || getContentType(file.name);
               
-              console.log(`[Popup] Caching vendor file: ${file.name} (${contentType})`);
+              console.log(`[Popup] Caching vendor file: ${file.name} (${contentType}) at ${basePath}vendor/`);
               
-              // Send to service worker
+              // Send to service worker with base path
               navigator.serviceWorker.controller.postMessage({
                 type: 'CACHE_VENDOR_FILE',
                 filename: file.name,
                 content: content,
-                contentType: contentType
+                contentType: contentType,
+                basePath: basePath
               });
               
               // Wait for confirmation

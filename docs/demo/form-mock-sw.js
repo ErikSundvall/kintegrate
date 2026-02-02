@@ -46,10 +46,13 @@ self.addEventListener('message', async (event) => {
     console.log('[SW] Claimed all clients');
   } else if (event.data.type === 'CACHE_VENDOR_FILE') {
     // Cache a vendor library file
+    // Use the base path from event data to support GitHub Pages deployment
     try {
-      const { filename, content, contentType } = event.data;
+      const { filename, content, contentType, basePath } = event.data;
       const cache = await caches.open(VENDOR_CACHE);
-      const url = `/vendor/${filename}`;
+      // Cache with full path including base (e.g., /kintegrate/demo/vendor/file.js)
+      const fullPath = (basePath || '') + 'vendor/' + filename;
+      const url = new Request(new URL(fullPath, self.location.origin));
       const response = new Response(content, {
         status: 200,
         headers: {
@@ -58,7 +61,7 @@ self.addEventListener('message', async (event) => {
         }
       });
       await cache.put(url, response);
-      console.log('[SW] Cached vendor file:', filename);
+      console.log('[SW] Cached vendor file:', fullPath);
       event.source.postMessage({ type: 'VENDOR_FILE_CACHED', filename });
     } catch (error) {
       console.error('[SW] Error caching vendor file:', error);
@@ -104,7 +107,8 @@ self.addEventListener('fetch', (event) => {
   console.log('[SW] Request:', event.request.method, url.pathname, url.search);
   
   // Handle vendor file requests from cache
-  if (url.pathname.startsWith('/vendor/')) {
+  // Match both /vendor/ and /path/to/app/vendor/ patterns
+  if (url.pathname.includes('/vendor/')) {
     event.respondWith(handleVendorRequest(url, event.request));
     return;
   }
@@ -319,7 +323,14 @@ async function handleVendorRequest(url, request) {
   
   try {
     const cache = await caches.open(VENDOR_CACHE);
-    const cachedResponse = await cache.match(request);
+    
+    // Try exact match first
+    let cachedResponse = await cache.match(request);
+    
+    // If no match, try matching by URL (in case request object differs)
+    if (!cachedResponse) {
+      cachedResponse = await cache.match(request.url);
+    }
     
     if (cachedResponse) {
       console.log('[SW] Serving cached vendor file:', url.pathname);
