@@ -11,7 +11,6 @@
     <script src="vendor/form-renderer.js"></script>
     <!-- JSZip for loading form packages -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" 
-            integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" 
             crossorigin="anonymous"></script>
     <style>
       * {
@@ -344,7 +343,10 @@
       async function registerMockCDR() {
         if ('serviceWorker' in navigator) {
           try {
-            swRegistration = await navigator.serviceWorker.register('form-mock-sw.js', { scope: '/' });
+            // Register service worker with appropriate scope for GitHub Pages
+            // Use relative path so it works both locally and on GitHub Pages
+            const scope = window.location.pathname.replace(/\/[^/]*$/, '/') || '/';
+            swRegistration = await navigator.serviceWorker.register('form-mock-sw.js', { scope: scope });
             console.log('[Popup] Service Worker registered:', swRegistration.scope);
             
             // Wait for SW to be ready
@@ -648,7 +650,7 @@
       const isFormRendererAvailable = customElements.get('form-renderer') !== undefined;
       
       if (!isFormRendererAvailable) {
-        showError('Better Form Renderer is not available. Please ensure vendor/form-renderer.js is present.');
+        showError('Better Form Renderer is not available. Click "📚 Upload Renderer" to upload the library files (requires license from Better Platform).');
       } else {
         // Initialize form renderer with mock CDR URL
         // The service worker will intercept requests to /mock-cdr/
