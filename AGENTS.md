@@ -75,3 +75,16 @@ When making changes:
 3. Ensure proprietary files stay out of Git (vendor/, docs-cache/)
 4. Update documentation in README.md for user-facing changes
 5. Update this AGENTS.md for AI-agent-relevant changes
+
+## Agent Safety: Git operations
+
+Agents MUST NOT execute `git push` (or any push/force-push) automatically.
+Any agent-run git operations that modify the repository locally are allowed
+only up to `git commit` (staging and committing). A `git push` to a remote
+must be performed only when an explicit, unambiguous instruction to push is
+provided by the human operator during that run (for example: "Please push
+these changes to origin/main now"). If in doubt, the agent should stop and
+ask for confirmation before pushing.
+
+This rule ensures humans remain in control of publishing changes to shared
+remotes and prevents unexpected deployments or merges.
