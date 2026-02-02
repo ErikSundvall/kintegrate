@@ -1,7 +1,7 @@
 # Kintegrate
 Prototype of integration builder tool for open-minded people with wide screens.
 
-Demo found at https://eriksundvall.github.io/kintegrate/demo/index.html (published from  `docs/` on GitHub Pages.)
+Demo found at https://eriksundvall.github.io/kintegrate/demo/index.html (published from  `docs/` on GitHub Pages via automated workflow.)
 
 The user interface has three rezisable columns
 * The left "input-container" column is for input of instance data and/or schema (or other structure defitnitions). It contains 
@@ -28,6 +28,9 @@ npm install
 # Build docs for GitHub Pages
 npm run build
 
+# Build with vendor libraries included (for private deployments with proprietary renderer)
+npm run build:full
+
 # Serve docs locally
 npm run serve
 
@@ -35,7 +38,36 @@ npm run serve
 npm run dev
 ```
 
-## Setting up the NPM_BETTER_AUTH environment variable
+## GitHub Pages Deployment
+
+The project is automatically deployed to GitHub Pages when changes are pushed to the `main` branch. The deployment is handled by a GitHub Actions workflow (`.github/workflows/deploy-pages.yml`).
+
+The workflow:
+- Runs on every push to `main`
+- Builds the project with `npm run build`
+- Deploys the `docs/` folder to GitHub Pages
+- Preserves existing `.md` files in the `docs/` directory
+
+## Better Form Renderer - Offline Upload Feature
+
+The Better Form Renderer is a proprietary library that is **not included in version control**. Users can upload the renderer library to their browser cache for offline use:
+
+1. **Obtain** the Better Form Renderer files (requires license):
+   - `form-renderer.js`
+   - `styles.css`
+   - `styles-theme.css`
+
+2. **Upload** via the Form Viewer:
+   - Open the Form Viewer in Kintegrate
+   - Click "📚 Upload Renderer" button
+   - Select all three files
+   - Files are cached in browser's Cache API
+
+3. **Offline Use**: Once uploaded, the renderer works completely offline via Service Worker
+
+See [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md) for technical details.
+
+## Setting up the NPM_BETTER_AUTH environment variable (for developers)
 
 The `.npmrc` file references `${NPM_BETTER_AUTH}` for authentication. To set this:
 

@@ -41,7 +41,8 @@ main {
 /* Common container styles for all columns */
 #input-container,
 #conversion-container,
-#output-container {
+#output-container,
+#form-container {
     flex: 1;
     overflow-y: auto;
     padding-bottom: 28px; /* Match footer height exactly */
@@ -49,10 +50,27 @@ main {
     box-sizing: border-box;
 }
 
+/* Form renderer container styles */
+#form-container {
+    display: flex;
+    flex-direction: column;
+}
+
+#form-renderer-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#form-renderer-wrapper form-renderer {
+    flex: 1;
+}
+
 /* Common footer styles for all columns */
 #input-footer,
 #conversion-footer,
-#output-footer {
+#output-footer,
+#form-footer {
     position: absolute;
     bottom: 0;
     left: 20px; /* Match column padding */
@@ -70,7 +88,8 @@ main {
 
 .hide-column-footers #input-footer,
 .hide-column-footers #conversion-footer,
-.hide-column-footers #output-footer {
+.hide-column-footers #output-footer,
+.hide-column-footers #form-footer {
     transform: translateY(100%);
 }
 
