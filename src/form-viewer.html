@@ -65,6 +65,16 @@
       #status.success {
         color: #080;
       }
+      #test-mode-badge {
+        margin-left: 8px;
+        font-size: 0.75em;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #ffb300;
+        color: #1f1f1f;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
       #toolbar {
         background: #fafafa;
         border-bottom: 1px solid #eee;
@@ -351,6 +361,18 @@
       const errorEl = document.getElementById('error-message');
       const getDataBtn = document.getElementById('get-data-btn');
       const clearBtn = document.getElementById('clear-btn');
+      const rawSearch = window.location.search || (window.location.hash ? `?${window.location.hash.replace(/^#/, '')}` : '');
+      const urlParams = new URLSearchParams(rawSearch);
+      const testModeEnabled = urlParams.get('testMode') === '1';
+      const testModeAutoLoad = urlParams.get('autoLoad') !== '0';
+      window.__formViewerBooted = true;
+      window.__formViewerSearch = rawSearch;
+      window.__formViewerTestMode = testModeEnabled;
+      if (testModeEnabled && !window.formTestApi) {
+        window.formTestApi = {
+          isReady: () => false
+        };
+      }
 
       // Mode switching elements
       const localModeBtn = document.getElementById('local-mode-btn');
@@ -372,6 +394,7 @@
       
       // Local mode elements
       let formLoaded = false;
+      let currentFormData = null;
       let parentWindow = window.opener;
       let serviceWorkerReady = false;
       let swRegistration = null;
@@ -435,6 +458,11 @@
       async function initializeApp() {
         const swReady = await registerMockCDR();
         console.log('[Popup] SW registration complete, ready:', swReady);
+
+        if (testModeEnabled) {
+          ensureTestModeBadge();
+          installFormTestApi();
+        }
         
         // Try to load vendor files (from cache via SW or from disk in dev)
         const rendererLoaded = await loadVendorFiles();
@@ -442,6 +470,10 @@
         
         // Initialize renderer if available
         initializeFormRenderer();
+
+        if (testModeEnabled && testModeAutoLoad) {
+          autoLoadDefaultFormPackages();
+        }
         
         // Check vendor cache status
         if (swReady) {
@@ -654,6 +686,81 @@
         }
       }
 
+      function ensureTestModeBadge() {
+        if (!testModeEnabled) {
+          return;
+        }
+        document.body.dataset.testMode = '1';
+        const header = document.getElementById('header');
+        if (!header || document.getElementById('test-mode-badge')) {
+          return;
+        }
+        const badge = document.createElement('span');
+        badge.id = 'test-mode-badge';
+        badge.textContent = 'TEST MODE';
+        header.appendChild(badge);
+      }
+
+      function buildFieldIndex(formDescription) {
+        const index = {
+          byPath: {},
+          byTag: {},
+          byId: {}
+        };
+
+        const visitNode = (node) => {
+          if (!node || typeof node !== 'object') {
+            return;
+          }
+
+          const path = node.aqlPath || node.path || node.aql_path || null;
+          const tag = node.tag || node.alias || node.name || null;
+          const id = node.id || node.formId || node.form_id || null;
+
+          if (path) {
+            index.byPath[path] = node;
+          }
+          if (tag) {
+            index.byTag[tag] = node;
+          }
+          if (id) {
+            index.byId[id] = node;
+          }
+
+          if (Array.isArray(node.children)) {
+            node.children.forEach(visitNode);
+          }
+        };
+
+        visitNode(formDescription);
+        return index;
+      }
+
+      function installFormTestApi() {
+        if (!testModeEnabled) {
+          return;
+        }
+
+        const fieldIndex = currentFormData?.formDescription
+          ? buildFieldIndex(currentFormData.formDescription)
+          : { byPath: {}, byTag: {}, byId: {} };
+
+        window.formTestApi = {
+          isReady: () => !!formRenderer && formRenderer.classList.contains('loaded'),
+          getFormInfo: () => formRenderer.getScriptApi?.()?.getFormInfo?.(),
+          getFieldModel: (tagOrPath, searchWithinContainerTag, containerMultiIndex) =>
+            formRenderer.getScriptApi?.()?.getFieldModel?.(tagOrPath, searchWithinContainerTag, containerMultiIndex),
+          setFieldValue: (tagOrPath, value, multiIndex, searchWithinContainerTag, containerMultiIndex) =>
+            formRenderer.getScriptApi?.()?.setFieldValue?.(tagOrPath, value, multiIndex, searchWithinContainerTag, containerMultiIndex),
+          getFieldValue: (tagOrPath, multiIndex, searchWithinContainerTag, containerMultiIndex, simpleValue = true) =>
+            formRenderer.getScriptApi?.()?.getFieldValue?.(tagOrPath, multiIndex, searchWithinContainerTag, containerMultiIndex, simpleValue),
+          isHidden: (tagOrPath, searchWithinContainerTag, containerMultiIndex) =>
+            formRenderer.getScriptApi?.()?.getFieldModel?.(tagOrPath, searchWithinContainerTag, containerMultiIndex)?.isHidden ?? null,
+          getFieldIndex: () => fieldIndex,
+          resolveTagFromPath: (path) => fieldIndex.byPath?.[path]?.tag || fieldIndex.byPath?.[path]?.alias || null
+        };
+      }
+
       // Track if form renderer is available (updated after dynamic load)
       let isFormRendererAvailable = false;
 
@@ -713,6 +820,9 @@
           formDataFormat: 'FLAT'
         };
 
+        ensureTestModeBadge();
+        installFormTestApi();
+
         // Event handlers - use addEventListener as per Better docs for framework-agnostic JS
         formRenderer.addEventListener('onFormRendered', (event) => {
           formLoaded = true;
@@ -722,6 +832,7 @@
           getDataBtn.disabled = false;
           clearBtn.disabled = false;
           console.log('Form rendered successfully');
+          installFormTestApi();
         });
 
         formRenderer.addEventListener('onValueChange', (event) => {
@@ -761,6 +872,7 @@
         }
 
         try {
+          currentFormData = formData;
           // Extract name from various sources
           const formName = formData.name || 
                           formData.manifest?.resource?.name || 
@@ -797,6 +909,51 @@
             parentWindow.postMessage({ type: 'formError', error: error.message }, '*');
           }
         }
+      }
+
+      function resolveExampleFormUrl(fileName) {
+        const basePath = window.location.pathname.replace(/\/[^/]*$/, '/') || '/';
+        return new URL(`${basePath}example/forms/${fileName}`, window.location.origin).toString();
+      }
+
+      async function loadFormPackageZipFromUrl(fileName) {
+        const url = resolveExampleFormUrl(fileName);
+        console.log('[Popup] Attempting to load default form package:', url);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch form package: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const file = new File([blob], fileName, { type: 'application/zip' });
+        await loadFormPackageZip(file);
+      }
+
+      async function autoLoadDefaultFormPackages() {
+        if (currentMode !== 'local') {
+          switchToLocalMode();
+        }
+
+        const candidates = [
+          '24oktDemo_1_0_4_FORM.zip',
+          'MDK_Rek_demo_1_0_131_FORM.zip'
+        ];
+
+        for (const fileName of candidates) {
+          try {
+            setStatus('Loading default form...', '');
+            loadingEl.style.display = 'flex';
+            loadingEl.textContent = `Loading ${fileName}...`;
+            await loadFormPackageZipFromUrl(fileName);
+            console.log('[Popup] Default form loaded:', fileName);
+            return;
+          } catch (error) {
+            console.warn('[Popup] Default form load failed:', fileName, error.message);
+          }
+        }
+
+        showError('Unable to auto-load default form packages. Please load a form manually.');
       }
 
       // Listen for messages from parent window
