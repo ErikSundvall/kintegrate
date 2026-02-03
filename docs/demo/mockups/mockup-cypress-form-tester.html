@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Better Form Test Generator (Cypress) - Mockup</title>
+  <style>
+    :root {
+      --primary: #1976d2;
+      --primary-dark: #1565c0;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+      --gray-900: #212121;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      line-height: 1.5;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .header .logo {
+      font-size: 2rem;
+    }
+    
+    .header .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .wizard-steps {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .wizard-step {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+    
+    .wizard-step.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .wizard-step.completed {
+      background: var(--success);
+      color: white;
+    }
+    
+    .wizard-step .number {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: currentColor;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+    
+    .wizard-step.active .number,
+    .wizard-step.completed .number {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .wizard-step::after {
+      content: '→';
+      margin-left: 0.5rem;
+      color: var(--gray-300);
+    }
+    
+    .wizard-step:last-child::after {
+      display: none;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    
+    .panel {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .panel-body {
+      padding: 1.5rem;
+    }
+    
+    .upload-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: var(--gray-50);
+    }
+    
+    .upload-zone .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .upload-zone p {
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+    }
+    
+    .upload-zone .hint {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-800);
+    }
+    
+    .btn-outline:hover {
+      background: var(--gray-100);
+    }
+    
+    .dependency-list {
+      list-style: none;
+    }
+    
+    .dependency-item {
+      padding: 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+    }
+    
+    .dependency-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .dependency-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    
+    .dependency-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    
+    .dependency-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      background: var(--gray-200);
+      color: var(--gray-800);
+    }
+    
+    .dependency-badge.show-hide {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    .dependency-badge.calculation {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    
+    .dependency-badge.validation {
+      background: #fff3e0;
+      color: #e65100;
+    }
+    
+    .dependency-condition {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem;
+      background: var(--gray-100);
+      padding: 0.5rem;
+      border-radius: 4px;
+      color: var(--gray-800);
+    }
+    
+    .test-count {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-top: 0.5rem;
+    }
+    
+    .step-builder {
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--gray-200);
+      gap: 0.75rem;
+    }
+    
+    .step-item:last-child {
+      border-bottom: none;
+    }
+    
+    .step-number {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .step-action {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: white;
+      min-width: 140px;
+    }
+    
+    .step-field {
+      flex: 1;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: white;
+    }
+    
+    .step-value {
+      width: 100px;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    
+    .step-delete {
+      background: none;
+      border: none;
+      color: var(--gray-600);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1rem;
+    }
+    
+    .step-delete:hover {
+      color: var(--danger);
+    }
+    
+    .add-step-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--gray-50);
+      border: none;
+      border-top: 1px solid var(--gray-200);
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    .add-step-btn:hover {
+      background: var(--gray-100);
+    }
+    
+    .code-preview {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+    
+    .code-keyword { color: #569cd6; }
+    .code-string { color: #ce9178; }
+    .code-function { color: #dcdcaa; }
+    .code-comment { color: #6a9955; }
+    
+    .action-bar {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    .ai-suggestion {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+    
+    .ai-suggestion h4 {
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .ai-suggestion p {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-bottom: 0.75rem;
+    }
+    
+    .ai-suggestion .btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .ai-suggestion .btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+      background: var(--gray-50);
+      padding: 1rem;
+      border-radius: 6px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-top: 0.25rem;
+    }
+    
+    .test-name-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-loaded-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: #e8f5e9;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    
+    .form-loaded-indicator .icon {
+      color: var(--success);
+      font-size: 1.5rem;
+    }
+    
+    .form-loaded-indicator .info {
+      flex: 1;
+    }
+    
+    .form-loaded-indicator .name {
+      font-weight: 600;
+    }
+    
+    .form-loaded-indicator .meta {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+    
+    .toggle-code {
+      font-size: 0.75rem;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .mockup-banner {
+      background: var(--warning);
+      color: var(--gray-900);
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-banner">
+    ⚠️ MOCKUP - This is a design prototype, not a functional application
+  </div>
+  
+  <header class="header">
+    <span class="logo">🧪</span>
+    <h1>Better Form Test Generator</h1>
+    <span class="badge">CYPRESS</span>
+  </header>
+  
+  <div class="container">
+    <nav class="wizard-steps">
+      <div class="wizard-step completed">
+        <span class="number">✓</span>
+        <span>Load Form</span>
+      </div>
+      <div class="wizard-step completed">
+        <span class="number">✓</span>
+        <span>Review Logic</span>
+      </div>
+      <div class="wizard-step active">
+        <span class="number">3</span>
+        <span>Build Tests</span>
+      </div>
+      <div class="wizard-step">
+        <span class="number">4</span>
+        <span>Generate & Run</span>
+      </div>
+    </nav>
+    
+    <div class="main-grid">
+      <!-- Left Panel: Form Info & Discovered Logic -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Form Analysis</h2>
+          <button class="btn btn-outline">Change Form</button>
+        </div>
+        <div class="panel-body">
+          <div class="form-loaded-indicator">
+            <span class="icon">✅</span>
+            <div class="info">
+              <div class="name">Blood Pressure Monitoring Form</div>
+              <div class="meta">24 fields • 5 dependencies • 3 calculations • 2 validations</div>
+            </div>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">24</div>
+              <div class="stat-label">Fields</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">5</div>
+              <div class="stat-label">Dependencies</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">3</div>
+              <div class="stat-label">Calculations</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">18</div>
+              <div class="stat-label">Tests to Generate</div>
+            </div>
+          </div>
+          
+          <h3 style="font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--gray-800);">Discovered Logic</h3>
+          
+          <ul class="dependency-list">
+            <li class="dependency-item">
+              <div class="dependency-header">
+                <span class="dependency-title">Gestational Age Field</span>
+                <span class="dependency-badge show-hide">Show/Hide</span>
+              </div>
+              <div class="dependency-condition">visible when: pregnant == true</div>
+              <div class="test-count">→ 3 tests will be generated</div>
+            </li>
+            
+            <li class="dependency-item">
+              <div class="dependency-header">
+                <span class="dependency-title">BMI Calculation</span>
+                <span class="dependency-badge calculation">Calculation</span>
+              </div>
+              <div class="dependency-condition">bmi = weight / (height * height)</div>
+              <div class="test-count">→ 3 tests will be generated</div>
+            </li>
+            
+            <li class="dependency-item">
+              <div class="dependency-header">
+                <span class="dependency-title">High BP Warning</span>
+                <span class="dependency-badge show-hide">Show/Hide</span>
+              </div>
+              <div class="dependency-condition">visible when: systolic > 180 || diastolic > 120</div>
+              <div class="test-count">→ 4 tests will be generated</div>
+            </li>
+            
+            <li class="dependency-item">
+              <div class="dependency-header">
+                <span class="dependency-title">Systolic Range</span>
+                <span class="dependency-badge validation">Validation</span>
+              </div>
+              <div class="dependency-condition">value >= 60 && value <= 300</div>
+              <div class="test-count">→ 2 tests will be generated</div>
+            </li>
+          </ul>
+          
+          <div class="ai-suggestion">
+            <h4>✨ AI Suggestions Available</h4>
+            <p>Based on this form's medical context, AI has identified 7 additional edge case tests (boundary values, clinical scenarios).</p>
+            <button class="btn">Review AI Suggestions</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Panel: Test Builder -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🔧 Custom Test Builder</h2>
+          <button class="toggle-code">Show Code Preview</button>
+        </div>
+        <div class="panel-body">
+          <input type="text" class="test-name-input" placeholder="Test name: e.g., 'Warning shows for hypertensive crisis'" value="Warning shows when systolic exceeds 180">
+          
+          <div class="step-builder">
+            <div class="step-item">
+              <span class="step-number">1</span>
+              <select class="step-action">
+                <option>Fill Field</option>
+                <option selected>Fill Field</option>
+                <option>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic" selected>Systolic BP</option>
+                <option value="diastolic">Diastolic BP</option>
+                <option value="weight">Weight (kg)</option>
+                <option value="height">Height (m)</option>
+                <option value="pregnant">Pregnant (checkbox)</option>
+                <option value="gestational-age">Gestational Age</option>
+                <option value="bmi">BMI (calculated)</option>
+              </select>
+              <input type="text" class="step-value" value="185">
+              <button class="step-delete">🗑️</button>
+            </div>
+            
+            <div class="step-item">
+              <span class="step-number">2</span>
+              <select class="step-action">
+                <option>Fill Field</option>
+                <option selected>Fill Field</option>
+                <option>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic">Systolic BP</option>
+                <option value="diastolic" selected>Diastolic BP</option>
+                <option value="weight">Weight (kg)</option>
+                <option value="height">Height (m)</option>
+                <option value="pregnant">Pregnant (checkbox)</option>
+                <option value="gestational-age">Gestational Age</option>
+                <option value="bmi">BMI (calculated)</option>
+              </select>
+              <input type="text" class="step-value" value="95">
+              <button class="step-delete">🗑️</button>
+            </div>
+            
+            <div class="step-item">
+              <span class="step-number">3</span>
+              <select class="step-action">
+                <option>Fill Field</option>
+                <option>Fill Field</option>
+                <option selected>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic">Systolic BP</option>
+                <option value="diastolic">Diastolic BP</option>
+                <option value="weight">Weight (kg)</option>
+                <option value="height">Height (m)</option>
+                <option value="pregnant">Pregnant (checkbox)</option>
+                <option value="gestational-age">Gestational Age</option>
+                <option value="bmi">BMI (calculated)</option>
+                <option value="high-bp-warning" selected>High BP Warning</option>
+              </select>
+              <input type="text" class="step-value" placeholder="(not needed)" disabled>
+              <button class="step-delete">🗑️</button>
+            </div>
+            
+            <button class="add-step-btn">+ Add Step</button>
+          </div>
+          
+          <div style="margin-top: 1.5rem;">
+            <h3 style="font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--gray-800);">Generated Code Preview</h3>
+            <div class="code-preview">
+<span class="code-comment">// Auto-generated test</span>
+<span class="code-keyword">describe</span>(<span class="code-string">'Blood Pressure Monitoring Form'</span>, () => {
+  <span class="code-keyword">it</span>(<span class="code-string">'Warning shows when systolic exceeds 180'</span>, () => {
+    cy.<span class="code-function">visit</span>(<span class="code-string">'/form-viewer.html?form=blood-pressure'</span>)
+    cy.<span class="code-function">fillField</span>(<span class="code-string">'systolic'</span>, <span class="code-string">'185'</span>)
+    cy.<span class="code-function">fillField</span>(<span class="code-string">'diastolic'</span>, <span class="code-string">'95'</span>)
+    cy.<span class="code-function">fieldShouldBeVisible</span>(<span class="code-string">'high-bp-warning'</span>)
+  })
+})
+            </div>
+          </div>
+          
+          <div class="action-bar">
+            <button class="btn btn-outline">Add to Test Suite</button>
+            <button class="btn btn-primary">Save & Create Another</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bottom Panel: Actions -->
+      <div class="panel full-width">
+        <div class="panel-header">
+          <h2>🚀 Generate & Run Tests</h2>
+        </div>
+        <div class="panel-body" style="display: flex; gap: 2rem; align-items: center;">
+          <div style="flex: 1;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Ready to generate 18 tests</h3>
+            <p style="font-size: 0.875rem; color: var(--gray-600);">
+              This includes auto-generated tests for all dependencies, calculations, and validations,
+              plus 1 custom test you created.
+            </p>
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <button class="btn btn-outline">
+              📥 Download Test Files
+            </button>
+            <button class="btn btn-success" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
+              ▶️ Open Cypress Runner
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Mockup interactivity (minimal)
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        alert('This is a mockup. In the real application, this button would perform an action.');
+      });
+    });
+    
+    document.querySelector('.add-step-btn').addEventListener('click', () => {
+      alert('This is a mockup. In the real application, this would add a new test step.');
+    });
+  </script>
+</body>
+</html>
