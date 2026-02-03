@@ -521,7 +521,11 @@ Närvarolista i ankomstordning:
 
       document.addEventListener('DOMContentLoaded', () => {
       // Set version in footer
-      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+      const appVersion = (typeof APP_VERSION !== 'undefined' && APP_VERSION) ? APP_VERSION : 'dev';
+      const appVersionEl = document.getElementById('app-version');
+      if (appVersionEl) {
+        appVersionEl.innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#' + appVersion + '">' + appVersion + '</a>';
+      }
 
       //handlebars helper from https://stackoverflow.com/a/31632215
 
@@ -1949,12 +1953,27 @@ Närvarolista i ankomstordning:
             this.addMenuItem(menu, 'Example from this server...', async () => {
               try {
                 const response = await fetch(this.options.defaultPath);
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const files = Array.from(doc.querySelectorAll('a'))
-                  .map(a => a.href)
-                  .filter(this.options.fileFilter);
+                const contentType = response.headers.get('content-type') || '';
+                let files = [];
+
+                if (contentType.includes('application/json')) {
+                  const data = await response.json();
+                  const list = Array.isArray(data) ? data : (data.files || []);
+                  const basePath = this.options.defaultPath.endsWith('/')
+                    ? this.options.defaultPath
+                    : this.options.defaultPath.replace(/[^/]*$/, '');
+
+                  files = list
+                    .map(entry => new URL(entry, new URL(basePath, window.location.href)).href)
+                    .filter(this.options.fileFilter);
+                } else {
+                  const html = await response.text();
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(html, 'text/html');
+                  files = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.href)
+                    .filter(this.options.fileFilter);
+                }
 
                 if (files.length === 0) {
                   alert('No files found in ' + this.options.defaultPath);
@@ -2099,7 +2118,7 @@ Närvarolista i ankomstordning:
         buttonId: 'load-examples-button',
         storageKey: 'kintegrate-script-bookmarks',
         title: 'Conversion Scripts',
-        defaultPath: 'src/example/conversion-scripts/',
+        defaultPath: 'example/conversion-scripts/index.json',
         fileFilter: href => href.endsWith('.hbs') || href.endsWith('.handlebars'),
         onLoad: (content) => {
           templateEditor.setValue(content);

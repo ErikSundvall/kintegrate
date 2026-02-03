@@ -502,7 +502,11 @@ Närvarolista i ankomstordning:
 
       document.addEventListener('DOMContentLoaded', () => {
       // Set version in footer
-      document.getElementById('app-version').innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#'+APP_VERSION+'">'+APP_VERSION+'</a>';
+      const appVersion = (typeof APP_VERSION !== 'undefined' && APP_VERSION) ? APP_VERSION : 'dev';
+      const appVersionEl = document.getElementById('app-version');
+      if (appVersionEl) {
+        appVersionEl.innerHTML = '<a href="https://github.com/ErikSundvall/kintegrate#' + appVersion + '">' + appVersion + '</a>';
+      }
 
       //handlebars helper from https://stackoverflow.com/a/31632215
 

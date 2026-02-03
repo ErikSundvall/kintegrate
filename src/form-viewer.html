@@ -91,6 +91,13 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+      #toolbar button svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
       #toolbar input[type="text"], #toolbar input[type="password"] {
         padding: 6px 10px;
         border: 1px solid #ccc;
@@ -261,7 +268,12 @@
       <select id="form-list" disabled>
         <option value="">-- Connect to load forms --</option>
       </select>
-      <button id="load-server-form-btn" disabled>📥 Load Form</button>
+      <button id="load-server-form-btn" disabled title="Load selected form from server">
+        <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
+        </svg>
+        Load Form
+      </button>
     </div>
     
     <div id="toolbar">
@@ -274,28 +286,55 @@
       <!-- Local Mode Controls -->
       <div id="local-controls" class="mode-section">
         <input type="file" id="form-package-input" accept=".zip,.json" style="display: none;">
-        <button id="load-form-btn" title="Load Better Studio form package (.zip or .json)">📦 Load Form</button>
-        <input type="file" id="web-template-input" accept=".json" style="display: none;">
-        <button id="load-template-btn" title="Load openEHR Web Template (JSON) - optional for offline mode">🧬 Load Web Template</button>
-        <span id="template-status" style="font-size: 0.8em; color: #666;"></span>
+        <button id="load-form-btn" title="Load Better Studio form package (.zip or .json)">
+          <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5z"></path>
+          </svg>
+          Load Form
+        </button>
       </div>
       
-      <span class="separator"></span>
-      
-      <!-- Vendor Library Upload (for offline use) -->
-      <div id="vendor-controls">
-        <input type="file" id="vendor-upload-input" accept=".js,.css" multiple style="display: none;">
-        <button id="upload-vendor-btn" title="Upload Better Form Renderer library files (form-renderer.js, styles.css, styles-theme.css)">📚 Upload Renderer</button>
-        <button id="clear-vendor-btn" title="Clear cached renderer library">🗑 Clear Renderer</button>
-        <span id="vendor-status" style="font-size: 0.8em; color: #666;"></span>
-      </div>
       
       <span class="separator"></span>
       
       <!-- Common Controls -->
-      <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">📋 Get Data</button>
-      <button id="send-to-parent-btn" disabled title="Send form data back to main window">↩ Send to Kintegrate</button>
-      <button id="clear-btn" disabled title="Clear form values">🗑 Clear</button>
+      <button id="get-data-btn" disabled title="Copy form data to clipboard as JSON">
+        <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M9 4h9v12H9z" opacity=".3"></path>
+          <path d="M18 2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H9V4h9zM3 15v-2h2v2zm0-5.5h2v2H3zM10 20h2v2h-2zm-7-1.5v-2h2v2zM5 22c-1.1 0-2-.9-2-2h2zm3.5 0h-2v-2h2zm5 0v-2h2c0 1.1-.9 2-2 2M5 6v2H3c0-1.1.9-2 2-2"></path>
+        </svg>
+        Copy values
+      </button>
+      <button id="clear-btn" disabled title="Clear form values">
+        <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M16 9H8v10h8zm-.47 7.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14z" opacity=".3"></path>
+          <path d="M14.12 10.47 12 12.59l-2.13-2.12-1.41 1.41L10.59 14l-2.12 2.12 1.41 1.41L12 15.41l2.12 2.12 1.41-1.41L13.41 14l2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8z"></path>
+        </svg>
+        Clear form
+      </button>
+
+      <span class="separator"></span>
+      
+      <!-- Vendor Library Upload (for offline use) -->
+      <div id="vendor-controls">
+        Initial setup: 
+        <input type="file" id="vendor-upload-input" accept=".js,.css" multiple style="display: none;">
+        <button id="upload-vendor-btn" title="Upload Better Form Renderer library files (form-renderer.js, styles.css, styles-theme.css)">
+          <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5z"></path>
+          </svg>
+          Upload Renderer
+        </button>
+        <button id="clear-vendor-btn" title="Clear cached renderer library">
+          <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M16 9H8v10h8zm-.47 7.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14z" opacity=".3"></path>
+            <path d="M14.12 10.47 12 12.59l-2.13-2.12-1.41 1.41L10.59 14l-2.12 2.12 1.41 1.41L12 15.41l2.12 2.12 1.41-1.41L13.41 14l2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8z"></path>
+          </svg>
+          Clear Renderer
+        </button>
+        <span id="vendor-status" style="font-size: 0.8em; color: #666;"></span>
+      </div>
+
     </div>
     
     <div id="form-container">
@@ -311,7 +350,6 @@
       const loadingEl = document.getElementById('loading');
       const errorEl = document.getElementById('error-message');
       const getDataBtn = document.getElementById('get-data-btn');
-      const sendToParentBtn = document.getElementById('send-to-parent-btn');
       const clearBtn = document.getElementById('clear-btn');
 
       // Mode switching elements
@@ -333,17 +371,12 @@
       const loadServerFormBtn = document.getElementById('load-server-form-btn');
       
       // Local mode elements
-      const loadTemplateBtn = document.getElementById('load-template-btn');
-      const webTemplateInput = document.getElementById('web-template-input');
-      const templateStatus = document.getElementById('template-status');
-
       let formLoaded = false;
       let parentWindow = window.opener;
       let serviceWorkerReady = false;
       let swRegistration = null;
       let currentMode = 'local'; // 'local' or 'server'
       let serverConnected = false;
-      let cachedWebTemplate = null; // For local mode web template loading
       let serverForms = []; // List of forms from server
       let syncModeEnabled = false; // Phase 4: Sync mode tracking
 
@@ -591,61 +624,6 @@
       connectBtn.addEventListener('click', connectToServer);
       loadServerFormBtn.addEventListener('click', loadFormFromServer);
       
-      // ============================================================
-      // LOCAL MODE - WEB TEMPLATE LOADING
-      // ============================================================
-      
-      loadTemplateBtn.addEventListener('click', () => {
-        webTemplateInput.click();
-      });
-      
-      webTemplateInput.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        
-        try {
-          const text = await file.text();
-          let parsed = JSON.parse(text);
-          
-          // Handle wrapped format { webTemplate: {...} }
-          if (parsed.webTemplate && typeof parsed.webTemplate === 'object') {
-            console.log('[Popup] Unwrapping nested webTemplate object');
-            parsed = parsed.webTemplate;
-          }
-          
-          cachedWebTemplate = parsed;
-          
-          // Validate it looks like a web template (check various common properties)
-          const hasTemplateId = cachedWebTemplate.templateId;
-          const hasTree = cachedWebTemplate.tree;
-          const hasVersion = cachedWebTemplate.version;
-          const hasDefaultLanguage = cachedWebTemplate.defaultLanguage;
-          
-          const validIndicators = [hasTemplateId, hasTree, hasVersion, hasDefaultLanguage].filter(Boolean).length;
-          
-          if (validIndicators >= 2) {
-            templateStatus.textContent = `✓ ${cachedWebTemplate.templateId || file.name}`;
-            templateStatus.style.color = '#080';
-            console.log('[Popup] Web template loaded:', cachedWebTemplate.templateId, 'tree:', !!hasTree);
-          } else if (validIndicators === 1) {
-            templateStatus.textContent = `⚠ ${file.name} (partial)`;
-            templateStatus.style.color = '#880';
-            console.warn('[Popup] Web template may be incomplete. Found:', { hasTemplateId, hasTree, hasVersion, hasDefaultLanguage });
-          } else {
-            templateStatus.textContent = `⚠ ${file.name} (unknown format)`;
-            templateStatus.style.color = '#880';
-            console.warn('[Popup] File does not look like a standard web template. Keys:', Object.keys(cachedWebTemplate).slice(0, 10));
-          }
-        } catch (error) {
-          console.error('[Popup] Error loading web template:', error);
-          templateStatus.textContent = '✗ Invalid JSON';
-          templateStatus.style.color = '#c00';
-          cachedWebTemplate = null;
-        }
-        
-        webTemplateInput.value = '';
-      });
-
       function setStatus(message, type = '') {
         statusEl.textContent = message;
         statusEl.className = type;
@@ -717,7 +695,7 @@
       // Initialize form renderer after it's loaded
       function initializeFormRenderer() {
         if (!isFormRendererAvailable) {
-          showError('Better Form Renderer is not available. Click "📚 Upload Renderer" to upload the library files (requires license from Better Platform).');
+          showError('Better Form Renderer is not available. Click "Upload Renderer" to upload the library files (requires license from Better Platform).');
           return;
         }
         
@@ -742,7 +720,6 @@
           hideLoading();
           setStatus('Form loaded', 'success');
           getDataBtn.disabled = false;
-          sendToParentBtn.disabled = !parentWindow;
           clearBtn.disabled = false;
           console.log('Form rendered successfully');
         });
@@ -947,22 +924,6 @@
         } catch (error) {
           console.error('Error getting composition:', error);
           setStatus('Error getting data', 'error');
-        }
-      });
-
-      sendToParentBtn.addEventListener('click', () => {
-        if (!formLoaded || !parentWindow) return;
-        try {
-          const composition = formRenderer.composition;
-          parentWindow.postMessage({
-            type: 'formComposition',
-            composition: composition
-          }, '*');
-          setStatus('Sent to Kintegrate', 'success');
-          setTimeout(() => setStatus('Form loaded', 'success'), 2000);
-        } catch (error) {
-          console.error('Error sending to parent:', error);
-          setStatus('Error sending data', 'error');
         }
       });
 
@@ -1245,13 +1206,6 @@
             console.error('[Popup] Error setting formMetadata:', metaError);
           }
           
-          // If we have a cached openEHR web template, log it but don't use it yet
-          // (future: may be needed for data binding/validation)
-          if (cachedWebTemplate) {
-            console.log('[Popup] Note: openEHR web template also loaded:', cachedWebTemplate.templateId);
-            console.log('[Popup] This may be needed for data model validation in future.');
-          }
-          
           // NOTE: Service Worker approach disabled - using direct webTemplate property instead
           // The webTemplate setter in form-renderer.js handles form-description format directly
           
@@ -1271,7 +1225,6 @@
                 hideLoading();
                 setStatus('Form loaded (fallback)', 'success');
                 getDataBtn.disabled = false;
-                sendToParentBtn.disabled = !parentWindow;
                 clearBtn.disabled = false;
                 console.log('[Popup] Form loaded via fallback detection');
               } else {

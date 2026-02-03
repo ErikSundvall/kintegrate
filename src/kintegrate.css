@@ -158,6 +158,12 @@ main {
     padding: 2px 8px;
 }
 
+.form-toolbar button svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
 .form-connection-status {
     font-weight: 700;
     margin-left: 4px;
