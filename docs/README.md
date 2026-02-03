@@ -181,20 +181,24 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 * added functions {{toLowerCase .}} and {{toUpperCase .}}
 * UI tweaks
 
-## ✅<a id="v0.3.7b"></a>version 0.3.7b Adding form renderer column and node/NPM capabilities
-- Added a fourth (resizable) column to the design, positioned to the left of the input column. It contains:
-  - An input field for naming "Form to be tested"
-  - A placeholder div for the form renderer (to be loaded with proprietary library)
-- Prepared NPM/Node infrastructure:
-  - Added `package.json` with build scripts
-  - Added `.npmrc` configured for Better Platform proprietary packages registry
-  - Authentication uses the `NPM_BETTER_AUTH` environment variable (see setup instructions below)
-- Converted the PowerShell build script to Node.js (`scripts/build.js`)
+## ✅<a id="v0.3.8"></a>version 0.3.8 Adding form renderer column and node/NPM capabilities
+* Added `.npmrc` and other things configured for using Better Platform proprietary packages registry
+* Authentication uses the `NPM_BETTER_AUTH` environment variable (see setup instructions below)
+* Converted the PowerShell build script to Node.js (`scripts/build.js`)
 
+## ✅<a id="v0.4"></a>version 0.4 Adding Better Form Renderer Popup
 
+This version introduces the integration of the Better Form Renderer using a popup window approach. The popup allows users to load and interact with forms in real-time, with the option to enable a "sync mode" for instant updates between the form viewer and the main app.
 
+### Key Features:
+* **Popup Integration**: A dedicated popup window (`form-viewer.html`) hosts the Better Form Renderer.
+* **Sync Mode**: Real-time updates from the form viewer to the main app, ensuring seamless data flow.
+* **Manual Mode**: Explicit push/pull functionality for greater control.
+* **Enhanced Input Column**: Added a "Download Instance" button to save the current composition as a JSON file.
 
-## 🔜<a id="v0.3.8"></a>version 0.3.8 Internal refactoring
+For detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
+
+## 🔜<a id="v0.4.2"></a>version 0.4.2 Internal refactoring
 1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
 2. Make a new configurator.html file where we add rete.js to the project for easier flexible configuration of connections between example sources, different kinds of editors and different converters. The easiest is likely to set up the project using rete kit as described in https://retejs.org/docs/development/rete-kit/ We want plain vanilla javascript or typescript in this project (not React etc), so using the vite stack in rete-kit is likely best. 
 3. Make new html files as a proper "web components", custom elements, these components should not know of or have any dependency on Rete:
@@ -208,7 +212,7 @@ Added a small build helper to prepare `docs/demo/` for GitHub Pages hosting. The
 5. Then wire the components together in an example start configuration in with the data flow setup: <example-source> => <example-converter> => <example-target>
 
 
-## <a id="v0.3.9"></a>version 0.3.9 further internal refactoringiincorporate the build step 
+## <a id="v0.5"></a>version 0.5 further internal refactoring  
 * since we have itroduced vite, turn the scripts\build_docs.ps1 into vite based dist build instead
 * In a new <editor-base> custom component make a copy of the functionality of #extended-editor (the textarea/codemirror plus all the buttons below in #conversion-buttons) from index.html so that they together form a separate component in a separate file.
 * Add a BroadcastChannel API pub/sub system to the application, starting with the connections to/from the #extended-editor with (data carrying) events for:
@@ -229,13 +233,13 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 * Components should be able to register multiple (data carrying) events that they can send and/or receive. Data in the events could be any object type or primitive.
 
 
-## <a id="v0.4"></a>version 0.4 dynamic sources (local use)
+## <a id="v0.6"></a>version 0.6 dynamic sources (local use)
 * change click behaviour: only "normal" left clicking of the checkbox should select the node. Left-clicking the node label should now have the same effect as when curently right-clicking the node (Preparation for touch devices)
 * settings: choose tree right-click behaviour
 * Add extra (optional) window running e.g. Better's form renderer (or Cambio's form runtime or a Medblocks form or something else) that can populate the input window with instance data after press of a button, or possibly dynamically upon change of form contents.
 * Make it easy to save/backup created scripts to github or similar (posibly also packs in/script/out)
 
-## <a id="v0.5"></a>version 0.5
+## <a id="v0.7"></a>version 0.7
 * add support for schema/structure defintition-format plugins that can feed the tree view instead of just instances
 ** Switch tree to D3
 ** When in instance/schema combo mode: highlight missing mandatory nodes from example instance relative to schema.
@@ -245,12 +249,12 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 ** Note: useful also for analyzing/highliting converted target instance vs target schema during development
 * Stretch: add plugin for Sectra forms defintions
 
-## <a id="v0.6"></a>Version 0.6
+## <a id="v0.8"></a>Version 0.8
 * Add support for plugins for other scripting formalisms than Handlebars. Keep supporting flat and hierarchical forms if scripting language allows it.
 ** refactor Handlebars support to be a plugin
 ** add support for https://github.com/WorkMaze/JUST.net scripting (used by Sectra) or just the mid-identifier-array-iterator helper functions (useful for Dicom SR)
 
-## <a id="v0.7"></a>version 0.7 
+## <a id="v0.9"></a>version 0.9
 * investigate if (another) tree view (column) can be useful to produce TARGET structures (e.g. in conversion script editor) from schema etc, especially openEHR web templates. 
 * Investigate support for FlatEHR
 * The tree for output format highlights what nodes are mentiond/connected or not especially marks missing mandatory nodes.

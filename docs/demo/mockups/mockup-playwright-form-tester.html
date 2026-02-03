@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Better Form Test Generator (Playwright) - Mockup</title>
+  <style>
+    :root {
+      --primary: #e91e63;
+      --primary-dark: #c2185b;
+      --secondary: #9c27b0;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+      --gray-900: #212121;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      line-height: 1.5;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .header .logo {
+      font-size: 2rem;
+    }
+    
+    .header .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 0.75rem;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .top-actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .action-card {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    
+    .action-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .action-card.featured {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+    }
+    
+    .action-card .icon {
+      font-size: 2.5rem;
+    }
+    
+    .action-card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .action-card p {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 2rem;
+    }
+    
+    .panel {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .panel-body {
+      padding: 1.5rem;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-800);
+    }
+    
+    .btn-outline:hover {
+      background: var(--gray-100);
+    }
+    
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+    }
+    
+    .test-list {
+      list-style: none;
+    }
+    
+    .test-item {
+      padding: 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .test-item .status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gray-300);
+    }
+    
+    .test-item .status.pass { background: var(--success); }
+    .test-item .status.fail { background: var(--danger); }
+    .test-item .status.pending { background: var(--warning); }
+    
+    .test-item .name {
+      flex: 1;
+    }
+    
+    .test-item .badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      background: var(--gray-200);
+    }
+    
+    .test-item .badge.auto { background: #e3f2fd; color: #1565c0; }
+    .test-item .badge.custom { background: #f3e5f5; color: #7b1fa2; }
+    .test-item .badge.ai { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    
+    .simplified-syntax {
+      background: var(--gray-50);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .simplified-syntax h4 {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .step-builder {
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--gray-200);
+      gap: 0.5rem;
+      font-size: 0.8rem;
+    }
+    
+    .step-item:last-child {
+      border-bottom: none;
+    }
+    
+    .step-number {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .step-action {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: white;
+      min-width: 110px;
+    }
+    
+    .step-field {
+      flex: 1;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: white;
+    }
+    
+    .step-value {
+      width: 70px;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    
+    .step-delete {
+      background: none;
+      border: none;
+      color: var(--gray-600);
+      cursor: pointer;
+      padding: 0.15rem;
+      font-size: 0.875rem;
+    }
+    
+    .step-delete:hover {
+      color: var(--danger);
+    }
+    
+    .add-step-btn {
+      width: 100%;
+      padding: 0.6rem;
+      background: var(--gray-50);
+      border: none;
+      border-top: 1px solid var(--gray-200);
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    .add-step-btn:hover {
+      background: var(--gray-100);
+    }
+    
+    .code-preview {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.7rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    
+    .code-keyword { color: #c586c0; }
+    .code-string { color: #ce9178; }
+    .code-function { color: #dcdcaa; }
+    .code-comment { color: #6a9955; }
+    .code-property { color: #9cdcfe; }
+    
+    .browser-icons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .browser-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    
+    .browser-icon.active {
+      border-color: var(--primary);
+      background: #fce4ec;
+    }
+    
+    .browser-icon:hover {
+      background: var(--gray-200);
+    }
+    
+    .trace-preview {
+      background: var(--gray-900);
+      border-radius: 6px;
+      padding: 1rem;
+      color: white;
+    }
+    
+    .trace-timeline {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    
+    .trace-frame {
+      width: 80px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    
+    .trace-frame img {
+      width: 80px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: var(--gray-700);
+      border: 2px solid transparent;
+    }
+    
+    .trace-frame.active img {
+      border-color: var(--primary);
+    }
+    
+    .trace-frame .label {
+      font-size: 0.6rem;
+      color: var(--gray-400);
+      margin-top: 0.25rem;
+    }
+    
+    .run-controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .stat-mini {
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem;
+      background: var(--gray-50);
+      border-radius: 6px;
+    }
+    
+    .stat-mini .value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    .stat-mini .label {
+      font-size: 0.65rem;
+      color: var(--gray-600);
+      text-transform: uppercase;
+    }
+    
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+    
+    .record-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #ffebee;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    
+    .record-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .record-indicator .text {
+      flex: 1;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--gray-200);
+      margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+      padding: 0 1.5rem;
+    }
+    
+    .tab {
+      padding: 0.75rem 1rem;
+      border: none;
+      background: none;
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 500;
+    }
+    
+    .tab:hover:not(.active) {
+      color: var(--gray-800);
+    }
+    
+    .mockup-banner {
+      background: var(--warning);
+      color: var(--gray-900);
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .syntax-note {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      background: #fff3e0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      margin-top: 0.75rem;
+    }
+    
+    .syntax-note strong {
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-banner">
+    ⚠️ MOCKUP - This is a design prototype, not a functional application
+  </div>
+  
+  <header class="header">
+    <span class="logo">🎭</span>
+    <h1>Better Form Test Generator</h1>
+    <span class="badge">PLAYWRIGHT</span>
+    <div class="header-actions">
+      <button class="btn btn-outline" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: white;">
+        📖 Docs
+      </button>
+      <button class="btn btn-outline" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: white;">
+        ⚙️ Settings
+      </button>
+    </div>
+  </header>
+  
+  <div class="container">
+    <!-- Top Action Cards -->
+    <div class="top-actions">
+      <div class="action-card featured">
+        <span class="icon">🎬</span>
+        <div>
+          <h3>Record New Test</h3>
+          <p>Click through the form to create a test automatically</p>
+        </div>
+      </div>
+      
+      <div class="action-card">
+        <span class="icon">📁</span>
+        <div>
+          <h3>Load Form Definition</h3>
+          <p>Auto-generate tests from Better form JSON</p>
+        </div>
+      </div>
+      
+      <div class="action-card">
+        <span class="icon">▶️</span>
+        <div>
+          <h3>Run All Tests</h3>
+          <p>Execute 24 tests across 3 browsers</p>
+        </div>
+      </div>
+      
+      <div class="action-card">
+        <span class="icon">🔍</span>
+        <div>
+          <h3>View Trace</h3>
+          <p>Debug last test failure</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="main-grid">
+      <!-- Left Sidebar: Test List -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Test Suite</h2>
+          <button class="btn btn-sm btn-outline">+ New</button>
+        </div>
+        <div class="panel-body">
+          <div class="stats-row">
+            <div class="stat-mini">
+              <div class="value">24</div>
+              <div class="label">Tests</div>
+            </div>
+            <div class="stat-mini">
+              <div class="value" style="color: var(--success)">21</div>
+              <div class="label">Passing</div>
+            </div>
+            <div class="stat-mini">
+              <div class="value" style="color: var(--danger)">1</div>
+              <div class="label">Failing</div>
+            </div>
+          </div>
+          
+          <ul class="test-list">
+            <li class="test-item">
+              <span class="status pass"></span>
+              <span class="name">Gestational age visibility</span>
+              <span class="badge auto">auto</span>
+            </li>
+            <li class="test-item">
+              <span class="status pass"></span>
+              <span class="name">BMI calculates correctly</span>
+              <span class="badge auto">auto</span>
+            </li>
+            <li class="test-item">
+              <span class="status fail"></span>
+              <span class="name">High BP warning shows</span>
+              <span class="badge auto">auto</span>
+            </li>
+            <li class="test-item">
+              <span class="status pass"></span>
+              <span class="name">Systolic range validation</span>
+              <span class="badge auto">auto</span>
+            </li>
+            <li class="test-item">
+              <span class="status pass"></span>
+              <span class="name">Pregnant toggle interaction</span>
+              <span class="badge custom">custom</span>
+            </li>
+            <li class="test-item">
+              <span class="status pending"></span>
+              <span class="name">Edge: BMI with zero height</span>
+              <span class="badge ai">✨ AI</span>
+            </li>
+            <li class="test-item">
+              <span class="status pending"></span>
+              <span class="name">Edge: Negative BP values</span>
+              <span class="badge ai">✨ AI</span>
+            </li>
+          </ul>
+          
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+            <h4 style="font-size: 0.75rem; color: var(--gray-600); margin-bottom: 0.5rem;">Run on Browsers</h4>
+            <div class="browser-icons">
+              <div class="browser-icon active" title="Chromium">🌐</div>
+              <div class="browser-icon" title="Firefox">🦊</div>
+              <div class="browser-icon" title="WebKit (Safari)">🧭</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content Area -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🔧 Test Editor</h2>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm btn-outline">Import Recorded</button>
+            <button class="btn btn-sm btn-primary">💾 Save</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabs">
+            <button class="tab active">Step Builder</button>
+            <button class="tab">Code View</button>
+            <button class="tab">Trace Viewer</button>
+          </div>
+          
+          <div class="record-indicator">
+            <span class="record-dot"></span>
+            <span class="text">Recording session active - interact with form at localhost:8080</span>
+            <button class="btn btn-sm btn-outline">Stop Recording</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Test Name</label>
+            <input type="text" class="form-control" value="High BP warning shows when systolic > 180">
+          </div>
+          
+          <div class="simplified-syntax">
+            <h4>No async/await required!</h4>
+            <p style="font-size: 0.8rem; color: var(--gray-600);">
+              Build your test using simple steps. We handle the complexity behind the scenes.
+            </p>
+          </div>
+          
+          <div class="step-builder">
+            <div class="step-item">
+              <span class="step-number">1</span>
+              <select class="step-action">
+                <option selected>Fill Field</option>
+                <option>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic" selected>systolic</option>
+                <option value="diastolic">diastolic</option>
+                <option value="weight">weight</option>
+                <option value="height">height</option>
+                <option value="pregnant">pregnant</option>
+              </select>
+              <input type="text" class="step-value" value="185">
+              <button class="step-delete">×</button>
+            </div>
+            
+            <div class="step-item">
+              <span class="step-number">2</span>
+              <select class="step-action">
+                <option selected>Fill Field</option>
+                <option>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic">systolic</option>
+                <option value="diastolic" selected>diastolic</option>
+                <option value="weight">weight</option>
+                <option value="height">height</option>
+                <option value="pregnant">pregnant</option>
+              </select>
+              <input type="text" class="step-value" value="95">
+              <button class="step-delete">×</button>
+            </div>
+            
+            <div class="step-item">
+              <span class="step-number">3</span>
+              <select class="step-action">
+                <option>Fill Field</option>
+                <option selected>Expect Visible</option>
+                <option>Expect Hidden</option>
+                <option>Expect Value</option>
+                <option>Click</option>
+                <option>Wait</option>
+              </select>
+              <select class="step-field">
+                <option value="systolic">systolic</option>
+                <option value="diastolic">diastolic</option>
+                <option value="high-bp-warning" selected>high-bp-warning</option>
+                <option value="weight">weight</option>
+              </select>
+              <input type="text" class="step-value" placeholder="" disabled>
+              <button class="step-delete">×</button>
+            </div>
+            
+            <button class="add-step-btn">+ Add Step</button>
+          </div>
+          
+          <div class="syntax-note">
+            <strong>💡 Tip:</strong> This simplified syntax generates proper async/await Playwright code automatically. 
+            You can view the generated code in the "Code View" tab.
+          </div>
+          
+          <div style="margin-top: 1.5rem;">
+            <h4 style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.75rem;">Generated Code (Read-only)</h4>
+            <div class="code-preview">
+<span class="code-comment">// Simplified syntax - no async/await for you to write!</span>
+<span class="code-function">formTest</span>(<span class="code-string">'High BP warning shows when systolic > 180'</span>, [
+  { <span class="code-property">action</span>: <span class="code-string">'fill'</span>, <span class="code-property">field</span>: <span class="code-string">'systolic'</span>, <span class="code-property">value</span>: <span class="code-string">'185'</span> },
+  { <span class="code-property">action</span>: <span class="code-string">'fill'</span>, <span class="code-property">field</span>: <span class="code-string">'diastolic'</span>, <span class="code-property">value</span>: <span class="code-string">'95'</span> },
+  { <span class="code-property">action</span>: <span class="code-string">'expectVisible'</span>, <span class="code-property">field</span>: <span class="code-string">'high-bp-warning'</span> }
+])
+
+<span class="code-comment">// ↓ Compiles to standard Playwright (hidden from you):</span>
+<span class="code-keyword">test</span>(<span class="code-string">'High BP warning...'</span>, <span class="code-keyword">async</span> ({ page }) => {
+  <span class="code-keyword">await</span> page.locator(<span class="code-string">'[data-field="systolic"]'</span>).fill(<span class="code-string">'185'</span>)
+  <span class="code-keyword">await</span> page.locator(<span class="code-string">'[data-field="diastolic"]'</span>).fill(<span class="code-string">'95'</span>)
+  <span class="code-keyword">await</span> expect(page.locator(<span class="code-string">'[data-field="high-bp-warning"]'</span>)).toBeVisible()
+})
+            </div>
+          </div>
+          
+          <div class="run-controls">
+            <button class="btn btn-success" style="flex: 1;">
+              ▶️ Run This Test
+            </button>
+            <button class="btn btn-outline">
+              🔍 Open UI Mode
+            </button>
+            <button class="btn btn-outline">
+              📊 View Report
+            </button>
+          </div>
+          
+          <!-- Trace Viewer Preview -->
+          <div style="margin-top: 1.5rem;">
+            <h4 style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.75rem;">
+              Last Run Trace <span style="color: var(--danger);">(Failed)</span>
+            </h4>
+            <div class="trace-preview">
+              <div class="trace-timeline">
+                <div class="trace-frame">
+                  <div style="width: 80px; height: 50px; background: #2d2d2d; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #888;">
+                    Navigate
+                  </div>
+                  <div class="label">0.0s</div>
+                </div>
+                <div class="trace-frame">
+                  <div style="width: 80px; height: 50px; background: #2d2d2d; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #888;">
+                    Fill systolic
+                  </div>
+                  <div class="label">0.5s</div>
+                </div>
+                <div class="trace-frame">
+                  <div style="width: 80px; height: 50px; background: #2d2d2d; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #888;">
+                    Fill diastolic
+                  </div>
+                  <div class="label">1.0s</div>
+                </div>
+                <div class="trace-frame active">
+                  <div style="width: 80px; height: 50px; background: #5d2626; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #f88;">
+                    ❌ Assert
+                  </div>
+                  <div class="label">1.5s</div>
+                </div>
+              </div>
+              <div style="margin-top: 0.75rem; font-size: 0.7rem; color: #f88;">
+                Error: Expected element [data-field="high-bp-warning"] to be visible, but it was hidden.
+                <br>
+                <span style="color: #888;">The dependency rule may not have triggered. Check if systolic threshold is correct.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Mockup interactivity
+    document.querySelectorAll('.btn, .action-card, .tab, .browser-icon').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (el.classList.contains('tab')) {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          el.classList.add('active');
+          return;
+        }
+        if (el.classList.contains('browser-icon')) {
+          el.classList.toggle('active');
+          return;
+        }
+        alert('This is a mockup. In the real application, this would perform an action.');
+      });
+    });
+    
+    document.querySelectorAll('.test-item').forEach(item => {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        alert('This is a mockup. Clicking would load this test into the editor.');
+      });
+    });
+  </script>
+</body>
+</html>

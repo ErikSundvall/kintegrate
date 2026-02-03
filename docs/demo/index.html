@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Kintegrate</title>
     <script>
-      const APP_VERSION = 'v0.4';
+      const APP_VERSION = 'v0.3.7';
     </script>
     <link rel="stylesheet" href="resizable-columns.css">
     <!--  css for tree widget -->
@@ -69,15 +69,18 @@
                   <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-3 2v5l-1-.75L15 9V4zm3 12H8V4h5v9l3-2.25L19 13V4h1z"></path>
                 </svg>
               </button>, upload <input type="file" id="fileInput" style="display: inline-block; width: 12em;" />
-              | <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window" style="padding: 2px 8px;">📋 Form Viewer</button>
-              <button id="push-to-form-btn" title="Send current instance to form viewer" style="padding: 2px 8px;">→ Push</button>
-              <button id="pull-from-form-btn" title="Get current composition from form viewer" style="padding: 2px 8px;">← Pull</button>
-              <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode - auto-update from form changes" style="padding: 2px 8px;">🔄 Sync: OFF</button>
-              <button id="download-instance-btn" title="Download current instance as JSON file" style="padding: 2px 8px;">
-                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
-                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
-                </svg>
-              </button>
+              <div id="form-toolbar" class="form-toolbar">
+                <button id="open-form-viewer-btn" title="Open EHR form viewer in popup window">📋 Form Viewer</button>
+                <button id="push-to-form-btn" title="Send current instance to form viewer">→ Push</button>
+                <button id="pull-from-form-btn" title="Get current composition from form viewer">← Pull</button>
+                <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode - auto-update from form changes">🔄 Sync: OFF</button>
+                <button id="download-instance-btn" title="Download current instance as JSON file">
+                  <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
+                    <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3zm-1-4-1.41-1.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5z"></path>
+                  </svg>
+                </button>
+                <span id="form-connection-status" class="form-connection-status disconnected" title="Form viewer disconnected">●</span>
+              </div>
               <br>or just paste input into the box below<br>
               <textarea id="inputInstance">Input example goes here</textarea>
               <hr>
@@ -372,6 +375,7 @@ Närvarolista i ankomstordning:
         );
         
         console.log('[Main] Opened form viewer popup');
+        updateConnectionStatus();
       }
 
       // Listen for messages from popup
@@ -386,6 +390,7 @@ Närvarolista i ankomstordning:
             console.log('[Main] Form viewer is ready');
             // Notify popup of current sync mode
             sendToFormViewer('SYNC_MODE_STATUS', { enabled: syncModeEnabled });
+            updateConnectionStatus();
             break;
             
           case 'COMPOSITION_CHANGED':
@@ -406,6 +411,10 @@ Närvarolista i ankomstordning:
             console.log('[Main] Received ping request, sending pong');
             sendToFormViewer('PONG', { timestamp: Date.now() });
             break;
+          case 'FORM_VIEWER_CLOSED':
+            console.log('[Main] Form viewer closed');
+            updateConnectionStatus();
+            break;
         }
       });
 
@@ -416,6 +425,16 @@ Närvarolista i ankomstordning:
         } else {
           console.log('[Main] Cannot send message - form viewer not open');
         }
+      }
+
+      function updateConnectionStatus() {
+        const indicator = document.getElementById('form-connection-status');
+        if (!indicator) return;
+
+        const isConnected = formViewerWindow && !formViewerWindow.closed;
+        indicator.classList.toggle('connected', isConnected);
+        indicator.classList.toggle('disconnected', !isConnected);
+        indicator.title = isConnected ? 'Form viewer connected' : 'Form viewer disconnected';
       }
       
       // ============================================
@@ -1934,12 +1953,27 @@ Närvarolista i ankomstordning:
             this.addMenuItem(menu, 'Example from this server...', async () => {
               try {
                 const response = await fetch(this.options.defaultPath);
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const files = Array.from(doc.querySelectorAll('a'))
-                  .map(a => a.href)
-                  .filter(this.options.fileFilter);
+                const contentType = response.headers.get('content-type') || '';
+                let files = [];
+
+                if (contentType.includes('application/json')) {
+                  const data = await response.json();
+                  const list = Array.isArray(data) ? data : (data.files || []);
+                  const basePath = this.options.defaultPath.endsWith('/')
+                    ? this.options.defaultPath
+                    : this.options.defaultPath.replace(/[^/]*$/, '');
+
+                  files = list
+                    .map(entry => new URL(entry, new URL(basePath, window.location.href)).href)
+                    .filter(this.options.fileFilter);
+                } else {
+                  const html = await response.text();
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(html, 'text/html');
+                  files = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.href)
+                    .filter(this.options.fileFilter);
+                }
 
                 if (files.length === 0) {
                   alert('No files found in ' + this.options.defaultPath);
@@ -2084,7 +2118,7 @@ Närvarolista i ankomstordning:
         buttonId: 'load-examples-button',
         storageKey: 'kintegrate-script-bookmarks',
         title: 'Conversion Scripts',
-        defaultPath: 'src/example/conversion-scripts/',
+        defaultPath: 'example/conversion-scripts/index.json',
         fileFilter: href => href.endsWith('.hbs') || href.endsWith('.handlebars'),
         onLoad: (content) => {
           templateEditor.setValue(content);
@@ -2147,6 +2181,10 @@ Närvarolista i ankomstordning:
         URL.revokeObjectURL(url);
         console.log('[Main] Downloaded instance as:', filename);
       });
+
+      // Connection status indicator updates
+      updateConnectionStatus();
+      setInterval(updateConnectionStatus, 1000);
       
       // Override updateInputFromComposition with access to inputEditor
       updateInputFromComposition = (composition) => {
