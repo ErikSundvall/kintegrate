@@ -2,7 +2,7 @@
 
 **Goal:** Add Better Form Renderer functionality to Kintegrate using a popup window approach, with real-time sync mode for instant feedback loop.
 
-**Status:** Phases 1, 2, 3 & 4 ✅ COMPLETE
+**Status:** Phases 1–5 ✅ COMPLETE
 
 ## Overview
 
@@ -344,7 +344,7 @@ Instead of setting `webTemplate` directly (which doesn't work), the solution:
 
 ---
 
-## Phase 4: Sync Mode (Real-time Updates) ⬅️ CURRENT
+## Phase 4: Sync Mode (Real-time Updates) ✅ COMPLETE
 
 ### Step 4.1: Add Sync Mode Toggle
 
@@ -469,7 +469,7 @@ formRenderer.onValueChange = (event) => {
 
 ---
 
-## Phase 5: Polish and Full Integration
+## Phase 5: Polish and Full Integration ✅ COMPLETE
 
 ### Step 5.1: Group Form Controls in Input Column
 
@@ -479,10 +479,11 @@ Create a small toolbar grouping form-related buttons:
 
 ```html
 <div id="form-toolbar" class="form-toolbar">
-  <button id="open-form-viewer-btn" title="Open form viewer popup">📋 Form</button>
-  <button id="push-to-form-btn" title="Push instance to form">→</button>
-  <button id="pull-from-form-btn" title="Pull from form">←</button>
-  <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode">🔄</button>
+  <button id="open-form-viewer-btn" title="Open form viewer popup">📋 Form Viewer</button>
+  <button id="push-to-form-btn" title="Push instance to form">→ Push</button>
+  <button id="pull-from-form-btn" title="Pull from form">← Pull</button>
+  <button id="sync-mode-btn" class="sync-off" title="Toggle sync mode">🔄 Sync: OFF</button>
+  <button id="download-instance-btn" title="Download current instance as JSON file">💾</button>
   <span id="form-connection-status" class="disconnected">●</span>
 </div>
 ```
@@ -518,7 +519,12 @@ setInterval(updateConnectionStatus, 1000);
 ### Step 5.3: Visual Feedback for Sync Updates
 
 - Add brief highlight when input (in input column) is updated from form in sync mode.
-- Add inciator in popup showing if we are in manual os sync mode
+- Add indicator in popup showing if we are in manual or sync mode.
+
+### Step 5.4: De-emphasize Renderer Upload Controls After Cache
+
+- When renderer library files are cached, reduce the visual prominence of the upload controls (e.g., lower opacity).
+- Keep the “Clear Renderer” action available for troubleshooting.
 
 ---
 
@@ -604,7 +610,9 @@ This architecture supports:
 
 ---
 
-Ready to start? Please review and confirm:
-1. Does the architecture look right?
-2. Is the data flow clear?
-3. Ready to begin Phase 1?
+## Completion Summary
+
+- Phases 1–5 are implemented and verified in the codebase.
+- Sync mode, toolbar grouping, connection status, and visual feedback are in place.
+- Renderer upload controls are de-emphasized when cached.
+- This plan is archived for historical reference.

@@ -102,6 +102,18 @@
         height: 24px;
         margin: 0 8px;
       }
+      #vendor-controls.is-ready {
+        opacity: 0.45;
+      }
+      #vendor-controls.is-ready #upload-vendor-btn {
+        opacity: 0.6;
+      }
+      #vendor-controls.is-ready #clear-vendor-btn {
+        opacity: 0.85;
+      }
+      #vendor-controls.is-ready #vendor-status {
+        font-weight: 600;
+      }
       .mode-section {
         display: flex;
         gap: 8px;
@@ -1283,6 +1295,12 @@
       const vendorUploadInput = document.getElementById('vendor-upload-input');
       const clearVendorBtn = document.getElementById('clear-vendor-btn');
       const vendorStatus = document.getElementById('vendor-status');
+
+      function setVendorControlsReady(isReady) {
+        const vendorControls = document.getElementById('vendor-controls');
+        if (!vendorControls) return;
+        vendorControls.classList.toggle('is-ready', isReady);
+      }
       
       // Check for cached vendor files on load
       async function checkVendorCache() {
@@ -1310,13 +1328,21 @@
           }, 2000);
         });
         
-        if (response && response.length > 0) {
+        const hasCached = response && response.length > 0;
+        const hasRenderer = hasCached || isFormRendererAvailable;
+
+        if (hasCached) {
           vendorStatus.textContent = `✅ ${response.length} file${response.length > 1 ? 's' : ''} cached`;
+          vendorStatus.style.color = '#080';
+        } else if (isFormRendererAvailable) {
+          vendorStatus.textContent = '✅ Renderer available (local)';
           vendorStatus.style.color = '#080';
         } else {
           vendorStatus.textContent = 'No renderer cached';
           vendorStatus.style.color = '#666';
         }
+
+        setVendorControlsReady(hasRenderer);
       }
       
       uploadVendorBtn?.addEventListener('click', () => {
@@ -1388,6 +1414,7 @@
           if (errorCount === 0) {
             vendorStatus.textContent = `✅ ${successCount} file${successCount > 1 ? 's' : ''} uploaded`;
             vendorStatus.style.color = '#080';
+            setVendorControlsReady(true);
             alert(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}.\n\nYou can now use the form renderer offline.\n\nNote: Reload this page for the renderer to load from cache.`);
           } else {
             vendorStatus.textContent = `⚠ ${successCount} ok, ${errorCount} failed`;
@@ -1442,6 +1469,7 @@
           
           vendorStatus.textContent = 'Cache cleared';
           vendorStatus.style.color = '#666';
+          setVendorControlsReady(false);
           
           alert('Vendor cache cleared.\n\nThe page will reload to use the network version (if available).');
           window.location.reload();
