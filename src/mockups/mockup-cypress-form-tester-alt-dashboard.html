@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cypress Form Tester - Dashboard Mockup</title>
+  <style>
+    :root {
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-600: #475569;
+      --gray-800: #1f2937;
+      --gray-900: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+    }
+
+    header {
+      background: linear-gradient(120deg, #0ea5e9, #22c55e);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 8px 20px rgba(14,165,233,0.2);
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 2rem;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--gray-100);
+    }
+
+    .panel-header h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+
+    .panel-body {
+      padding: 1.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-800);
+    }
+
+    .section {
+      margin-bottom: 1.5rem;
+    }
+
+    .section h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gray-600);
+      margin-bottom: 0.75rem;
+    }
+
+    .input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .card {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .category {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      background: white;
+      border: 1px solid var(--gray-200);
+      padding: 0.6rem 0.7rem;
+      border-radius: 8px;
+    }
+
+    .category input {
+      width: 16px;
+      height: 16px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .repo-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--gray-600);
+      margin-top: 0.5rem;
+    }
+
+    .main {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .metric {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .metric .value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .metric .label {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .test-list {
+      list-style: none;
+    }
+
+    .test-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gray-300);
+    }
+
+    .dot.pass { background: var(--success); }
+    .dot.pending { background: var(--warning); }
+
+    .test-item .name {
+      flex: 1;
+      font-size: 0.85rem;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span style="font-size: 1.8rem;">🧪</span>
+    <h1>Cypress Form Tester</h1>
+    <span class="badge">DASHBOARD</span>
+  </header>
+
+  <div class="container">
+    <aside class="panel">
+      <div class="panel-header">
+        <h2>Setup</h2>
+        <button class="btn btn-outline">Reset</button>
+      </div>
+      <div class="panel-body">
+        <div class="section">
+          <h3>Form Source</h3>
+          <div class="card">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+              <span class="pill">offline</span>
+              <span style="font-size:0.85rem;">Popup connected</span>
+            </div>
+            <button class="btn btn-primary" style="width:100%;">Open Form Viewer</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Auto-Generate Categories</h3>
+          <div class="category-grid">
+            <label class="category"><input type="checkbox" checked> Form logic</label>
+            <label class="category"><input type="checkbox" checked> Calculations</label>
+            <label class="category"><input type="checkbox" checked> Validations</label>
+            <label class="category"><input type="checkbox"> Value ranges</label>
+            <label class="category"><input type="checkbox"> Required fields</label>
+            <label class="category"><input type="checkbox"> Conditional text</label>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>GitHub Repo</h3>
+          <input class="input" placeholder="owner/repo" value="eriksundvall/kintegrate-tests" />
+          <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
+            <input class="input" style="flex:1" placeholder="branch" value="main" />
+            <button class="btn btn-outline">Connect</button>
+          </div>
+          <div class="repo-status">
+            <span>✅ Connected</span>
+            <span>Path: /forms/bp</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <button class="btn btn-primary" style="width:100%;">Generate Tests</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="hero">
+        <div class="metric">
+          <div class="value">24</div>
+          <div class="label">Fields</div>
+        </div>
+        <div class="metric">
+          <div class="value">16</div>
+          <div class="label">Auto Tests</div>
+        </div>
+        <div class="metric">
+          <div class="value">4</div>
+          <div class="label">Custom Tests</div>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Generated Suite</h2>
+          <button class="btn btn-outline">Preview</button>
+        </div>
+        <div class="panel-body">
+          <ul class="test-list">
+            <li class="test-item"><span class="dot pass"></span><span class="name">Gestational age shows when pregnant is true</span><span class="pill">logic</span></li>
+            <li class="test-item"><span class="dot pass"></span><span class="name">BMI recalculates on weight change</span><span class="pill">calc</span></li>
+            <li class="test-item"><span class="dot pending"></span><span class="name">Systolic value range 60–300</span><span class="pill">range</span></li>
+            <li class="test-item"><span class="dot pending"></span><span class="name">Required: Patient ID</span><span class="pill">required</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Actions</h2>
+        </div>
+        <div class="panel-body">
+          <div class="footer-actions">
+            <button class="btn btn-outline">Export to GitHub</button>
+            <button class="btn btn-primary">Open Cypress Runner</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

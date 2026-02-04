@@ -10,8 +10,8 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 
 ## 2. Goals
 
-1. **Enable non-developers** to create and run form tests without writing code
-2. **Auto-generate tests** from Better form definitions, covering 100% of declared dependencies and calculations
+1. **Enable non-developers** to create and run form tests without writing code - but also be able to optionally edit or add tests using cypress code
+2. **Auto-generate tests** from Better form definitions, covering 100% of declared dependencies (e.g. calculations and field visibility changes based on values selected/entered in one or several fields)
 3. **Provide visual feedback** so informaticians can see exactly what's being tested
 4. **Run standalone** from the main kintegrate tool (separate npm package/directory)
 5. **Support AI-assisted edge case generation** while keeping humans in control
@@ -25,13 +25,22 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 > As a medical informatician, I want to build tests using a visual step-by-step builder with dropdown menus, so I can create custom tests without learning Cypress syntax.
 
 ### US-3: Run Tests Visually
-> As a medical informatician, I want to see tests execute in real-time in a browser, stepping through each action, so I can understand what's being tested and debug failures.
+> As a medical informatician, I want to be able to see tests execute in real-time in a browser, stepping through each action, so I can understand what's being tested and debug failures. (But we also want a headless mode for CI/CD flows etc.)
 
 ### US-4: Review AI-Suggested Tests
 > As a medical informatician, I want the system to suggest additional edge case tests using AI, but I want to review and approve them before they're added, so I stay in control.
 
 ### US-5: Export/Share Tests
 > As a medical informatician, I want to export generated tests as files that developers can integrate into CI/CD pipelines, so test automation can be part of the deployment process.
+
+### US-6: Select Auto-Generation Categories
+> As a medical informatician, I want to select which categories (form logic, value ranges, calculations, validations, required fields) are auto-generated, so I can control the scope of test creation.
+
+### US-7: Store Tests in GitHub
+> As a medical informatician, I want to load and save tests in a user-selected GitHub repository, so tests are versioned and easy to share.
+
+### US-8: Optional Code Editing
+> As a medical informatician (or developer), I want to optionally edit or add tests using Cypress code, so advanced users can fine-tune generated tests.
 
 ## 4. Functional Requirements
 
@@ -63,23 +72,27 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 
 6. **FR-6:** The system must generate human-readable test names derived from the form structure (e.g., "Gestational age shows when pregnant is checked").
 
+7. **FR-7:** The system must allow users to select which categories are auto-generated (e.g., form logic, value ranges, calculations, validations, required fields).
+
+8. **FR-8:** The system must allow users to load and store tests in a user-selected GitHub repository (including branch and target folder).
+
+9. **FR-9:** The system must provide an optional Cypress code editor (read/write) that can create new tests or adjust generated ones.
+
 ### AI Enhancement (Optional Feature)
 
-7. **FR-7:** The system may optionally connect to an AI service (OpenAI API) to suggest additional edge case tests based on the form structure.
+10. **FR-10:** The system may optionally connect to an AI service of user's choice (via API) to suggest additional edge case tests based on the form structure.
 
-8. **FR-8:** AI-suggested tests must be presented to the user for review before being added to the test suite.
+11. **FR-11:** AI-suggested tests must be presented to the user for review before being added to the test suite.
 
-9. **FR-9:** Users must be able to accept, modify, or reject each AI suggestion individually.
+12. **FR-12:** Users must be able to accept, modify, or reject each AI suggestion individually.
 
 ### CLI & Integration
 
-10. **FR-10:** The system must provide CLI commands:
+13. **FR-13:** The system must provide CLI commands:
     - `npm run test` - Run all tests headlessly
     - `npm run test:open` - Open Cypress visual runner
     - `npm run generate -- --form <path>` - Generate tests from form definition
-    - `npm run ui` - Start the web UI for test building
-
-11. **FR-11:** The system must be installable as a standalone npm package, independent of kintegrate.
+    
 
 ## 5. Non-Goals (Out of Scope)
 
@@ -94,13 +107,20 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 ### UI/UX Requirements
 
 - **Clean, minimal interface** suitable for non-technical users
-- **No code visible by default** - code preview is optional
+- **No code visible by default** - code preview/editor is optional
 - **Clear visual feedback** on test results (green/red indicators)
 - **Step-by-step wizard** for first-time users
 
 ### Mockup Reference
 
-See: [mockup-cypress-form-tester.html](../src/mockups/mockup-cypress-form-tester.html)
+See:
+- [mockup-cypress-form-tester.html](../src/mockups/mockup-cypress-form-tester.html)
+- [mockup-cypress-form-tester-alt-dashboard.html](../src/mockups/mockup-cypress-form-tester-alt-dashboard.html)
+- [mockup-cypress-form-tester-alt-wizard.html](../src/mockups/mockup-cypress-form-tester-alt-wizard.html)
+- [mockup-cypress-form-tester-alt-studio.html](../src/mockups/mockup-cypress-form-tester-alt-studio.html)
+
+Archived reference (Playwright-inspired design):
+- [mockup-playwright-form-tester.html](../docs/history/mockup-playwright-form-tester.html)
 
 ### Design Principles
 
@@ -219,8 +239,11 @@ Test 2: valid input -> error hidden
 1. **Open Form Viewer** (popup) from Kintegrate
 2. **Load form package** (ZIP) or **connect to server**
 3. Toggle **Test Mode** (adds selectors + enables Test API)
-4. **Run autogenerated logic tests** (dependencies/calculations/validations)
-5. Inspect failures and record custom steps
+4. **Select auto-generation categories** (logic, calculations, validations, value ranges, required fields)
+5. (Optional) **Connect GitHub repo** for load/save of tests
+6. **Run autogenerated tests** (based on selected categories)
+7. Inspect failures and record custom steps
+8. (Optional) **Edit tests in Cypress code view** for advanced customization
 
 ### 7.7 Implementation Steps (Phase-by-Phase)
 
@@ -241,8 +264,15 @@ Test 2: valid input -> error hidden
 
 **Phase D — Minimal UI**
 1. Simple panel to load form and list discovered logic
-2. “Run Tests” button that opens Cypress Runner
-3. Show last run results (pass/fail count)
+2. Category selector for auto-generation scope
+3. “Run Tests” button that opens Cypress Runner
+4. Show last run results (pass/fail count)
+
+**Phase E — GitHub + Code Editor**
+1. GitHub repo connect (owner/repo, branch, folder)
+2. Load/save test suites to repo
+3. Optional Cypress code editor (read/write) with validation - Note that we already use CodeMirror in Kintegrate, consider reusing that (possibly adding some Cypress mode if available).
+
 
 ### 7.10 PoC Findings (Cypress + Form Viewer)
 
@@ -304,11 +334,13 @@ form-testing-cypress/
 - Reads Better form definition JSON files
 - Outputs standard Cypress test files (.cy.js)
 - Can test forms served by kintegrate's dev server or any URL
+- Can load/save test suites from a user-selected GitHub repository
 
 ### Constraints
 
 - Cypress runs in-browser; cannot test multiple browser tabs in one test
 - Cypress parallel execution requires paid Cypress Cloud (or self-hosted)
+- GitHub integration requires an auth flow (token or OAuth) suitable for non-developers
 
 ## 9. Success Metrics
 
@@ -318,6 +350,7 @@ form-testing-cypress/
 | Informatician adoption | Can generate tests without developer help | User feedback |
 | Test creation time | < 5 minutes for auto-generated suite | Timing measurement |
 | False positive rate | < 5% of generated tests | Manual review |
+| Advanced edit success | Users can adjust tests in code view without breaking runs | Usability testing |
 
 ## 10. Open Questions
 
@@ -332,3 +365,13 @@ form-testing-cypress/
 
 4. **Q4:** What's the minimum form viewer URL structure we need to support?
    - *Recommendation:* Support query param `?form=<name>` or `?template=<path>`
+
+5. **Q5:** Which mockup direction should we pursue for the first functional prototype (dashboard, wizard, or studio layout)?
+
+6. **Q6:** Where should the optional Cypress code editor live in the UI (tab switch, split view, or separate advanced mode)?
+
+7. **Q7:** How should GitHub integration be handled for non-developers (OAuth app, PAT, or device flow), and should we support read-only browsing of existing repos before connecting?
+
+8. **Q8:** How granular should auto-generation category controls be (simple toggles vs. advanced per-rule sliders for test depth)?
+
+9. **Q9:** Should mockups emphasize “quick start” (single-screen dashboard) or “guided onboarding” (wizard), given the target informatician audience?
