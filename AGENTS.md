@@ -2,6 +2,11 @@
 
 This document contains information for AI agents working with this project.
 
+## Style in narrative text
+Keep narrative text in PRDs, documentation etc short and concise.
+No fluffy or cheerful filler text.
+Technical prose only, be kind but direct (e.g., "Thanks @user" not "Thanks so much @user!")
+
 ## Better Form Renderer Documentation
 
 **Version-controlled docs** (in Git):

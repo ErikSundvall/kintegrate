@@ -1,34 +1,32 @@
 # PRD: Better Form Testing Tool (Cypress)
 
-## 1. Introduction/Overview
+## 1. Introduction
+Independent Cypress-based testing tool for Better EHR forms. Enables medical informaticians with limited programming experience to create, run, and maintain automated tests for Better forms—including testing dependencies (show/hide logic), calculations, and validations designed in Better's EHR Studio low-code environment.
 
-This document describes a **standalone form testing tool** for Better EHR forms using the **Cypress** framework. The tool enables medical informaticians with limited programming experience to create, run, and maintain automated tests for Better forms—including testing dependencies (show/hide logic), calculations, and validations designed in Better's EHR Studio low-code environment.
+The tool enables medical informaticians with limited programming experience to create, run, and maintain automated tests for 
 
-**Scope note:** This PRD focuses exclusively on Cypress for the current phase. Playwright is out of scope.
-
-**Problem Solved:** Currently, there's no easy way for non-developers to verify that complex form logic (dependencies, calculations) works correctly after changes. Manual testing is time-consuming and error-prone. This tool automates that process with a user-friendly interface.
+**Problem:** Manual verification of complex form logic (dependencies, calculations) is error-prone and slow. Automated testing is typically inaccessible to non-developers.
 
 ## 2. Goals
-
-1. **Enable non-developers** to create and run form tests without writing code - but also be able to optionally edit or add tests using cypress code
-2. **Auto-generate tests** from Better form definitions, covering 100% of declared dependencies (e.g. calculations and field visibility changes based on values selected/entered in one or several fields)
-3. **Provide visual feedback** so informaticians can see exactly what's being tested
-4. **Run standalone** from the main kintegrate tool (separate npm package/directory)
-5. **Support AI-assisted edge case generation** while keeping humans in control
+1. **No-Code Testing:** Enable informaticians to create/run tests; optional code editor for advanced users.
+2. **Auto-Generation:** Generate tests for 100% of declared dependencies (calculations, visibility).
+3. **Visual Feedback:** Execute tests visibly in-browser for debugging and verification.
+4. **Standalone:** Run independently from the main Kintegrate application.
+5. **AI-Assisted:** Suggest edge case tests with human review/approval.
 
 ## 3. User Stories
 
-### US-1: Auto-Generate Tests from Form
-> As a medical informatician, I want to upload a Better form definition and automatically generate tests for all dependencies and calculations, so I don't have to write test code manually.
+### US-1: Auto-Generate Tests
+> As a medical informatician, I want to auto-generate tests from a form definition (uploaded from from Better Studio) so I don't have to write code manually.
 
 ### US-2: Visual Test Builder
-> As a medical informatician, I want to build tests using a visual step-by-step builder with dropdown menus, so I can create custom tests without learning Cypress syntax.
+> As a medical informatician, I want to build tests using a visual builder so that I do not necessarily need to know Cypress syntax.
 
 ### US-3: Run Tests Visually
 > As a medical informatician, I want to be able to see tests execute in real-time in a browser, stepping through each action, so I can understand what's being tested and debug failures. (But we also want a headless mode for CI/CD flows etc.)
 
-### US-4: Review AI-Suggested Tests
-> As a medical informatician, I want the system to suggest additional edge case tests using AI, but I want to review and approve them before they're added, so I stay in control.
+### US-4: Review AI Tests
+> As a medical informatician, I want to review/approve AI-suggested edge case tests.
 
 ### US-5: Export/Share Tests
 > As a medical informatician, I want to export generated tests as files that developers can integrate into CI/CD pipelines, so test automation can be part of the deployment process.
@@ -36,8 +34,8 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 ### US-6: Select Auto-Generation Categories
 > As a medical informatician, I want to select which categories (form logic, value ranges, calculations, validations, required fields) are auto-generated, so I can control the scope of test creation.
 
-### US-7: Store Tests in GitHub
-> As a medical informatician, I want to load and save tests in a user-selected GitHub repository, so tests are versioned and easy to share.
+### US-7: GitHub Storage
+> I want to load/save tests to a GitHub repository for versioning and easy sharing.
 
 ### US-8: Optional Code Editing
 > As a medical informatician (or developer), I want to optionally edit or add tests using Cypress code, so advanced users can fine-tune generated tests.
@@ -104,23 +102,18 @@ This document describes a **standalone form testing tool** for Better EHR forms 
 
 ## 6. Design Considerations
 
-### UI/UX Requirements
+### UI/UX
+- **Minimalist:** Suitable for non-technical users.
+- **Visual Feedback:** Clear pass/fail indicators.
+- **Guided:** Wizard approach for new users.
 
-- **Clean, minimal interface** suitable for non-technical users
-- **No code visible by default** - code preview/editor is optional
-- **Clear visual feedback** on test results (green/red indicators)
-- **Step-by-step wizard** for first-time users
+### Mockups
+- [mockup-cypress-form-tester.html](../src/mockups/mockup-cypress-form-tester.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester.html)
+- [mockup-cypress-form-tester-alt-dashboard.html](../src/mockups/mockup-cypress-form-tester-alt-dashboard.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-dashboard.html)
+- [mockup-cypress-form-tester-alt-wizard.html](../src/mockups/mockup-cypress-form-tester-alt-wizard.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-wizard.html)
+- [mockup-cypress-form-tester-alt-studio.html](../src/mockups/mockup-cypress-form-tester-alt-studio.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-studio.html)
 
-### Mockup Reference
-
-See:
-- [mockup-cypress-form-tester.html](../src/mockups/mockup-cypress-form-tester.html)
-- [mockup-cypress-form-tester-alt-dashboard.html](../src/mockups/mockup-cypress-form-tester-alt-dashboard.html)
-- [mockup-cypress-form-tester-alt-wizard.html](../src/mockups/mockup-cypress-form-tester-alt-wizard.html)
-- [mockup-cypress-form-tester-alt-studio.html](../src/mockups/mockup-cypress-form-tester-alt-studio.html)
-
-Archived reference (Playwright-inspired design):
-- [mockup-playwright-form-tester.html](../docs/history/mockup-playwright-form-tester.html)
+(Archived: [mockup-playwright-form-tester.html](../docs/history/mockup-playwright-form-tester.html))
 
 ### Design Principles
 
@@ -130,7 +123,7 @@ Archived reference (Playwright-inspired design):
 
 ---
 
-## 7. Part 1 (Formulärlogiken): Deeper Design & Implementation Plan (Cypress)
+## 7. Implementation Plan (Part 1: Logic)
 
 ### 7.1 Scope (Part 1)
 
@@ -168,49 +161,36 @@ Archived reference (Playwright-inspired design):
 
 **Key idea:** Cypress tests target the **form-viewer popup**, not the main app, so we test form logic *close to where it’s authored* while reusing the existing offline rendering infrastructure.
 
-### 7.3 Test Harness (Form Viewer Mode)
+### 7.3 Test Harness
+**Form Viewer (`form-viewer.html`):**
+- **Test Mode (`testMode=1`):** Adds selectors, exposes `window.formTestApi`, shows "TEST MODE" badge.
+- **Auto Load (`autoLoad=0`):** Prevents automatic default form loading for test handling.
 
-Add a **Test Mode** in form-viewer.html:
-- Exposes stable selectors for Cypress (e.g. `data-testid`, `data-field`, `data-path`)
-- Exposes a lightweight JS test API on `window.formTestApi`
-- Provides a “Test Session” banner to avoid confusion with clinical use
-
-**Window API (example):**
+**Window API:**
 ```javascript
 window.formTestApi = {
   isReady: () => !!formRenderer && formRenderer.classList.contains('loaded'),
-  setFieldValue: (fieldTag, value) => formRenderer.getScriptApi().setFieldValue(fieldTag, value),
-  getFieldValue: (fieldTag) => formRenderer.getScriptApi().getFieldValue(fieldTag),
-  getComposition: () => formRenderer.getScriptApi().getComposition(),
+  setFieldValue: (tagOrPath, value) => scriptApi.setFieldValue(tagOrPath, value),
+  getFieldValue: (tagOrPath) => scriptApi.getFieldValue(tagOrPath),
+  getComposition: () => scriptApi.getComposition(),
   validate: () => formRenderer.validate(),
-  show: (fieldTag) => formRenderer.getScriptApi().showFormElement(fieldTag),
-  hide: (fieldTag) => formRenderer.getScriptApi().hideFormElement(fieldTag)
+  show: (tagOrPath) => scriptApi.showFormElement(tagOrPath),
+  hide: (tagOrPath) => scriptApi.hideFormElement(tagOrPath)
 };
 ```
 
-### 7.4 Selector Strategy (critical for Cypress)
+### 7.4 Selector Strategy
+Reliable selection is critical for generated tests.
 
-Use a layered selector strategy to ensure tests survive UI changes:
+1. **Primary:** `aqlPath` (Stable, semantic).
+2. **Secondary:** `tag` or `alias` (Stable if managed well).
+3. **Fallback:** Label text (Brittle).
 
-1. **Primary:** `data-field="<tag>"` or `data-path="<ehrPath>"`
-2. **Secondary:** label text (only for fallback)
-3. **Tertiary:** CSS class (avoid for long-term tests)
-
-If the Better renderer does not expose stable attributes, use a thin DOM-mapping layer in the popup to attach `data-field` attributes after render, using ScriptApi metadata and the renderer DOM.
-
-### 7.4.1 Field Identifiers (Paths, Tags, and Containers)
-
-**Key API detail:** ScriptApi methods accept **`tagOrPath`** where the identifier can be a **tag**, **alias**, or **path**. The `getFieldModel` response includes `aqlPath`, `isHidden`, and container metadata. This allows a **path-first strategy** for stable identifiers:
-
-1. **Preferred:** `aqlPath` from the form model (stable across label changes)
-2. **Fallback:** tag/alias from form-description
-3. **Last resort:** DOM label text
-
-**Container handling:** ScriptApi functions accept `searchWithinContainerTag` and `containerMultiIndex`. This is essential for repeated structures (multi-containers). The test generator must track container context when building identifiers.
-
-**Coded text values:** `getFieldValue(tagOrPath, ..., simpleValue=true)` returns label for CODED_TEXT. For strict assertions, use `simpleValue=false` and compare `code` where applicable.
-
-**Implication for generator:** Store a field index keyed by `aqlPath` and tag, and include container scope in generated steps.
+#### 7.4.1 Field Identifiers & AQL Paths
+The Better ScriptApi handles `tagOrPath`. **`aqlPath` is preferred** as it remains stable across UI layout/label changes.
+- **Paths:** Use `getFieldModel()` to resolve `aqlPath`.
+- **Containers:** Repeated structures require `searchWithinContainerTag` and `containerMultiIndex`. The generator must track container context.
+- **Coded Text:** `getFieldValue` returns labels by default; use `simpleValue=false` for code comparisons.
 
 ### 7.5 Test Types & Templates
 
@@ -273,33 +253,22 @@ Test 2: valid input -> error hidden
 2. Load/save test suites to repo
 3. Optional Cypress code editor (read/write) with validation - Note that we already use CodeMirror in Kintegrate, consider reusing that (possibly adding some Cypress mode if available).
 
+### 7.8 Execution Modes
+1. **Local (Offline):** Service Worker mock (Authoring).
+2. **Server:** Live EHR connection (Integration).
 
-### 7.10 PoC Findings (Cypress + Form Viewer)
+### 7.9 Deliverables
+- Test-enabled Form Viewer.
+- Cypress Command Library.
+- Logic Test Generator.
+- Testing UI.
+- Documentation.
 
-1. **ScriptApi is the most stable control surface.** Using `getScriptApi()` avoids brittle DOM selectors and works well with `tagOrPath`.
-2. **`aqlPath` is the best long-term identifier.** It is available via `getFieldModel` and is less likely to change than labels.
-3. **Test Mode should expose a minimal API.** A small `window.formTestApi` surface allows Cypress to drive the form without DOM coupling.
-4. **Container scope must be explicit.** Repeated structures require `searchWithinContainerTag` and `containerMultiIndex` in generated steps.
-
-**PoC location:** `tasks/cypress-poc/`
-
-### 7.8 Test Execution Modes
-
-1. **Local offline mode** (preferred for authoring)
-   - Uses Service Worker `/mock-cdr`
-   - Tests run against the popup
-
-2. **Server mode** (optional)
-   - Uses `ehrServerUrl` + credentials
-   - Same tests, different configuration
-
-### 7.9 Deliverables (Part 1)
-
-- Updated form-viewer popup with Test Mode
-- Cypress commands for core actions
-- Generator that outputs logic tests
-- Refined mockup for the Form Logic testing UI
-- Minimal docs for running tests locally
+### 7.10 PoC Findings
+1. **API Control:** `window.formTestApi` -> `scriptApi` is robust.
+2. **Identifiers:** `aqlPath` is superior to DOM selectors; Better ScriptAPI handles `tagOrPath` effectively.
+3. **Containers:** Explicit container scope is required for multi-value fields.
+4. **URL Control:** `testMode` and `autoLoad` params are effective for test setup.
 
 ## 8. Technical Considerations
 
@@ -307,7 +276,6 @@ Test 2: valid input -> error hidden
 
 - **Cypress** (v13+) - Test framework
 - **Node.js** (v18+) - Runtime
-- **Express** (optional) - Serve web UI locally
 
 ### Architecture
 
