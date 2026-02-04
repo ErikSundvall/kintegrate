@@ -203,6 +203,31 @@ Outer ZIP:
 
 ---
 
+## Kintegrate Form Viewer Integration
+
+The Kintegrate Form Viewer (`form-viewer.html`) provides additional control for automated testing and development.
+
+### URL Query Parameters
+
+The viewer's behavior can be controlled via URL parameters (supports both `?param=val` and `#param=val` syntax):
+
+| Parameter | Value | Effect |
+|-----------|-------|--------|
+| `testMode` | `1` | Enables **Test Mode**. Overlays a badge and exposes `window.formTestApi`. |
+| `autoLoad` | `0` | (Requires `testMode=1`) Disables the default behavior of auto-loading sample forms on startup. |
+
+### Test API (`window.formTestApi`)
+
+When `testMode=1` is active, the viewer exposes a stable API for testing tools like Cypress:
+
+- `isReady()`: Returns true if the renderer is loaded and initialized.
+- `setFieldValue(tagOrPath, value)`: Updates a field value.
+- `getFieldValue(tagOrPath)`: Retrieves a field value.
+- `getComposition()`: Returns the full composition JSON.
+- `validate()`: Triggers form validation.
+
+---
+
 ## Related Resources
 
 - **Official Docs:** https://docs.better.care/studio/form-renderer/

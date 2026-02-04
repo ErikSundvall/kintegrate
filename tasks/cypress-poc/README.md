@@ -17,6 +17,14 @@ npm install
 npm run cypress:open
 ```
 
+## URL Query Parameters
+The `form-viewer.html` supports the following query parameters (can be passed via `?` or `#` hash):
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `testMode` | `1` | Enables **Test Mode**. Overlays a "TEST MODE" badge and installs `window.formTestApi` for Cypress automation. |
+| `autoLoad` | `0` | Disables the automatic loading of example forms on startup when in `testMode`. Useful if the test wants to handle the loading process itself. |
+
 ## Notes
 - The PoC assumes the form is already rendered before the test asserts on fields.
 - Use `testMode=1` in the URL to enable `window.formTestApi`.

@@ -67,6 +67,20 @@ The Better Form Renderer is a proprietary library that is **not included in vers
 
 See [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md) for technical details.
 
+## Form Viewer - URL Control
+
+The Form Viewer (`form-viewer.html`) can be controlled via URL query parameters (or hash parameters):
+
+ `testMode=1`: Enables **Test Mode**.
+    - Displays a "TEST MODE" badge.
+    - Installs `window.formTestApi` for automated testing (wraps Better's `ScriptApi`).
+    - Defaults to auto-loading example forms for convenience.
+- `autoLoad=0`: Disables the automatic loading of default forms. 
+    - Only applicable when `testMode=1` is active.
+    - Used when a testing tool (like Cypress) wants to control exactly which form is loaded and when.
+
+Example: `form-viewer.html?testMode=1&autoLoad=0`
+
 ## Setting up the NPM_BETTER_AUTH environment variable (for developers)
 
 The `.npmrc` file references `${NPM_BETTER_AUTH}` for authentication. To set this:
