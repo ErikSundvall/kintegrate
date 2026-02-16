@@ -1,17 +1,20 @@
 {
+  "rmType": "FORM_DEFINITION",
+  "formId": "sample_triage_logic",
   "name": "Sample triage logic",
-  "fields": [
+  "children": [
     {
-      "tag": "pregnant",
-      "aqlPath": "/content[openEHR-EHR-SECTION.adhoc.v1,'Pregnancy']/items[at0001]/value",
-      "dependencies": [
-        {
-          "targetPath": "/content[openEHR-EHR-SECTION.adhoc.v1,'Pregnancy']/items[at0002]/value",
-          "triggerValue": true,
-          "falsyValue": false,
-          "description": "Gestational age is visible only when pregnant is true"
+      "formId": "sample_triage_logic/pregnant",
+      "name": "Pregnant"
+    },
+    {
+      "formId": "sample_triage_logic/gestational_age",
+      "name": "Gestational age",
+      "viewConfig": {
+        "annotations": {
+          "conditions": "{\"formId\":\"sample_triage_logic/gestational_age\",\"expressions\":[{\"id\":\"expr-1\",\"statements\":[{\"fieldId\":\"sample_triage_logic/pregnant\",\"condition\":{\"operator\":\"is\",\"value\":{\"value\":\"true\",\"label\":\"true\"}},\"id\":\"stmt-1\",\"valid\":true}],\"actions\":[{\"target\":\"sample_triage_logic/gestational_age\",\"action\":\"show\",\"id\":\"act-1\",\"valid\":true}],\"otherwise\":[{\"target\":\"sample_triage_logic/gestational_age\",\"action\":\"hide\",\"id\":\"act-2\",\"valid\":true}],\"events\":[{\"id\":\"evt-1\",\"fieldId\":\"ALL_CASES\",\"type\":\"CHANGE\"}]}]}"
         }
-      ]
+      }
     }
   ]
 }

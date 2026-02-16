@@ -53,6 +53,7 @@ Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
 - Root-level Cypress harness (`cypress.config.js`, `cypress/support/commands.js`)
 - Test-mode bootstrap spec (`cypress/e2e/custom/form-viewer-test-mode.cy.js`)
 - Logic generator CLI (`npm run generate`) that creates dependency specs in `cypress/e2e/generated/`
+- Generator input format is Better `form-description` JSON (`rmType: "FORM_DEFINITION"`), typically extracted from a Better Studio `*_FORM.zip`
 
 Current generator scope is dependency/visibility rules.
 
@@ -302,5 +303,4 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 * plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
 * Local search box (possibly for each column in footer) --> ciunt and hihligt ocurrences - see VS Code's good search impl. (and/or plugin to CodeMirror?)
 * add if/else-clause insertion button to context menu
-
 
