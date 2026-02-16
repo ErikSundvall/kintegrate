@@ -36,8 +36,8 @@ function collectDependencyRules(node, rules, context = {}) {
             nextContext.currentTag,
           targetPath: candidate.targetPath || candidate.path || nextContext.currentPath,
           targetTag: candidate.targetTag || candidate.target || nextContext.currentTag,
-          truthyValue: candidate.triggerValue ?? candidate.value ?? true,
-          falsyValue: candidate.falsyValue ?? false,
+          showValue: candidate.triggerValue ?? candidate.value ?? true,
+          hideValue: candidate.falsyValue ?? false,
           description: candidate.description || candidate.name || ''
         });
       });

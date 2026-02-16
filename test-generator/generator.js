@@ -25,14 +25,15 @@ function buildDependencySpec(parsedForm) {
       const target = pickIdentifier(rule, 'target');
 
       if (!trigger || !target) {
-        return `  it('dependency rule ${index + 1} has unresolved field identifiers', () => {\n    throw new Error('Generator could not resolve trigger/target for dependency rule ${index + 1}.');\n  });`;
+        const missing = [!trigger ? 'trigger' : null, !target ? 'target' : null].filter(Boolean).join(' and ');
+        return `  it('dependency rule ${index + 1} has unresolved field identifiers', () => {\n    throw new Error('Generator could not resolve ${missing} identifier for dependency rule ${index + 1}.');\n  });`;
       }
 
       const name =
         sanitizeTestTitle(rule.description) ||
         `${target} visibility toggles from ${trigger}`;
 
-      return `  it('${name}', () => {\n    cy.visit('/form-viewer.html?testMode=1&autoLoad=0');\n    cy.formViewerReady();\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.falsyValue)});\n    cy.expectHidden(${asLiteral(target)});\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.truthyValue)});\n    cy.expectVisible(${asLiteral(target)});\n  });`;
+      return `  it('${name}', () => {\n    cy.visit('/form-viewer.html?testMode=1&autoLoad=0');\n    cy.formViewerReady();\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.hideValue)});\n    cy.expectHidden(${asLiteral(target)});\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.showValue)});\n    cy.expectVisible(${asLiteral(target)});\n  });`;
     })
     .join('\n\n');
 

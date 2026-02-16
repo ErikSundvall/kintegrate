@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseFormDefinition } = require('./parser');
 const { buildDependencySpec } = require('./generator');
+const MAX_FILENAME_LENGTH = 80;
 
 function parseArgs(argv) {
   const args = {};
@@ -30,7 +31,7 @@ function toSafeFileName(name) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'generated-form';
+    .slice(0, MAX_FILENAME_LENGTH) || 'generated-form';
 }
 
 function main() {
