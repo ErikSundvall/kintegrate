@@ -103,7 +103,7 @@ The tool enables medical informaticians with limited programming experience to c
 ## 6. Design Considerations
 
 ### UI/UX
-- **Minimalist:** Suitable for non-technical users.
+- **Minimalist:** Suitable for non-technical users. Follow style of existing app src\index.html, e.g. the use of SVG icons derived from https://mui.com/material-ui/material-icons/
 - **Visual Feedback:** Clear pass/fail indicators.
 - **Guided:** Wizard approach for new users.
 
@@ -265,6 +265,7 @@ Test 2: valid input -> error hidden
 - Documentation.
 
 ### 7.10 PoC Findings
+We did perform a PoC with Better forms and Cypress, dee files in tasks\cypress-poc
 1. **API Control:** `window.formTestApi` -> `scriptApi` is robust.
 2. **Identifiers:** `aqlPath` is superior to DOM selectors; Better ScriptAPI handles `tagOrPath` effectively.
 3. **Containers:** Explicit container scope is required for multi-value fields.
@@ -276,9 +277,10 @@ Test 2: valid input -> error hidden
 
 - **Cypress** (v13+) - Test framework
 - **Node.js** (v18+) - Runtime
+- Possibly github copilot SDK/API or similar if using AI at runtime
 
 ### Architecture
-
+Feel free to modify this AI-generated structure:
 ```
 form-testing-cypress/
 ├── cypress/
@@ -299,22 +301,22 @@ form-testing-cypress/
 
 ### Integration Points
 
-- Reads Better form definition JSON files
+- Reads Better form definition JSON files (usually loaded via zip package)
 - Outputs standard Cypress test files (.cy.js)
 - Can test forms served by kintegrate's dev server or any URL
-- Can load/save test suites from a user-selected GitHub repository
+- Can load/save test suites from a user-selected GitHub repository - remember last 10 selected repos using a cookie, internal browser storage or similar.
 
 ### Constraints
 
 - Cypress runs in-browser; cannot test multiple browser tabs in one test
-- Cypress parallel execution requires paid Cypress Cloud (or self-hosted)
+- Cypress parallel execution might later be done using https://www.npmjs.com/package/cypress-split or similar
 - GitHub integration requires an auth flow (token or OAuth) suitable for non-developers
 
 ## 9. Success Metrics
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Test generation coverage | 100% of declared dependencies/calculations | Automated check |
+| Test generation coverage | 100% of declared dependencies/calculations (if user selects such depth) | Automated check |
 | Informatician adoption | Can generate tests without developer help | User feedback |
 | Test creation time | < 5 minutes for auto-generated suite | Timing measurement |
 | False positive rate | < 5% of generated tests | Manual review |
@@ -330,16 +332,22 @@ form-testing-cypress/
 
 3. **Q3:** Should generated tests be committed to Git, or regenerated on each run?
    - *Recommendation:* Commit them; allows manual customization and version tracking
+   - *Response:* yes, let USER inspect/modify the list of tests and commit them with som kind of save button (do not develop auto commit now)
 
 4. **Q4:** What's the minimum form viewer URL structure we need to support?
-   - *Recommendation:* Support query param `?form=<name>` or `?template=<path>`
+   - *Recommendation:* Support query param `?form=<name>` and version, see section about forms in Better's API docs/swagger
 
 5. **Q5:** Which mockup direction should we pursue for the first functional prototype (dashboard, wizard, or studio layout)?
+   - *Response:* The first one, the one found in ../src/mockups/mockup-cypress-form-tester.html Also use CodeMirror for inspecting/editing the generated code.
 
-6. **Q6:** Where should the optional Cypress code editor live in the UI (tab switch, split view, or separate advanced mode)?
+7. **Q6:** Where should the optional Cypress code editor live in the UI (tab switch, split view, or separate advanced mode)?
+   - *Response:* Use CodeMirror for inspecting/editing the generated code, initially as a small part of main UI as in ../src/mockups/mockup-cypress-form-tester.html but with possibility to open in separate window.
 
-7. **Q7:** How should GitHub integration be handled for non-developers (OAuth app, PAT, or device flow), and should we support read-only browsing of existing repos before connecting?
+9. **Q7:** How should GitHub integration be handled for non-developers (OAuth app, PAT, or device flow), and should we support read-only browsing of existing repos before connecting?
+   - *Response:* Go for oAuth initially, also add PAT in later development Phase
 
-8. **Q8:** How granular should auto-generation category controls be (simple toggles vs. advanced per-rule sliders for test depth)?
+10. **Q8:** How granular should auto-generation category controls be (simple toggles vs. advanced per-rule sliders for test depth)?
+    - *Response:* Sliders
 
-9. **Q9:** Should mockups emphasize “quick start” (single-screen dashboard) or “guided onboarding” (wizard), given the target informatician audience?
+12. **Q9:** Should mockups emphasize “quick start” (single-screen dashboard) or “guided onboarding” (wizard), given the target informatician audience?
+    - *Response:*  “quick start” (single-screen dashboard)
