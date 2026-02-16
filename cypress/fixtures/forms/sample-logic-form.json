@@ -1,0 +1,17 @@
+{
+  "name": "Sample triage logic",
+  "fields": [
+    {
+      "tag": "pregnant",
+      "aqlPath": "/content[openEHR-EHR-SECTION.adhoc.v1,'Pregnancy']/items[at0001]/value",
+      "dependencies": [
+        {
+          "targetPath": "/content[openEHR-EHR-SECTION.adhoc.v1,'Pregnancy']/items[at0002]/value",
+          "triggerValue": true,
+          "falsyValue": false,
+          "description": "Gestational age is visible only when pregnant is true"
+        }
+      ]
+    }
+  ]
+}

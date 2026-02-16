@@ -1,6 +1,9 @@
 # Node / web
 node_modules/
 dist/
+cypress/downloads/
+cypress/screenshots/
+cypress/videos/
 
 # Proprietary libs
 src/vendor/
