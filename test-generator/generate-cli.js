@@ -13,6 +13,9 @@ function parseArgs(argv) {
     if (token === '--form-file' || token === '--form-file-path' || token === '--formpath') {
       args.form = argv[i + 1];
       i += 1;
+    } else if (token === '--categories') {
+      args.categories = argv[i + 1];
+      i += 1;
     } else if (token === '--out') {
       args.out = argv[i + 1];
       i += 1;
@@ -72,7 +75,10 @@ function main() {
   const inputPath = path.resolve(process.cwd(), args.form);
   const raw = loadFormInput(inputPath);
   const parsed = parseFormDefinition(raw);
-  const specSource = buildDependencySpec(parsed);
+  const categories = args.categories
+    ? args.categories.split(',').map((item) => item.trim()).filter(Boolean)
+    : undefined;
+  const specSource = buildDependencySpec(parsed, { categories });
 
   const fileName = `${toSafeFileName(parsed.name)}.generated.cy.js`;
   const outputPath = path.resolve(
@@ -82,7 +88,7 @@ function main() {
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, specSource, 'utf8');
-  console.log(`Generated ${parsed.dependencies.length} dependency test(s): ${outputPath}`);
+  console.log(`Generated tests for ${categories ? categories.join(', ') : 'logic'}: ${outputPath}`);
 }
 
 if (require.main === module) {

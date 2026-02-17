@@ -51,6 +51,9 @@ npm run generate -- --form-file src/example/forms/24oktDemo_1_0_4_FORM.zip
 
 # Or from an extracted form-description JSON
 npm run generate -- --form-file cypress/fixtures/forms/sample-logic-form.json
+
+# Optional: select categories (logic, calculations, validations, value-ranges, required-fields)
+npm run generate -- --form-file src/example/forms/MV_akutmall_undervisningsexempel_2a.json --categories logic,validations,required-fields
 ```
 
 ## Cypress form testing (PRD phase starter)
@@ -61,7 +64,7 @@ Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
 - Logic generator CLI (`npm run generate`) that creates dependency specs in `cypress/e2e/generated/`
 - Generator input format is Better `form-description` JSON (`rmType: "FORM_DEFINITION"`), typically extracted from a Better Studio `*_FORM.zip`
 
-Current generator scope is dependency/visibility rules.
+Current generator supports category selection. Dependency/visibility rules generate runnable tests. Other categories currently generate editable skeleton tests (`it.skip`) that can be completed with concrete input/output values.
 
 ## GitHub Pages Deployment
 
