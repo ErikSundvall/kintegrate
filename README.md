@@ -66,6 +66,12 @@ Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
 
 Current generator supports category selection. Dependency/visibility rules generate runnable tests. Other categories currently generate editable skeleton tests (`it.skip`) that can be completed with concrete input/output values.
 
+Phase D/E prototype UI is available at `src/mockups/mockup-cypress-form-tester.html` with:
+- form load + discovered rules panel
+- slider-based category scope
+- step builder + generated code preview
+- GitHub target persistence scaffold (localStorage, last 10)
+
 ## GitHub Pages Deployment
 
 The project is automatically deployed to GitHub Pages when changes are pushed to the `main` branch. The deployment is handled by a GitHub Actions workflow (`.github/workflows/deploy-pages.yml`).
