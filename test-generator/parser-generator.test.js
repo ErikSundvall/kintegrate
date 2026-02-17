@@ -4,7 +4,6 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const JSZip = require('jszip');
 
 const { parseFormDefinition } = require('./parser');
 const { buildDependencySpec } = require('./generator');
@@ -16,23 +15,26 @@ const formZipFiles = [
   'MDK_Rek_demo_1_0_131_FORM.zip'
 ];
 
-async function loadFormDescriptionFromBetterZip(zipPath) {
-  const outerZip = await JSZip.loadAsync(fs.readFileSync(zipPath));
-  const innerZipFileName = Object.keys(outerZip.files).find(
-    (fileName) => fileName.toLowerCase().endsWith('.zip') && !outerZip.files[fileName].dir
-  );
-
-  assert.ok(innerZipFileName, `Expected nested form ZIP in ${path.basename(zipPath)}`);
-  const innerZipBuffer = await outerZip.file(innerZipFileName).async('nodebuffer');
-  const innerZip = await JSZip.loadAsync(innerZipBuffer);
-  const formDescriptionText = await innerZip.file('form-description').async('string');
-  return JSON.parse(formDescriptionText);
+function loadFormDescriptionFromBetterZip(zipPath) {
+  const python = [
+    'import io, json, zipfile, sys',
+    'zip_path = sys.argv[1]',
+    'with zipfile.ZipFile(zip_path) as outer:',
+    "    inner_name = next((n for n in outer.namelist() if n.lower().endswith('.zip')), None)",
+    "    assert inner_name, 'Missing nested form ZIP'",
+    '    with zipfile.ZipFile(io.BytesIO(outer.read(inner_name))) as inner:',
+    "        data = json.loads(inner.read('form-description').decode('utf-8'))",
+    'print(json.dumps(data))'
+  ].join('\n');
+  const result = spawnSync('python', ['-c', python, zipPath], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return JSON.parse(result.stdout);
 }
 
-test('parser extracts dependency visibility rules from all bundled Better form ZIP examples', async () => {
+test('parser extracts dependency visibility rules from all bundled Better form ZIP examples', () => {
   for (const fileName of formZipFiles) {
     const zipPath = path.join(repoRoot, 'src', 'example', 'forms', fileName);
-    const formDescription = await loadFormDescriptionFromBetterZip(zipPath);
+    const formDescription = loadFormDescriptionFromBetterZip(zipPath);
     const parsed = parseFormDefinition(formDescription);
 
     assert.equal(formDescription.rmType, 'FORM_DEFINITION');
@@ -43,9 +45,9 @@ test('parser extracts dependency visibility rules from all bundled Better form Z
   }
 });
 
-test('generator builds Cypress specs with expected command flow from parsed Better conditions', async () => {
+test('generator builds Cypress specs with expected command flow from parsed Better conditions', () => {
   const zipPath = path.join(repoRoot, 'src', 'example', 'forms', formZipFiles[0]);
-  const formDescription = await loadFormDescriptionFromBetterZip(zipPath);
+  const formDescription = loadFormDescriptionFromBetterZip(zipPath);
   const parsed = parseFormDefinition(formDescription);
   const spec = buildDependencySpec(parsed);
 
@@ -55,13 +57,13 @@ test('generator builds Cypress specs with expected command flow from parsed Bett
   assert.match(spec, /cy\.expectVisible\(/);
 });
 
-test('CLI generates Cypress e2e output from a real Better form-description file', async () => {
+test('CLI generates Cypress e2e output from a real Better form-description file', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kintegrate-generator-test-'));
   const outFile = path.join(tmpDir, 'generated.cy.js');
   const inputFile = path.join(tmpDir, 'form-description.json');
 
   const zipPath = path.join(repoRoot, 'src', 'example', 'forms', formZipFiles[1]);
-  const formDescription = await loadFormDescriptionFromBetterZip(zipPath);
+  const formDescription = loadFormDescriptionFromBetterZip(zipPath);
   fs.writeFileSync(inputFile, JSON.stringify(formDescription), 'utf8');
 
   const cliResult = spawnSync(
