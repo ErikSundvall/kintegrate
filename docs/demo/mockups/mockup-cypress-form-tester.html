@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Better Form Logic Tester (Cypress) - Mockup</title>
+  <title>Better Form Test Generator (Cypress) - Mockup</title>
   <style>
     :root {
       --primary: #1976d2;
@@ -528,7 +528,7 @@
   
   <header class="header">
     <span class="logo">🧪</span>
-    <h1>Better Form Logic Tester</h1>
+    <h1>Better Form Test Generator</h1>
     <span class="badge">CYPRESS</span>
   </header>
   
@@ -536,19 +536,19 @@
     <nav class="wizard-steps">
       <div class="wizard-step completed">
         <span class="number">✓</span>
-        <span>Connect Viewer</span>
+        <span>Load Form</span>
       </div>
       <div class="wizard-step completed">
         <span class="number">✓</span>
-        <span>Load Form</span>
+        <span>Review Logic</span>
       </div>
       <div class="wizard-step active">
         <span class="number">3</span>
-        <span>Review Logic</span>
+        <span>Build Tests</span>
       </div>
       <div class="wizard-step">
         <span class="number">4</span>
-        <span>Run Cypress</span>
+        <span>Generate & Run</span>
       </div>
     </nav>
     
@@ -556,19 +556,11 @@
       <!-- Left Panel: Form Info & Discovered Logic -->
       <div class="panel">
         <div class="panel-header">
-          <h2>🔌 Viewer + Form Status</h2>
-          <button class="btn btn-outline">Open Form Viewer</button>
+          <h2>📋 Form Analysis</h2>
+          <button class="btn btn-outline">Change Form</button>
         </div>
         <div class="panel-body">
           <div class="form-loaded-indicator">
-            <span class="icon">🟢</span>
-            <div class="info">
-              <div class="name">Popup Connected • Test Mode ON</div>
-              <div class="meta">form-viewer.html • offline mock CDR</div>
-            </div>
-          </div>
-
-          <div class="form-loaded-indicator" style="margin-top: 0.75rem;">
             <span class="icon">✅</span>
             <div class="info">
               <div class="name">Blood Pressure Monitoring Form</div>
@@ -595,7 +587,7 @@
             </div>
           </div>
           
-          <h3 style="font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--gray-800);">Formulärlogik (Discovered)</h3>
+          <h3 style="font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--gray-800);">Discovered Logic</h3>
           
           <ul class="dependency-list">
             <li class="dependency-item">
@@ -636,9 +628,9 @@
           </ul>
           
           <div class="ai-suggestion">
-            <h4>🧠 Edge Case Suggestions</h4>
-            <p>7 boundary-value tests suggested. Review and add if needed.</p>
-            <button class="btn">Review Suggestions</button>
+            <h4>✨ AI Suggestions Available</h4>
+            <p>Based on this form's medical context, AI has identified 7 additional edge case tests (boundary values, clinical scenarios).</p>
+            <button class="btn">Review AI Suggestions</button>
           </div>
         </div>
       </div>
@@ -650,7 +642,7 @@
           <button class="toggle-code">Show Code Preview</button>
         </div>
         <div class="panel-body">
-          <input type="text" class="test-name-input" placeholder="Test name: e.g., 'Warning shows for hypertensive crisis'" value="High BP warning shows when systolic exceeds 180">
+          <input type="text" class="test-name-input" placeholder="Test name: e.g., 'Warning shows for hypertensive crisis'" value="Warning shows when systolic exceeds 180">
           
           <div class="step-builder">
             <div class="step-item">
@@ -735,11 +727,10 @@
 <span class="code-comment">// Auto-generated test</span>
 <span class="code-keyword">describe</span>(<span class="code-string">'Blood Pressure Monitoring Form'</span>, () => {
   <span class="code-keyword">it</span>(<span class="code-string">'Warning shows when systolic exceeds 180'</span>, () => {
-    cy.<span class="code-function">visit</span>(<span class="code-string">'/form-viewer.html?testMode=1&form=blood-pressure'</span>)
-    cy.<span class="code-function">formViewerReady</span>()
+    cy.<span class="code-function">visit</span>(<span class="code-string">'/form-viewer.html?form=blood-pressure'</span>)
     cy.<span class="code-function">fillField</span>(<span class="code-string">'systolic'</span>, <span class="code-string">'185'</span>)
     cy.<span class="code-function">fillField</span>(<span class="code-string">'diastolic'</span>, <span class="code-string">'95'</span>)
-    cy.<span class="code-function">expectVisible</span>(<span class="code-string">'high-bp-warning'</span>)
+    cy.<span class="code-function">fieldShouldBeVisible</span>(<span class="code-string">'high-bp-warning'</span>)
   })
 })
             </div>
@@ -755,18 +746,19 @@
       <!-- Bottom Panel: Actions -->
       <div class="panel full-width">
         <div class="panel-header">
-          <h2>🚀 Run Cypress (Form Logic)</h2>
+          <h2>🚀 Generate & Run Tests</h2>
         </div>
         <div class="panel-body" style="display: flex; gap: 2rem; align-items: center;">
           <div style="flex: 1;">
-            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Ready to run 18 logic tests</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Ready to generate 18 tests</h3>
             <p style="font-size: 0.875rem; color: var(--gray-600);">
-              Generated from dependencies, calculations, and validations. Target: form-viewer popup in Test Mode.
+              This includes auto-generated tests for all dependencies, calculations, and validations,
+              plus 1 custom test you created.
             </p>
           </div>
           <div style="display: flex; gap: 1rem;">
             <button class="btn btn-outline">
-              📥 Export Cypress Tests
+              📥 Download Test Files
             </button>
             <button class="btn btn-success" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
               ▶️ Open Cypress Runner

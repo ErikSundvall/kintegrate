@@ -36,32 +36,7 @@ npm run serve
 
 # Development server from src
 npm run dev
-
-# Run Cypress tests (headless)
-npm run test
-
-# Open Cypress visual runner
-npm run test:open
-
-# Run unit tests for test-generator parser/CLI
-npm run test:unit
-
-# Generate dependency tests from a Better FORM zip package
-npm run generate -- --form-file src/example/forms/24oktDemo_1_0_4_FORM.zip
-
-# Or from an extracted form-description JSON
-npm run generate -- --form-file cypress/fixtures/forms/sample-logic-form.json
 ```
-
-## Cypress form testing (PRD phase starter)
-
-Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
-- Root-level Cypress harness (`cypress.config.js`, `cypress/support/commands.js`)
-- Test-mode bootstrap spec (`cypress/e2e/custom/form-viewer-test-mode.cy.js`)
-- Logic generator CLI (`npm run generate`) that creates dependency specs in `cypress/e2e/generated/`
-- Generator input format is Better `form-description` JSON (`rmType: "FORM_DEFINITION"`), typically extracted from a Better Studio `*_FORM.zip`
-
-Current generator scope is dependency/visibility rules.
 
 ## GitHub Pages Deployment
 
@@ -91,20 +66,6 @@ The Better Form Renderer is a proprietary library that is **not included in vers
 3. **Offline Use**: Once uploaded, the renderer works completely offline via Service Worker
 
 See [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md) for technical details.
-
-## Form Viewer - URL Control
-
-The Form Viewer (`form-viewer.html`) can be controlled via URL query parameters (or hash parameters):
-
- `testMode=1`: Enables **Test Mode**.
-    - Displays a "TEST MODE" badge.
-    - Installs `window.formTestApi` for automated testing (wraps Better's `ScriptApi`).
-    - Defaults to auto-loading example forms for convenience.
-- `autoLoad=0`: Disables the automatic loading of default forms. 
-    - Only applicable when `testMode=1` is active.
-    - Used when a testing tool (like Cypress) wants to control exactly which form is loaded and when.
-
-Example: `form-viewer.html?testMode=1&autoLoad=0`
 
 ## Setting up the NPM_BETTER_AUTH environment variable (for developers)
 
@@ -309,3 +270,6 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 * plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
 * Local search box (possibly for each column in footer) --> ciunt and hihligt ocurrences - see VS Code's good search impl. (and/or plugin to CodeMirror?)
 * add if/else-clause insertion button to context menu
+
+
+
