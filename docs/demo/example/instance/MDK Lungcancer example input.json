@@ -1,0 +1,493 @@
+{
+ "granskning": {
+  "nuvarande_situation_och_bakgrund": [
+   {
+    "sjukdomshistoria": [
+     {
+      "anamnes": [
+       {
+        "|value": "Patienten bor med sambo, 2 barn. "
+       }
+      ],
+      "komorbiditet": [
+       {
+        "|value": "Diabetes, hjärtsvikt."
+       }
+      ]
+     }
+    ],
+    "klinisk_synopsis": [
+     {
+      "aktuellt": []
+     }
+    ],
+    "sammanfattning_av_rökvanor_för_tobak": [
+     {
+      "per_typ": [
+       {
+        "status": [
+         {
+          "|code": "at0059",
+          "|value": "Före detta rökare"
+         }
+        ],
+        "typ": [
+         {
+          "|code": "at0054",
+          "|value": "Cigaretter"
+         }
+        ],
+        "paketår_pack_years": [
+         {
+          "|value": 5
+         }
+        ],
+        "slutdatum": [
+         {
+          "|value": "2015"
+         }
+        ],
+        "kommentar": []
+       }
+      ],
+      "definition_av_rökare": [
+       {
+        "|value": "Använder nu eller har slutat för mindre än 6 månader sedan."
+       }
+      ],
+      "definition_av_före_detta_rökare": [
+       {
+        "|value": "Slutade för mer än 6 månader sedan"
+       }
+      ]
+     }
+    ],
+    "sammanfattning_av_vaping": [
+     {
+      "status": [],
+      "slutdatum": [],
+      "kommentar": [],
+      "definition_av_nuvarande_vaper": [
+       {
+        "|value": "Använder nu eller har slutat för mindre än 6 månader sedan."
+       }
+      ],
+      "definition_av_före_detta_vaper": [
+       {
+        "|value": "Har tidigare använd men slutade för mer än 6 månader sedan."
+       }
+      ],
+      "definition_av_har_aldrigt_vapat": [
+       {
+        "|value": "Har aldrig använt."
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "utredning_undersökning": [
+   {
+    "bilddiagnostik": [
+     {
+      "bilddiagnostiskt_resultat": [
+       {
+        "typ_av_undersökning": [
+         {
+          "|code": "5",
+          "|value": "Ultraljud"
+         }
+        ],
+        "kroppsställe": [
+         {
+          "|value": "Lunga"
+         }
+        ],
+        "datum": [
+         {
+          "|value": "2026-02-09"
+         }
+        ],
+        "imaging_examination_of_an_anomaly_en": [
+         {
+          "physical_dimensions_en": [
+           {
+            "diameter_största_tumör": [
+             {
+              "quantity_value": [
+               {
+                "|magnitude": 11,
+                "|unit": "mm"
+               }
+              ]
+             }
+            ]
+           }
+          ],
+          "multifokalitet": [
+           {
+            "|code": "397207006",
+            "|value": "Nej"
+           }
+          ],
+          "anatomisk_lokalisation_primärtumör": [
+           {
+            "namn_på_kroppsställe": [
+             {
+              "|code": "361969002",
+              "|value": "Höger ovanlob"
+             }
+            ],
+            "beskrivning": [
+             {
+              "|value": "Penetrerar omkringliggande struktur. "
+             }
+            ]
+           }
+          ],
+          "anatomisk_lokalisation_lymfkörtelmetastaser": [
+           {
+            "namn_på_kroppsställe": [],
+            "beskrivning": []
+           }
+          ],
+          "anatomisk_lokalisation_fjärrmetastaser": [
+           {
+            "namn_på_kroppsställe": [],
+            "beskrivning": []
+           }
+          ]
+         }
+        ],
+        "kommentar": []
+       }
+      ],
+      "kompletterande_bilddiagnostik_hjärna": [
+       {
+        "datum": [],
+        "typ_av_undersökning": [],
+        "antal_förekomster_av_ett_observerat_fynd": [
+         {
+          "antal_metastaser_i_hjärnan": []
+         }
+        ],
+        "kommentar": [],
+        "anatomiskt_målområde": []
+       }
+      ]
+     }
+    ],
+    "pad": [
+     {
+      "pad_resultat": [
+       {
+        "undersökningsnamn": [],
+        "anatomisk_lokalisation": [
+         {
+          "anatomisk_lokalisation_för_provtagning": []
+         }
+        ],
+        "laboratoriedisciplin": [],
+        "molekylärpatologisk_analys": [
+         {
+          "analysnamn": [
+           {
+            "|code": "1",
+            "|value": "EGFR"
+           }
+          ],
+          "analysresultat": [
+           {
+            "|code": "e13ec0a3-7871-46cb-911e-4b554dbea399",
+            "|value": "Positiv"
+           }
+          ],
+          "analysresultat_2": [
+           {
+            "|magnitude": null,
+            "|unit": "%"
+           }
+          ]
+         }
+        ],
+        "kommentar": []
+       }
+      ],
+      "ingreppsmetod": [
+       {
+        "namn_på_procedur": [
+         {
+          "|code": "3000",
+          "|value": "Bronkoskopi med EBUS"
+         }
+        ]
+       }
+      ],
+      "problem_diagnos": [
+       {
+        "patologisk_diagnos": [
+         {
+          "|code": "C34.9A",
+          "|value": "Lungcancer, skivepitelcancer"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "funktionsutredning": [
+     {
+      "funktionsstatus_enligt_ecog": [
+       {
+        "funktionsstatus_enligt_ecog": [
+         {
+          "|code": "at0006",
+          "|value": "Symtomatisk men fullt rörlig",
+          "|ordinal": 1
+         }
+        ]
+       }
+      ],
+      "trapptest": [
+       {
+        "resultat": [],
+        "distans": [
+         {
+          "|magnitude": null,
+          "|unit": "m"
+         }
+        ],
+        "orsak_ej_godkänt": [],
+        "orsak_ej_genomfört": []
+       }
+      ],
+      "pulsoximetri": [
+       {
+        "spo": []
+       }
+      ],
+      "spirometriresultat": [
+       {
+        "fev1": [
+         {
+          "fev1_liter": [
+           {
+            "|unit": "L"
+           }
+          ],
+          "fev1": []
+         }
+        ]
+       }
+      ],
+      "dlco": [
+       {
+        "dlco": []
+       }
+      ],
+      "ergospirometri": [
+       {
+        "vo2max": []
+       }
+      ],
+      "lungscintigrafi": [
+       {
+        "typ_av_undersökning": [],
+        "namn_på_kroppsställe": [],
+        "datum": [],
+        "lungscintigrafi": [
+         {
+          "höger_lunga": [
+           {
+            "|magnitude": null,
+            "|unit": "%"
+           }
+          ],
+          "vänster_lunga": [
+           {
+            "|magnitude": null,
+            "|unit": "%"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "ordination_av_vårdförlopp": [
+   {
+    "ordination": [
+     {
+      "vårdförlopp": [],
+      "svf-start": [
+       {
+        "|value": ""
+       }
+      ],
+      "datum_senaste_start_av_första_behandling_enligt_svf": []
+     }
+    ]
+   }
+  ],
+  "deltagara": [
+   {
+    "behållare_för_demografiska_uppgifter": [
+     {
+      "tillfällig_deltaglista": [
+       {
+        "deltagare": [
+         {
+          "|value": "Test Testsson\nTest Testsson2"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "bedömning": [
+   {
+    "behållare": [
+     {
+      "klinisk_tnm-klassificering": [
+       {
+        "tnm-version": [],
+        "primärtumör_t": [],
+        "regional_lymfkörtlar_n": [],
+        "fjärrmetastaser_m": [],
+        "stadieindelning": []
+       }
+      ]
+     }
+    ],
+    "huvuddiagnos": [
+     {
+      "icd-10": [],
+      "datum_och_tid_för_kliniskt_erkänd": [],
+      "problem_diagnoskvalificering": [
+       {
+        "diagnostisk_kategori": []
+       }
+      ]
+     }
+    ],
+    "bidiagnos": [
+     {
+      "icd-10": [],
+      "datum_och_tid_för_kliniskt_erkänd": [],
+      "problem_diagnoskvalificering": [
+       {
+        "diagnostisk_kategori": []
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "gemensamt_beslut": [
+   {
+    "multidisciplinär_rekommendation_för_handläggning_av_cancer": [
+     {
+      "rekommenderad_behandlingsstrategi": [
+       {
+        "behandlingsalternativ": [
+         {
+          "klinisk_studie": [],
+          "bästa_understödjande_vård_bsc": [
+           {
+            "bästa_understödjande_vård_bsc": [
+             {
+              "|value": true
+             }
+            ],
+            "skäl_till_val_av_bästa_understödjande_vård": [
+             {
+              "|value": "Riskerna med behandling överväger nyttan. Livskvaliten kommer inte att bli bättre med systemisk behandling. "
+             }
+            ]
+           }
+          ],
+          "huvudbehandling": [
+           {
+            "intention": [],
+            "typ_av_behandling": [],
+            "form_av_kemoradioterpi": [],
+            "regim": [],
+            "antal_kurer": [],
+            "fraktionsdos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "totaldos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "fritext": [
+             {
+              "detaljer_om_huvudbehandling": []
+             }
+            ]
+           }
+          ],
+          "tilläggsbehandling": [
+           {
+            "intention": [],
+            "relation_till_huvudbehandling": [],
+            "typ_av_behandling": [],
+            "form_av_kemoradioterapi": [],
+            "regim": [],
+            "antal_kurer": [],
+            "fraktionsdos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "totaldos": [
+             {
+              "|magnitude": null,
+              "|unit": "Gy"
+             }
+            ],
+            "fritext": [
+             {
+              "detaljer_om_tilläggsbehandling": []
+             }
+            ]
+           }
+          ],
+          "kommentar": []
+         }
+        ]
+       }
+      ],
+      "vidare_utredning": [
+       {
+        "beskrivning_av_vidare_utredning": []
+       }
+      ],
+      "uppföljning": []
+     }
+    ]
+   }
+  ],
+  "rekommendation": [
+   {
+    "sammanställd_journaltext": []
+   }
+  ]
+ },
+ "ctx": {
+  "language": "sv",
+  "territory": "SI",
+  "generic_fields": {}
+ }
+}

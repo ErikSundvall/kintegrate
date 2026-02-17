@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cypress Form Tester - Studio Mockup</title>
+  <style>
+    :root {
+      --primary: #8b5cf6;
+      --secondary: #ec4899;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray-50: #fafafa;
+      --gray-100: #f4f4f5;
+      --gray-200: #e4e4e7;
+      --gray-600: #52525b;
+      --gray-800: #27272a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+    }
+
+    .banner {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 12px 24px rgba(139, 92, 246, 0.25);
+    }
+
+    .banner h1 { font-size: 1.4rem; font-weight: 600; }
+
+    .toolbar {
+      margin-left: auto;
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .btn {
+      border: none;
+      background: white;
+      color: var(--gray-800);
+      border-radius: 8px;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 1.5rem;
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--gray-200);
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: var(--gray-50);
+    }
+
+    .panel-body { padding: 1.25rem; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #f3e8ff;
+      color: #6d28d9;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .list {
+      list-style: none;
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .list-item {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gray-200);
+    }
+
+    .status.pass { background: var(--success); }
+    .status.pending { background: var(--warning); }
+
+    .editor {
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 10px;
+      padding: 1rem;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .step {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.8rem;
+    }
+
+    .step:last-child { border-bottom: none; }
+
+    .field {
+      flex: 1;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      background: white;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 1px solid var(--gray-200); color: var(--gray-800); }
+
+    .switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .switch input { width: 16px; height: 16px; }
+
+    .repo {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .repo input {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <span style="font-size:1.8rem;">✨</span>
+    <h1>Cypress Form Tester Studio</h1>
+    <div class="toolbar">
+      <button class="btn">Docs</button>
+      <button class="btn">Settings</button>
+      <button class="btn">Help</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="panel-header">Auto-Generate Categories</div>
+      <div class="panel-body">
+        <div class="switch"><span>Form logic</span><input type="checkbox" checked></div>
+        <div class="switch"><span>Calculations</span><input type="checkbox" checked></div>
+        <div class="switch"><span>Validations</span><input type="checkbox" checked></div>
+        <div class="switch"><span>Value ranges</span><input type="checkbox"></div>
+        <div class="switch"><span>Required fields</span><input type="checkbox"></div>
+        <div class="switch"><span>Container repeats</span><input type="checkbox"></div>
+
+        <div style="margin-top:1rem;">
+          <span class="chip">18 tests selected</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="panel-header">Test Authoring</div>
+      <div class="panel-body">
+        <div style="margin-bottom:1rem; display:flex; gap:0.6rem; align-items:center;">
+          <span class="chip">Popup connected</span>
+          <span class="chip">Test Mode ON</span>
+        </div>
+
+        <div class="step">
+          <span>1.</span>
+          <select class="field">
+            <option>Fill Field</option>
+            <option>Expect Visible</option>
+            <option>Expect Hidden</option>
+          </select>
+          <select class="field">
+            <option>Gestational age</option>
+            <option>Pregnant</option>
+            <option>Height</option>
+          </select>
+          <input class="field" value="true" />
+        </div>
+        <div class="step">
+          <span>2.</span>
+          <select class="field">
+            <option>Expect Visible</option>
+          </select>
+          <select class="field">
+            <option>Gestational age</option>
+          </select>
+          <input class="field" placeholder="(no value)" />
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-outline">+ Add step</button>
+          <button class="btn btn-primary">Save test</button>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <div class="editor">
+            <span>// Preview</span><br>
+            cy.visit('/form-viewer.html?testMode=1')<br>
+            cy.formViewerReady()<br>
+            cy.fillField('pregnant', true)<br>
+            cy.expectVisible('gestational-age')
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-header">GitHub Repo</div>
+      <div class="panel-body">
+        <div class="repo">
+          <input value="eriksundvall/kintegrate-tests" />
+          <input value="main" />
+          <input value="/forms/blood-pressure" />
+        </div>
+        <div class="actions" style="margin-top:1rem;">
+          <button class="btn btn-outline">Connect</button>
+          <button class="btn btn-primary">Save to Repo</button>
+        </div>
+
+        <div style="margin-top:1.2rem;">
+          <div class="panel-header" style="border-radius:8px;">Recent Tests</div>
+          <div class="panel-body">
+            <ul class="list">
+              <li class="list-item"><span><span class="status pass"></span> BP warning visible</span><span class="chip">logic</span></li>
+              <li class="list-item"><span><span class="status pass"></span> BMI recalculates</span><span class="chip">calc</span></li>
+              <li class="list-item"><span><span class="status pending"></span> Range: systolic</span><span class="chip">range</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>
