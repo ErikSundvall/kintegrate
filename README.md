@@ -43,6 +43,9 @@ npm run test
 # Open Cypress visual runner
 npm run test:open
 
+# Run unit tests for test-generator parser/CLI
+npm run test:unit
+
 # Generate dependency tests from a form definition JSON
 npm run generate -- --form cypress/fixtures/forms/sample-logic-form.json
 ```
@@ -303,4 +306,3 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 * plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
 * Local search box (possibly for each column in footer) --> ciunt and hihligt ocurrences - see VS Code's good search impl. (and/or plugin to CodeMirror?)
 * add if/else-clause insertion button to context menu
-
