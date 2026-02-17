@@ -105,7 +105,7 @@ This document describes a **standalone form testing tool** for Better EHR forms 
     - `npm run test:ui` - Open Playwright UI mode
     - `npm run test:headed` - Run tests with visible browser
     - `npm run record` - Launch Playwright Codegen to record a test
-    - `npm run generate -- --form <path>` - Generate tests from form definition
+   - `npm run generate -- --form-file <path>` - Generate tests from form definition
     - `npm run report` - Open HTML test report
     - `npm run trace` - Open Trace Viewer for debugging
     - `npm run ui` - Start the web UI for test building

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { unzipSync, strFromU8 } = require('fflate');
 const { parseFormDefinition } = require('./parser');
 const { buildDependencySpec } = require('./generator');
 const MAX_FILENAME_LENGTH = 80;
@@ -9,7 +10,7 @@ function parseArgs(argv) {
   const args = {};
   for (let i = 2; i < argv.length; i += 1) {
     const token = argv[i];
-    if (token === '--form') {
+    if (token === '--form-file' || token === '--form-file-path' || token === '--formpath') {
       args.form = argv[i + 1];
       i += 1;
     } else if (token === '--out') {
@@ -26,6 +27,36 @@ function ensureArg(value, message) {
   }
 }
 
+function parseBetterFormZip(buffer, inputPath) {
+  const outerFiles = unzipSync(buffer);
+  const innerZipFileName = Object.keys(outerFiles).find((name) => name.toLowerCase().endsWith('.zip'));
+
+  if (innerZipFileName) {
+    const innerFiles = unzipSync(outerFiles[innerZipFileName]);
+    if (!innerFiles['form-description']) {
+      throw new Error(`ZIP does not contain form-description: ${inputPath}`);
+    }
+    return JSON.parse(strFromU8(innerFiles['form-description']));
+  }
+
+  if (outerFiles['form-description']) {
+    return JSON.parse(strFromU8(outerFiles['form-description']));
+  }
+
+  throw new Error(`Unsupported ZIP format (missing form-description): ${inputPath}`);
+}
+
+function loadFormInput(inputPath) {
+  const rawBuffer = fs.readFileSync(inputPath);
+  const extension = path.extname(inputPath).toLowerCase();
+
+  if (extension === '.zip') {
+    return parseBetterFormZip(rawBuffer, inputPath);
+  }
+
+  return JSON.parse(rawBuffer.toString('utf8'));
+}
+
 function toSafeFileName(name) {
   return String(name || 'generated-form')
     .toLowerCase()
@@ -36,10 +67,10 @@ function toSafeFileName(name) {
 
 function main() {
   const args = parseArgs(process.argv);
-  ensureArg(args.form, 'Missing required argument: --form <path>');
+  ensureArg(args.form, 'Missing required argument: --form-file <path>');
 
   const inputPath = path.resolve(process.cwd(), args.form);
-  const raw = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+  const raw = loadFormInput(inputPath);
   const parsed = parseFormDefinition(raw);
   const specSource = buildDependencySpec(parsed);
 

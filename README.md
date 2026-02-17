@@ -46,8 +46,11 @@ npm run test:open
 # Run unit tests for test-generator parser/CLI
 npm run test:unit
 
-# Generate dependency tests from a form definition JSON
-npm run generate -- --form cypress/fixtures/forms/sample-logic-form.json
+# Generate dependency tests from a Better FORM zip package
+npm run generate -- --form-file src/example/forms/24oktDemo_1_0_4_FORM.zip
+
+# Or from an extracted form-description JSON
+npm run generate -- --form-file cypress/fixtures/forms/sample-logic-form.json
 ```
 
 ## Cypress form testing (PRD phase starter)

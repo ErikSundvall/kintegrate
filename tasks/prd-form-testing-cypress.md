@@ -89,7 +89,7 @@ The tool enables medical informaticians with limited programming experience to c
 13. **FR-13:** The system must provide CLI commands:
     - `npm run test` - Run all tests headlessly
     - `npm run test:open` - Open Cypress visual runner
-    - `npm run generate -- --form <path>` - Generate tests from form definition
+   - `npm run generate -- --form-file <path>` - Generate tests from form definition
     
 
 ## 5. Non-Goals (Out of Scope)

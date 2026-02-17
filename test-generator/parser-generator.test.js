@@ -55,15 +55,12 @@ test('generator builds Cypress specs with expected command flow from parsed Bett
 test('CLI generates Cypress e2e output from a real Better form-description file', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kintegrate-generator-test-'));
   const outFile = path.join(tmpDir, 'generated.cy.js');
-  const inputFile = path.join(tmpDir, 'form-description.json');
 
   const zipPath = path.join(repoRoot, 'src', 'example', 'forms', formZipFiles[1]);
-  const formDescription = loadFormDescriptionFromBetterZip(zipPath);
-  fs.writeFileSync(inputFile, JSON.stringify(formDescription), 'utf8');
 
   const cliResult = spawnSync(
     process.execPath,
-    [path.join(repoRoot, 'test-generator', 'generate-cli.js'), '--form', inputFile, '--out', outFile],
+    [path.join(repoRoot, 'test-generator', 'generate-cli.js'), '--form-file', zipPath, '--out', outFile],
     { encoding: 'utf8' }
   );
 
