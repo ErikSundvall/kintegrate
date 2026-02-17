@@ -29,6 +29,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "cypress": "^13.17.0",
+    "fflate": "^0.8.2",
     "fs-extra": "^11.2.0"
   },
   "dependencies": {

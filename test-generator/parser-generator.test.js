@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { unzipSync, strFromU8 } = require('fflate');
 
 const { parseFormDefinition } = require('./parser');
 const { buildDependencySpec } = require('./generator');
@@ -16,19 +17,13 @@ const formZipFiles = [
 ];
 
 function loadFormDescriptionFromBetterZip(zipPath) {
-  const python = [
-    'import io, json, zipfile, sys',
-    'zip_path = sys.argv[1]',
-    'with zipfile.ZipFile(zip_path) as outer:',
-    "    inner_name = next((n for n in outer.namelist() if n.lower().endswith('.zip')), None)",
-    "    assert inner_name, 'Missing nested form ZIP'",
-    '    with zipfile.ZipFile(io.BytesIO(outer.read(inner_name))) as inner:',
-    "        data = json.loads(inner.read('form-description').decode('utf-8'))",
-    'print(json.dumps(data))'
-  ].join('\n');
-  const result = spawnSync('python', ['-c', python, zipPath], { encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  return JSON.parse(result.stdout);
+  const outerFiles = unzipSync(fs.readFileSync(zipPath));
+  const innerZipFileName = Object.keys(outerFiles).find((name) => name.toLowerCase().endsWith('.zip'));
+
+  assert.ok(innerZipFileName, `Expected nested form ZIP in ${path.basename(zipPath)}`);
+  const innerFiles = unzipSync(outerFiles[innerZipFileName]);
+  assert.ok(innerFiles['form-description'], `Missing form-description in ${path.basename(zipPath)}`);
+  return JSON.parse(strFromU8(innerFiles['form-description']));
 }
 
 test('parser extracts dependency visibility rules from all bundled Better form ZIP examples', () => {
