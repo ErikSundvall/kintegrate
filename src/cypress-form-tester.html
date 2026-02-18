@@ -457,7 +457,6 @@
       <button class="btn" type="button">✕</button>`;
     
     const actionSelect = row.querySelector('.step-action');
-    const valueInput = row.querySelector('.step-value');
     const browseBtn = row.querySelector('.browse-field-btn');
     const fieldInput = row.querySelector('.step-field');
     
@@ -466,24 +465,28 @@
     // Make value field reactive to action selection
     const updateValueField = () => {
       const selectedAction = actionSelect.value;
+      const currentValueEl = row.querySelector('.step-value');
+      
       if (selectedAction === 'Expect Visible' || selectedAction === 'Expect Hidden') {
-        // Convert to dropdown for boolean values
-        const currentValue = valueInput.value;
-        const select = document.createElement('select');
-        select.className = 'step-value';
-        select.innerHTML = '<option value="true">true</option><option value="false">false</option>';
-        select.value = currentValue === 'false' ? 'false' : 'true';
-        valueInput.replaceWith(select);
+        // Convert to dropdown for boolean values if not already a select
+        if (currentValueEl.tagName !== 'SELECT') {
+          const currentValue = currentValueEl.value;
+          const select = document.createElement('select');
+          select.className = 'step-value';
+          select.innerHTML = '<option value="true">true</option><option value="false">false</option>';
+          select.value = currentValue === 'false' ? 'false' : 'true';
+          currentValueEl.replaceWith(select);
+        }
       } else {
         // Keep/restore text input
-        if (valueInput.tagName === 'SELECT') {
-          const currentValue = valueInput.value;
+        if (currentValueEl.tagName === 'SELECT') {
+          const currentValue = currentValueEl.value;
           const input = document.createElement('input');
           input.className = 'step-value';
           input.type = 'text';
           input.placeholder = 'value';
           input.value = currentValue;
-          valueInput.replaceWith(input);
+          currentValueEl.replaceWith(input);
         }
       }
     };
