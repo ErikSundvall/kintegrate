@@ -61,3 +61,71 @@ Cypress.Commands.add('expectValue', (tagOrPath, expectedValue, options = {}) => 
     expect(actualValue, `${tagOrPath} value`).to.deep.equal(expectedValue);
   });
 });
+
+Cypress.Commands.add('assertRangeSamples', (options = {}) => {
+  const {
+    label = 'range rule',
+    min = null,
+    max = null,
+    minOp = '>=',
+    maxOp = '<=',
+    validSamples = [],
+    invalidSamples = [],
+    expectedUnit = null
+  } = options;
+
+  const getMagnitude = (sample) => {
+    if (typeof sample === 'number') {
+      return sample;
+    }
+    if (sample && typeof sample === 'object') {
+      if (Number.isFinite(sample.magnitude)) {
+        return sample.magnitude;
+      }
+      if (Number.isFinite(sample.value)) {
+        return sample.value;
+      }
+    }
+    return null;
+  };
+
+  const getUnit = (sample) => {
+    if (sample && typeof sample === 'object') {
+      return sample.unit ?? null;
+    }
+    return null;
+  };
+
+  const hasExpectedUnit = (sample) => {
+    if (!expectedUnit) {
+      return true;
+    }
+    return getUnit(sample) === expectedUnit;
+  };
+
+  const isValid = (sample) => {
+    const magnitude = getMagnitude(sample);
+    if (!Number.isFinite(magnitude)) {
+      return false;
+    }
+    if (!hasExpectedUnit(sample)) {
+      return false;
+    }
+    const minPass = min === null || (minOp === '>' ? magnitude > min : magnitude >= min);
+    const maxPass = max === null || (maxOp === '<' ? magnitude < max : magnitude <= max);
+    return minPass && maxPass;
+  };
+
+  expect(validSamples.length, `${label} generated valid samples`).to.be.greaterThan(0);
+  validSamples.forEach((sample) => {
+    expect(isValid(sample), `${label} expected valid sample to pass`).to.equal(true);
+    if (expectedUnit) {
+      expect(getUnit(sample), `${label} valid sample unit`).to.equal(expectedUnit);
+    }
+  });
+
+  expect(invalidSamples.length, `${label} generated invalid samples`).to.be.greaterThan(0);
+  invalidSamples.forEach((sample) => {
+    expect(isValid(sample), `${label} expected invalid sample to fail`).to.equal(false);
+  });
+});

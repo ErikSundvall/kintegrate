@@ -66,7 +66,7 @@ Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
 
 Current generator supports category selection. Dependency/visibility rules generate runnable tests. Other categories currently generate editable skeleton tests (`it.skip`) that can be completed with concrete input/output values.
 
-Phase D/E prototype UI is available at `src/mockups/mockup-cypress-form-tester.html` with:
+Form testing UI is available at `src/cypress-form-tester.html` with:
 - form load + discovered rules panel
 - slider-based category scope
 - step builder + generated code preview

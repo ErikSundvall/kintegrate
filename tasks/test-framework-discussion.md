@@ -5,7 +5,7 @@ Some people have been involved in inital discussions regarding how to create and
 * Comparison report Cypress vs Playwright for Informaticians testing Better forms: tasks\test-framework-discussion.md
   * Cypress:
     * PRD: tasks\prd-form-testing-cypress.md
-    * Mockup: src\mockups\mockup-cypress-form-tester.html
+    * UI: src\cypress-form-tester.html
   * Playwright
     * PRD: tasks\prd-form-testing-playwright.md
     * Mockup: src\mockups\mockup-playwright-form-tester.html

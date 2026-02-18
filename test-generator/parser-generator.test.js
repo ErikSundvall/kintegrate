@@ -46,7 +46,7 @@ test('generator builds Cypress specs with expected command flow from parsed Bett
   const parsed = parseFormDefinition(formDescription);
   const spec = buildDependencySpec(parsed);
 
-  assert.match(spec, /cy\.visit\('\/form-viewer\.html\?testMode=1&autoLoad=0'\)/);
+  assert.match(spec, /cy\.visit\('\/form-viewer\.html#testMode=1&autoLoad=1'\)/);
   assert.match(spec, /cy\.formViewerReady\(\)/);
   assert.match(spec, /cy\.expectHidden\(/);
   assert.match(spec, /cy\.expectVisible\(/);
@@ -82,6 +82,42 @@ test('parser extracts validation, value range, required and calculation metadata
   assert.ok(parsed.valueRanges.some((rule) => rule.field === 'vitals/hr' && rule.min === 30 && rule.max === 220));
 });
 
+test('parser deduplicates repeated rules by signature', () => {
+  const parsed = parseFormDefinition({
+    name: 'Dedup sample',
+    children: [
+      {
+        id: 'pulse',
+        min: 1,
+        validation: {
+          range: {
+            min: 30,
+            max: 180,
+            minOp: '>=',
+            maxOp: '<='
+          }
+        }
+      },
+      {
+        id: 'pulse',
+        min: 1,
+        validation: {
+          range: {
+            min: 30,
+            max: 180,
+            minOp: '>=',
+            maxOp: '<='
+          }
+        }
+      }
+    ]
+  });
+
+  assert.equal(parsed.validations.length, 1);
+  assert.equal(parsed.valueRanges.length, 1);
+  assert.equal(parsed.requiredFields.length, 1);
+});
+
 test('generator includes selected categories in generated Cypress spec output', () => {
   const spec = buildDependencySpec(
     {
@@ -95,10 +131,13 @@ test('generator includes selected categories in generated Cypress spec output', 
     { categories: ['calculations', 'validations', 'value-ranges', 'required-fields'] }
   );
 
-  assert.match(spec, /it\.skip\('calculation bmi uses/);
-  assert.match(spec, /it\.skip\('bmi validation min 10, max 80'/);
-  assert.match(spec, /it\.skip\('bmi value range \(10 to 80\)'/);
-  assert.match(spec, /it\.skip\('bmi is required \(min 1\)'/);
+  assert.match(spec, /it\('calculation metadata exists for bmi'/);
+  assert.match(spec, /it\('bmi range rule 1 accepts valid values and rejects invalid values/);
+  assert.doesNotMatch(spec, /it\.skip\(/);
+  assert.match(spec, /it\('bmi required cardinality enforces min 1'/);
+  assert.match(spec, /cy\.assertRangeSamples\(/);
+  assert.match(spec, /"validSamples":\[/);
+  assert.match(spec, /"invalidSamples":\[/);
 });
 
 test('CLI generates Cypress e2e output from a real Better form-description file', () => {

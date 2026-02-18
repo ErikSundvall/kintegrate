@@ -107,13 +107,9 @@ The tool enables medical informaticians with limited programming experience to c
 - **Visual Feedback:** Clear pass/fail indicators.
 - **Guided:** Wizard approach for new users.
 
-### Mockups
-- [mockup-cypress-form-tester.html](../src/mockups/mockup-cypress-form-tester.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester.html)
-- [mockup-cypress-form-tester-alt-dashboard.html](../src/mockups/mockup-cypress-form-tester-alt-dashboard.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-dashboard.html)
-- [mockup-cypress-form-tester-alt-wizard.html](../src/mockups/mockup-cypress-form-tester-alt-wizard.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-wizard.html)
-- [mockup-cypress-form-tester-alt-studio.html](../src/mockups/mockup-cypress-form-tester-alt-studio.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/mockups/mockup-cypress-form-tester-alt-studio.html)
+### UI references
+- [cypress-form-tester.html](../src/cypress-form-tester.html) - also [via githack](https://raw.githack.com/ErikSundvall/kintegrate/main/src/cypress-form-tester.html)
 
-(Archived: [mockup-playwright-form-tester.html](../docs/history/mockup-playwright-form-tester.html))
 
 ### Design Principles
 
@@ -337,11 +333,11 @@ form-testing-cypress/
 4. **Q4:** What's the minimum form viewer URL structure we need to support?
    - *Recommendation:* Support query param `?form=<name>` and version, see section about forms in Better's API docs/swagger
 
-5. **Q5:** Which mockup direction should we pursue for the first functional prototype (dashboard, wizard, or studio layout)?
-   - *Response:* The first one, the one found in ../src/mockups/mockup-cypress-form-tester.html Also use CodeMirror for inspecting/editing the generated code.
+5. **Q5:** Which direction should we pursue for the first functional version (dashboard, wizard, or studio layout)?
+   - *Response:* The first one, the one found in ../src/cypress-form-tester.html Also use CodeMirror for inspecting/editing the generated code.
 
 7. **Q6:** Where should the optional Cypress code editor live in the UI (tab switch, split view, or separate advanced mode)?
-   - *Response:* Use CodeMirror for inspecting/editing the generated code, initially as a small part of main UI as in ../src/mockups/mockup-cypress-form-tester.html but with possibility to open in separate window.
+   - *Response:* Use CodeMirror for inspecting/editing the generated code, initially as a small part of main UI as in ../src/cypress-form-tester.html but with possibility to open in separate window.
 
 9. **Q7:** How should GitHub integration be handled for non-developers (OAuth app, PAT, or device flow), and should we support read-only browsing of existing repos before connecting?
    - *Response:* Go for oAuth initially, also add PAT in later development Phase

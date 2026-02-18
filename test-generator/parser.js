@@ -152,7 +152,7 @@ function collectDependencyRules(node, rules, context = {}) {
   });
 }
 
-function pushValidationRangeRule(rules, identifier, range, suffix = null) {
+function pushValidationRangeRule(rules, identifier, range, suffix = null, extras = {}) {
   if (!identifier || !range || typeof range !== 'object') {
     return;
   }
@@ -165,6 +165,8 @@ function pushValidationRangeRule(rules, identifier, range, suffix = null) {
   rules.push({
     field: identifier,
     suffix,
+    rmType: extras.rmType || null,
+    unit: extras.unit || null,
     min,
     max,
     minOp: range.minOp || null,
@@ -172,11 +174,26 @@ function pushValidationRangeRule(rules, identifier, range, suffix = null) {
   });
 }
 
+function extractQuantityUnitRules(inputs) {
+  const unitInput = (inputs || []).find((input) => input?.suffix === 'unit');
+  if (!unitInput || !Array.isArray(unitInput.list)) {
+    return [];
+  }
+
+  return unitInput.list
+    .map((entry) => ({
+      unit: entry?.value ?? entry?.label ?? null,
+      range: entry?.validation?.range || null
+    }))
+    .filter((entry) => entry.unit);
+}
+
 function collectValidationRules(node, validations, valueRanges, requiredFields, calculations, context = {}) {
   if (!node || typeof node !== 'object') {
     return;
   }
 
+  const ownIdentifier = node.formId || node.tag || node.alias || node.id || node.aqlPath || node.path || null;
   const nextContext = {
     currentPath: node.aqlPath || node.path || context.currentPath || null,
     currentTag: node.formId || node.tag || node.alias || node.id || context.currentTag || null
@@ -185,21 +202,55 @@ function collectValidationRules(node, validations, valueRanges, requiredFields, 
 
   const range = node.validation?.range;
   if (range) {
-    pushValidationRangeRule(validations, currentIdentifier, range);
-    pushValidationRangeRule(valueRanges, currentIdentifier, range);
+    pushValidationRangeRule(validations, currentIdentifier, range, null, { rmType: node.rmType || null });
+    pushValidationRangeRule(valueRanges, currentIdentifier, range, null, { rmType: node.rmType || null });
   }
+
+  const quantityUnitRules = node.rmType === 'DV_QUANTITY'
+    ? extractQuantityUnitRules(node.inputs)
+    : [];
 
   if (Array.isArray(node.inputs)) {
     node.inputs.forEach((input) => {
       const inputRange = input?.validation?.range;
       if (inputRange) {
-        pushValidationRangeRule(validations, currentIdentifier, inputRange, input?.suffix || null);
-        pushValidationRangeRule(valueRanges, currentIdentifier, inputRange, input?.suffix || null);
+        const inputSuffix = input?.suffix || null;
+
+        if (node.rmType === 'DV_QUANTITY' && inputSuffix === 'magnitude' && quantityUnitRules.length) {
+          quantityUnitRules.forEach((unitRule) => {
+            pushValidationRangeRule(
+              validations,
+              currentIdentifier,
+              unitRule.range || inputRange,
+              inputSuffix,
+              { rmType: node.rmType, unit: unitRule.unit }
+            );
+            pushValidationRangeRule(
+              valueRanges,
+              currentIdentifier,
+              unitRule.range || inputRange,
+              inputSuffix,
+              { rmType: node.rmType, unit: unitRule.unit }
+            );
+          });
+          return;
+        }
+
+        if (inputSuffix === 'unit') {
+          return;
+        }
+
+        pushValidationRangeRule(validations, currentIdentifier, inputRange, inputSuffix, {
+          rmType: node.rmType || null
+        });
+        pushValidationRangeRule(valueRanges, currentIdentifier, inputRange, inputSuffix, {
+          rmType: node.rmType || null
+        });
       }
     });
   }
 
-  if (currentIdentifier && Number.isFinite(node.min) && node.min > 0) {
+  if (ownIdentifier && Number.isFinite(node.min) && node.min > 0) {
     requiredFields.push({
       field: currentIdentifier,
       min: node.min
@@ -210,7 +261,7 @@ function collectValidationRules(node, validations, valueRanges, requiredFields, 
     if (!value || /conditions/i.test(key)) {
       return;
     }
-    if (/calculation|formula|derived/i.test(key)) {
+    if (ownIdentifier && /calculation|formula|derived/i.test(key)) {
       calculations.push({
         field: currentIdentifier,
         expression: typeof value === 'string' ? value : JSON.stringify(value)
@@ -218,15 +269,52 @@ function collectValidationRules(node, validations, valueRanges, requiredFields, 
     }
   });
 
-  Object.values(node).forEach((value) => {
+  Object.entries(node).forEach(([key, value]) => {
+    if (!value || key === 'inputs' || key === 'validation' || key === 'list' || /conditions/i.test(key)) {
+      return;
+    }
+
     if (Array.isArray(value)) {
       value.forEach((item) =>
         collectValidationRules(item, validations, valueRanges, requiredFields, calculations, nextContext)
       );
-    } else if (value && typeof value === 'object') {
+      return;
+    }
+
+    if (value && typeof value === 'object') {
       collectValidationRules(value, validations, valueRanges, requiredFields, calculations, nextContext);
     }
   });
+}
+
+function stableValueKey(value) {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value, Object.keys(value).sort());
+    } catch (error) {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function dedupeBySignature(items, signatureBuilder) {
+  const seen = new Set();
+  const output = [];
+
+  (items || []).forEach((item) => {
+    const signature = signatureBuilder(item);
+    if (!signature || seen.has(signature)) {
+      return;
+    }
+    seen.add(signature);
+    output.push(item);
+  });
+
+  return output;
 }
 
 function parseFormDefinition(input) {
@@ -239,13 +327,48 @@ function parseFormDefinition(input) {
 
   collectDependencyRules(source, dependencies);
   collectValidationRules(source, validations, valueRanges, requiredFields, calculations);
+
+  const uniqueDependencies = dedupeBySignature(
+    dependencies,
+    (rule) =>
+      [
+        rule?.key,
+        rule?.triggerPath,
+        rule?.triggerTag,
+        rule?.targetPath,
+        rule?.targetTag,
+        stableValueKey(rule?.showValue),
+        stableValueKey(rule?.hideValue)
+      ].join('|')
+  );
+
+  const uniqueValidations = dedupeBySignature(
+    validations,
+    (rule) => [rule?.field, rule?.suffix, rule?.rmType, rule?.unit, rule?.min, rule?.max, rule?.minOp, rule?.maxOp].join('|')
+  );
+
+  const uniqueValueRanges = dedupeBySignature(
+    valueRanges,
+    (rule) => [rule?.field, rule?.suffix, rule?.rmType, rule?.unit, rule?.min, rule?.max, rule?.minOp, rule?.maxOp].join('|')
+  );
+
+  const uniqueRequiredFields = dedupeBySignature(
+    requiredFields,
+    (rule) => [rule?.field, rule?.min].join('|')
+  );
+
+  const uniqueCalculations = dedupeBySignature(
+    calculations,
+    (rule) => [rule?.field, rule?.expression].join('|')
+  );
+
   return {
     name: input?.name || source?.name || source?.templateId || 'generated-form',
-    dependencies,
-    calculations,
-    validations,
-    valueRanges,
-    requiredFields
+    dependencies: uniqueDependencies,
+    calculations: uniqueCalculations,
+    validations: uniqueValidations,
+    valueRanges: uniqueValueRanges,
+    requiredFields: uniqueRequiredFields
   };
 }
 
