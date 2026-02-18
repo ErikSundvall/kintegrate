@@ -194,11 +194,13 @@ This version introduces the integration of the Better Form Renderer using a popu
 * **Popup Integration**: A dedicated popup window (`form-viewer.html`) hosts the Better Form Renderer.
 * **Sync Mode**: Real-time updates from the form viewer to the main app, ensuring seamless data flow.
 * **Manual Mode**: Explicit push/pull functionality for greater control.
-* **Enhanced Input Column**: Added a "Download Instance" button to save the current composition as a JSON file.
+* **Enhanced Input Column**: Added a "Download Instance" button to save the current composition as a JSONCustom step builder
+ section ofFor detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
 
-For detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
+## 🔜<a id="v0.4.1"></a>version 0.4.1 Internal refactoring
+* By the input.step-field in the "Custom step builder" section of cypress-form-tester.html add a button that opens a popup with a tree widget representing the nodes of the loaded form with a way for the user to oprionally browse and pick desired Better form field instad of entering path or tag manually in the input.step-field. Also make the input.step-value field react to what has been selected in the select field so that it has a true/false choise if "Expect Visible" or "Expect Hidden" have been picked in the select field
 
-## 🔜<a id="v0.4.2"></a>version 0.4.2 Internal refactoring
+## <a id="v0.4.9"></a>version 0.4.9 Internal refactoring
 1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
 2. Make a new configurator.html file where we add rete.js to the project for easier flexible configuration of connections between example sources, different kinds of editors and different converters. The easiest is likely to set up the project using rete kit as described in https://retejs.org/docs/development/rete-kit/ We want plain vanilla javascript or typescript in this project (not React etc), so using the vite stack in rete-kit is likely best. 
 3. Make new html files as a proper "web components", custom elements, these components should not know of or have any dependency on Rete:
