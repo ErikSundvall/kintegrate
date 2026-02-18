@@ -246,6 +246,17 @@ This version introduces the integration of the Better Form Renderer using a popu
 
 For detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
 
+## ✅<a id="v0.4.1"></a>version 0.4.1 Enhanced Custom Step Builder
+
+This version improves the UX for creating custom test steps in the Cypress Form Tester by adding:
+
+* **Field Browser Modal**: A popup window with a tree widget showing the complete form structure
+* **Browse Button (🔍)**: Added next to each step field input to open the field browser for easy field selection
+* **Smart Value Input**: The value field automatically adapts based on the selected action:
+  * Shows true/false dropdown for "Expect Visible" and "Expect Hidden" actions
+  * Shows text input for "Fill Field" and "Expect Value" actions
+* **Improved Workflow**: Users can now browse and select fields from the form structure instead of manually typing paths
+
 ## 🔜<a id="v0.4.2"></a>version 0.4.2 Internal refactoring
 1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
 2. Make a new configurator.html file where we add rete.js to the project for easier flexible configuration of connections between example sources, different kinds of editors and different converters. The easiest is likely to set up the project using rete kit as described in https://retejs.org/docs/development/rete-kit/ We want plain vanilla javascript or typescript in this project (not React etc), so using the vite stack in rete-kit is likely best. 
