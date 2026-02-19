@@ -36,7 +36,41 @@ npm run serve
 
 # Development server from src
 npm run dev
+
+# Run Cypress tests (headless)
+npm run test
+
+# Open Cypress visual runner
+npm run test:open
+
+# Run unit tests for test-generator parser/CLI
+npm run test:unit
+
+# Generate dependency tests from a Better FORM zip package
+npm run generate -- --form-file src/example/forms/24oktDemo_1_0_4_FORM.zip
+
+# Or from an extracted form-description JSON
+npm run generate -- --form-file cypress/fixtures/forms/sample-logic-form.json
+
+# Optional: select categories (logic, calculations, validations, value-ranges, required-fields)
+npm run generate -- --form-file src/example/forms/MV_akutmall_undervisningsexempel_2a.json --categories logic,validations,required-fields
 ```
+
+## Cypress form testing (PRD phase starter)
+
+Initial implementation for `tasks/prd-form-testing-cypress.md` includes:
+- Root-level Cypress harness (`cypress.config.js`, `cypress/support/commands.js`)
+- Test-mode bootstrap spec (`cypress/e2e/custom/form-viewer-test-mode.cy.js`)
+- Logic generator CLI (`npm run generate`) that creates dependency specs in `cypress/e2e/generated/`
+- Generator input format is Better `form-description` JSON (`rmType: "FORM_DEFINITION"`), typically extracted from a Better Studio `*_FORM.zip`
+
+Current generator supports category selection. Dependency/visibility rules generate runnable tests. Other categories currently generate editable skeleton tests (`it.skip`) that can be completed with concrete input/output values.
+
+Form testing UI is available at `src/cypress-form-tester.html` with:
+- form load + discovered rules panel
+- slider-based category scope
+- step builder + generated code preview
+- GitHub target persistence scaffold (localStorage, last 10)
 
 ## GitHub Pages Deployment
 
@@ -66,6 +100,20 @@ The Better Form Renderer is a proprietary library that is **not included in vers
 3. **Offline Use**: Once uploaded, the renderer works completely offline via Service Worker
 
 See [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md) for technical details.
+
+## Form Viewer - URL Control
+
+The Form Viewer (`form-viewer.html`) can be controlled via URL query parameters (or hash parameters):
+
+ `testMode=1`: Enables **Test Mode**.
+    - Displays a "TEST MODE" badge.
+    - Installs `window.formTestApi` for automated testing (wraps Better's `ScriptApi`).
+    - Defaults to auto-loading example forms for convenience.
+- `autoLoad=0`: Disables the automatic loading of default forms. 
+    - Only applicable when `testMode=1` is active.
+    - Used when a testing tool (like Cypress) wants to control exactly which form is loaded and when.
+
+Example: `form-viewer.html?testMode=1&autoLoad=0`
 
 ## Setting up the NPM_BETTER_AUTH environment variable (for developers)
 
@@ -194,13 +242,22 @@ This version introduces the integration of the Better Form Renderer using a popu
 * **Popup Integration**: A dedicated popup window (`form-viewer.html`) hosts the Better Form Renderer.
 * **Sync Mode**: Real-time updates from the form viewer to the main app, ensuring seamless data flow.
 * **Manual Mode**: Explicit push/pull functionality for greater control.
-* **Enhanced Input Column**: Added a "Download Instance" button to save the current composition as a JSONCustom step builder
- section ofFor detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
+* **Enhanced Input Column**: Added a "Download Instance" button to save the current composition as a JSON file.
 
-## 🔜<a id="v0.4.1"></a>version 0.4.1 Internal refactoring
-* By the input.step-field in the "Custom step builder" section of cypress-form-tester.html add a button that opens a popup with a tree widget representing the nodes of the loaded form with a way for the user to oprionally browse and pick desired Better form field instad of entering path or tag manually in the input.step-field. Also make the input.step-value field react to what has been selected in the select field so that it has a true/false choise if "Expect Visible" or "Expect Hidden" have been picked in the select field
+For detailed implementation steps, see the [Implementation Plan for Form Renderer Popup](docs/history/implementation-plan-form-renderer-popup-v3.md).
 
-## <a id="v0.4.9"></a>version 0.4.9 Internal refactoring
+## ✅<a id="v0.4.1"></a>version 0.4.1 Enhanced Custom Step Builder
+
+This version improves the UX for creating custom test steps in the Cypress Form Tester by adding:
+
+* **Field Browser Modal**: A popup window with a tree widget showing the complete form structure
+* **Browse Button (🔍)**: Added next to each step field input to open the field browser for easy field selection
+* **Smart Value Input**: The value field automatically adapts based on the selected action:
+  * Shows true/false dropdown for "Expect Visible" and "Expect Hidden" actions
+  * Shows text input for "Fill Field" and "Expect Value" actions
+* **Improved Workflow**: Users can now browse and select fields from the form structure instead of manually typing paths
+
+## 🔜<a id="v0.4.2"></a>version 0.4.2 Internal refactoring
 1. Do not modify the existing index.html or files it is dependent on, instead we will make a configurator that can produce simple one page html/js apps with functionality similar to the current app. 
 2. Make a new configurator.html file where we add rete.js to the project for easier flexible configuration of connections between example sources, different kinds of editors and different converters. The easiest is likely to set up the project using rete kit as described in https://retejs.org/docs/development/rete-kit/ We want plain vanilla javascript or typescript in this project (not React etc), so using the vite stack in rete-kit is likely best. 
 3. Make new html files as a proper "web components", custom elements, these components should not know of or have any dependency on Rete:
@@ -272,6 +329,3 @@ eventBus.emit('converted-output-ready', { output: renderedConverted });
 * plantuml json viewer (or d3 eqivalent) as alternative to tree (perhaps class-aware instance viewer as d3 component)
 * Local search box (possibly for each column in footer) --> ciunt and hihligt ocurrences - see VS Code's good search impl. (and/or plugin to CodeMirror?)
 * add if/else-clause insertion button to context menu
-
-
-

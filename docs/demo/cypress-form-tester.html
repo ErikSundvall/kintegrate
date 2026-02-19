@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Better Form Tester (Cypress)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="tree.min.css">
   <style>
     :root { --primary:#1976d2; --ok:#2e7d32; --warn:#ed6c02; --danger:#d32f2f; --line:#d7dbe0; --bg:#f6f8fa; }
     * { box-sizing: border-box; }
@@ -22,6 +23,7 @@
     .btn { border:1px solid var(--line); background:#fff; border-radius:6px; padding:0.45rem 0.7rem; cursor:pointer; }
     .btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; }
     .btn:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn.small { padding:0.25rem 0.4rem; font-size:0.75rem; }
     input[type="text"], input[type="password"], select { border:1px solid var(--line); border-radius:6px; padding:0.4rem 0.55rem; font-size:0.85rem; }
     ul { margin:0; padding-left:1.1rem; max-height:240px; overflow:auto; }
     li { margin-bottom:0.35rem; font-size:0.82rem; }
@@ -31,9 +33,19 @@
     .small { font-size:0.75rem; color:#6b7280; }
     .full { grid-column:1 / -1; }
     .results { border:1px solid var(--line); border-radius:6px; padding:0.5rem; font-size:0.82rem; background:#fbfdff; }
-    #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px auto; gap:0.4rem; margin-bottom:0.35rem; }
+    #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px 70px auto; gap:0.4rem; margin-bottom:0.35rem; align-items:center; }
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    
+    /* Modal styles */
+    .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+    .modal.active { display:flex; align-items:center; justify-content:center; }
+    .modal-content { background:#fff; border-radius:8px; max-width:600px; max-height:80vh; width:90%; display:flex; flex-direction:column; }
+    .modal-header { padding:1rem; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3 { margin:0; font-size:1rem; }
+    .modal-body { padding:1rem; overflow:auto; flex:1; }
+    .modal-footer { padding:1rem; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:0.5rem; }
+    .tree-container { max-height:400px; overflow:auto; border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
   </style>
 </head>
 <body>
@@ -126,7 +138,26 @@
   </section>
 </div>
 
+<!-- Field Browser Modal -->
+<div id="field-browser-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Browse Form Fields</h3>
+      <button class="btn small" id="close-modal-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="small">Select a field from the form structure:</p>
+      <div id="field-tree-container" class="tree-container"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="cancel-field-btn">Cancel</button>
+      <button class="btn primary" id="select-field-btn" disabled>Select Field</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script src="tree.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 <script>
@@ -135,6 +166,9 @@
   let loadedForm = null;
   let generatedCode = '';
   let editor = null;
+  let fieldTree = null;
+  let currentFieldInput = null;
+  let formRawData = null;
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
@@ -417,11 +451,60 @@
       <select class="step-action">
         <option>Fill Field</option><option>Expect Visible</option><option>Expect Hidden</option><option>Expect Value</option>
       </select>
-      <input class="step-field" type="text" placeholder="field/tag/aqlPath" value="${field}">
+      <input class="step-field path" type="text" placeholder="field/tag/aqlPath" value="${field}">
       <input class="step-value" type="text" placeholder="value" value="${value}">
+      <button class="btn small browse-field-btn" type="button" title="Browse form fields">🔍</button>
       <button class="btn" type="button">✕</button>`;
-    row.querySelector('.step-action').value = action;
-    row.querySelector('button').addEventListener('click', () => row.remove());
+    
+    const actionSelect = row.querySelector('.step-action');
+    const browseBtn = row.querySelector('.browse-field-btn');
+    const fieldInput = row.querySelector('.step-field');
+    
+    actionSelect.value = action;
+    
+    // Make value field reactive to action selection
+    const updateValueField = () => {
+      const selectedAction = actionSelect.value;
+      const currentValueEl = row.querySelector('.step-value');
+      
+      if (selectedAction === 'Expect Visible' || selectedAction === 'Expect Hidden') {
+        // Convert to dropdown for boolean values if not already a select
+        if (currentValueEl.tagName !== 'SELECT') {
+          const currentValue = currentValueEl.value;
+          const select = document.createElement('select');
+          select.className = 'step-value';
+          select.innerHTML = '<option value="true">true</option><option value="false">false</option>';
+          select.value = currentValue === 'false' ? 'false' : 'true';
+          currentValueEl.replaceWith(select);
+        }
+      } else {
+        // Keep/restore text input
+        if (currentValueEl.tagName === 'SELECT') {
+          const currentValue = currentValueEl.value;
+          const input = document.createElement('input');
+          input.className = 'step-value';
+          input.type = 'text';
+          input.placeholder = 'value';
+          input.value = currentValue;
+          currentValueEl.replaceWith(input);
+        }
+      }
+    };
+    
+    actionSelect.addEventListener('change', updateValueField);
+    updateValueField();
+    
+    // Browse button handler
+    browseBtn.addEventListener('click', () => {
+      if (!formRawData) {
+        alert('Please load a form first.');
+        return;
+      }
+      currentFieldInput = fieldInput;
+      openFieldBrowser();
+    });
+    
+    row.querySelector('button:last-child').addEventListener('click', () => row.remove());
     $('step-list').appendChild(row);
   }
 
@@ -489,12 +572,102 @@
     if (name.endsWith('.zip')) raw = await loadZipFile(file);
     else raw = JSON.parse(await file.text());
 
+    formRawData = raw;  // Store raw form data for tree building
     loadedForm = parseFormDefinition(raw);
     statusEl.className = 'status ok';
     statusEl.textContent = `Loaded: ${loadedForm.name}`;
     updateCounts(loadedForm);
     renderRules(loadedForm);
     $('generate-btn').disabled = false;
+  }
+
+  function buildFormFieldTree(formData) {
+    const fields = [];
+    let idCounter = 0;
+    
+    const collectFields = (node, path = []) => {
+      if (!node || typeof node !== 'object') return;
+      
+      const tag = node.formId || node.tag || node.alias || node.id;
+      if (tag) {
+        const fullPath = path.length ? `${path.join('/')}/${tag}` : tag;
+        fields.push({
+          id: `field-${idCounter++}`,
+          text: tag,
+          path: fullPath,
+          data: { tag, path: fullPath }
+        });
+      }
+      
+      // Recursively collect from children
+      Object.values(node).forEach((value) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            if (item && typeof item === 'object') {
+              collectFields(item, tag ? [...path, tag] : path);
+            }
+          });
+        } else if (value && typeof value === 'object' && value !== node) {
+          collectFields(value, tag ? [...path, tag] : path);
+        }
+      });
+    };
+    
+    const source = formData.formDescription || formData.webTemplate || formData;
+    collectFields(source);
+    
+    return fields;
+  }
+
+  function openFieldBrowser() {
+    const modal = $('field-browser-modal');
+    const container = $('field-tree-container');
+    const selectBtn = $('select-field-btn');
+    
+    // Build tree data
+    const treeData = buildFormFieldTree(formRawData);
+    
+    if (treeData.length === 0) {
+      container.innerHTML = '<p class="small">No fields found in form.</p>';
+      selectBtn.disabled = true;
+    } else {
+      container.innerHTML = '';
+      
+      // Initialize tree
+      if (fieldTree) {
+        fieldTree = null;
+      }
+      
+      fieldTree = new Tree('#field-tree-container', {
+        data: treeData,
+        closeDepth: 2,
+        onChange: function() {
+          const selected = this.selectedNodes || [];
+          selectBtn.disabled = selected.length === 0;
+        }
+      });
+    }
+    
+    modal.classList.add('active');
+  }
+
+  function closeFieldBrowser() {
+    const modal = $('field-browser-modal');
+    modal.classList.remove('active');
+    currentFieldInput = null;
+  }
+
+  function selectFieldFromTree() {
+    if (!fieldTree || !currentFieldInput) return;
+    
+    const selected = fieldTree.selectedNodes || [];
+    if (selected.length > 0) {
+      const node = selected[0];
+      const path = node.data?.path || node.text;
+      currentFieldInput.value = path;
+    }
+    
+    closeFieldBrowser();
   }
 
   function regenerateCode() {
@@ -520,6 +693,7 @@
     try {
       const response = await fetch(new URL('example/forms/MV_akutmall_undervisningsexempel_2a.json', window.location.href));
       const raw = await response.json();
+      formRawData = raw;  // Store raw form data
       loadedForm = parseFormDefinition(raw);
       statusEl.className = 'status ok';
       statusEl.textContent = `Loaded sample: ${loadedForm.name}`;
@@ -574,6 +748,18 @@
 
   $('open-viewer-btn').addEventListener('click', () => {
     window.open(new URL('form-viewer.html?testMode=1&autoLoad=0', window.location.href), '_blank');
+  });
+
+  // Modal event listeners
+  $('close-modal-btn').addEventListener('click', closeFieldBrowser);
+  $('cancel-field-btn').addEventListener('click', closeFieldBrowser);
+  $('select-field-btn').addEventListener('click', selectFieldFromTree);
+  
+  // Close modal on background click
+  $('field-browser-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'field-browser-modal') {
+      closeFieldBrowser();
+    }
   });
 
   ['logic','calc','val','range','req'].forEach((id) => $(id).addEventListener('input', updateSliderLabels));
