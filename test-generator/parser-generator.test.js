@@ -131,10 +131,13 @@ test('generator includes selected categories in generated Cypress spec output', 
     { categories: ['calculations', 'validations', 'value-ranges', 'required-fields'] }
   );
 
-  assert.match(spec, /it\('calculation metadata exists for bmi'/);
-  assert.match(spec, /it\('bmi range rule 1 accepts valid values and rejects invalid values/);
+  assert.match(spec, /describe\('calc', \(\) => \{/);
+  assert.match(spec, /describe\('validation', \(\) => \{/);
+  assert.match(spec, /describe\('required', \(\) => \{/);
+  assert.match(spec, /it\('\[calc\] bmi metadata exists'/);
+  assert.match(spec, /it\('\[validation\] bmi #1'/);
   assert.doesNotMatch(spec, /it\.skip\(/);
-  assert.match(spec, /it\('bmi required cardinality enforces min 1'/);
+  assert.match(spec, /it\('\[required\] bmi min 1'/);
   assert.match(spec, /cy\.assertRangeSamples\(/);
   assert.match(spec, /"validSamples":\[/);
   assert.match(spec, /"invalidSamples":\[/);

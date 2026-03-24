@@ -6,6 +6,7 @@
   <title>Better Form Tester (Cypress)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="tree.min.css">
+  <link rel="stylesheet" href="vendor/tabulator/tabulator.min.css">
   <style>
     :root { --primary:#1976d2; --ok:#2e7d32; --warn:#ed6c02; --danger:#d32f2f; --line:#d7dbe0; --bg:#f6f8fa; }
     * { box-sizing: border-box; }
@@ -25,17 +26,56 @@
     .btn:disabled { opacity:0.55; cursor:not-allowed; }
     .btn.small { padding:0.25rem 0.4rem; font-size:0.75rem; }
     input[type="text"], input[type="password"], select { border:1px solid var(--line); border-radius:6px; padding:0.4rem 0.55rem; font-size:0.85rem; }
-    ul { margin:0; padding-left:1.1rem; max-height:240px; overflow:auto; }
-    li { margin-bottom:0.35rem; font-size:0.82rem; }
     .sliders { display:grid; grid-template-columns: repeat(2,minmax(180px,1fr)); gap:0.5rem 1rem; }
     .slider-row { border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
     .slider-row label { display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.3rem; }
     .small { font-size:0.75rem; color:#6b7280; }
     .full { grid-column:1 / -1; }
     .results { border:1px solid var(--line); border-radius:6px; padding:0.5rem; font-size:0.82rem; background:#fbfdff; }
+    .discovery-scope-row { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(250px,1fr); gap:0.75rem; min-height:272px; }
+    .rules-card, .scope-card { display:flex; flex-direction:column; gap:0.55rem; min-height:0; border:1px solid var(--line); border-radius:6px; background:#fbfdff; padding:0.75rem; }
+    .section-label { font-size:0.75rem; font-weight:600; color:#6b7280; }
+    .rule-list { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
+    .rule-item { display:flex; align-items:center; gap:0.5rem; min-height:28px; padding:0.25rem 0.4rem; border:1px solid #e3e7eb; border-radius:6px; background:#fff; font-size:0.72rem; color:#1f2937; }
+    .rule-item-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rule-empty { padding:0.6rem 0.7rem; border:1px dashed #d7dbe0; border-radius:6px; background:#fff; color:#6b7280; font-size:0.75rem; }
+    .scope-controls { display:flex; flex-direction:column; gap:0.5rem; }
+    .scope-row { display:flex; align-items:center; gap:0.65rem; padding:0.45rem 0.55rem; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .scope-chip-wrap { flex:1 1 auto; min-width:0; display:flex; }
+    .scope-segments { display:flex; align-items:center; gap:0.25rem; margin-left:auto; }
+    .scope-level-btn { min-width:24px; height:22px; border:1px solid var(--line); border-radius:6px; background:#fff; color:#6b7280; font-size:0.65rem; line-height:1; cursor:pointer; }
+    .scope-level-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .scope-footer { margin-top:auto; }
+    .scope-generate-btn { width:100%; justify-content:center; }
     #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px 70px auto; gap:0.4rem; margin-bottom:0.35rem; align-items:center; }
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .test-grid-wrap { min-height:0; }
+    .table-actions { margin-top:0.7rem; margin-bottom:0; }
+    .table-sync-status { margin-top:0.45rem; }
+    #test-suite-grid { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+    #test-suite-grid .tabulator { border:none; background:#fff; font-size:0.82rem; }
+    #test-suite-grid .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
+    #test-suite-grid .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.78rem; font-weight:600; }
+    #test-suite-grid .tabulator-row { background:#fff; }
+    #test-suite-grid .tabulator-row:hover { background:#fbfdff; }
+    #test-suite-grid .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.45rem 0.55rem; vertical-align:middle; }
+    #test-suite-grid .tabulator-row.group-row { background:#f8fafc; font-weight:600; }
+    #test-suite-grid .tabulator-row.group-row .tabulator-cell { background:#f8fafc; color:#1f2937; }
+    #test-suite-grid .tabulator-row.group-row:hover { background:#f8fafc; }
+    #test-suite-grid .tabulator-row.group-row .tabulator-cell:first-child { border-left:none; }
+    #test-suite-grid .tabulator-row.group-row .drag-handle-cell { color:#9aa4b2; }
+    .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
+    .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
+    .drag-handle-cell { color:#9aa4b2; text-align:center; }
+    .row-select-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .cell-chip { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px; font-size:0.68rem; line-height:1.2; white-space:nowrap; }
+    .cell-chip.logic, .cell-chip.recorded { background:#e8f1fd; color:#1976d2; }
+    .cell-chip.calc { background:#eef7ee; color:#2e7d32; }
+    .cell-chip.validation, .cell-chip.failed { background:#fff4e8; color:#ed6c02; }
+    .cell-chip.required, .cell-chip.ranges, .cell-chip.handcrafted, .cell-chip.not-run { background:#f3f4f6; color:#6b7280; }
+    .cell-chip.ok { background:#eef7ee; color:#2e7d32; }
+    .cell-chip.custom, .cell-chip.section { background:#ede9fe; color:#6d28d9; }
     
     /* Modal styles */
     .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
@@ -46,6 +86,7 @@
     .modal-body { padding:1rem; overflow:auto; flex:1; }
     .modal-footer { padding:1rem; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:0.5rem; }
     .tree-container { max-height:400px; overflow:auto; border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
+    .group-name-input { width:100%; }
   </style>
 </head>
 <body>
@@ -67,26 +108,82 @@
       <div class="row small">
         <span id="counts" class="mono">fields:0 dependencies:0 validations:0 calculations:0 required:0</span>
       </div>
-      <h3 class="small">Discovered rules</h3>
-      <ul id="rule-list"></ul>
+      <div class="discovery-scope-row">
+        <section class="rules-card">
+          <div class="section-label">Discovered rules</div>
+          <div id="rule-list" class="rule-list"></div>
+        </section>
+        <section class="scope-card">
+          <div class="section-label">Generation scope</div>
+          <div id="scope-controls" class="scope-controls">
+            <div class="scope-row" data-scope-key="logic">
+              <div class="scope-chip-wrap"><span class="cell-chip logic">logic</span></div>
+              <input id="logic" type="hidden" value="1">
+              <div class="scope-segments" role="group" aria-label="Logic scope level">
+                <button class="scope-level-btn" data-level="0" type="button">0</button>
+                <button class="scope-level-btn active" data-level="1" type="button">1</button>
+                <button class="scope-level-btn" data-level="2" type="button">2</button>
+                <button class="scope-level-btn" data-level="3" type="button">3</button>
+              </div>
+            </div>
+            <div class="scope-row" data-scope-key="calc">
+              <div class="scope-chip-wrap"><span class="cell-chip calc">calc</span></div>
+              <input id="calc" type="hidden" value="1">
+              <div class="scope-segments" role="group" aria-label="Calculation scope level">
+                <button class="scope-level-btn" data-level="0" type="button">0</button>
+                <button class="scope-level-btn active" data-level="1" type="button">1</button>
+                <button class="scope-level-btn" data-level="2" type="button">2</button>
+                <button class="scope-level-btn" data-level="3" type="button">3</button>
+              </div>
+            </div>
+            <div class="scope-row" data-scope-key="val">
+              <div class="scope-chip-wrap"><span class="cell-chip validation">validation</span></div>
+              <input id="val" type="hidden" value="1">
+              <div class="scope-segments" role="group" aria-label="Validation scope level">
+                <button class="scope-level-btn" data-level="0" type="button">0</button>
+                <button class="scope-level-btn active" data-level="1" type="button">1</button>
+                <button class="scope-level-btn" data-level="2" type="button">2</button>
+                <button class="scope-level-btn" data-level="3" type="button">3</button>
+              </div>
+            </div>
+            <div class="scope-row" data-scope-key="range">
+              <div class="scope-chip-wrap"><span class="cell-chip ranges">ranges</span></div>
+              <input id="range" type="hidden" value="1">
+              <div class="scope-segments" role="group" aria-label="Range scope level">
+                <button class="scope-level-btn" data-level="0" type="button">0</button>
+                <button class="scope-level-btn active" data-level="1" type="button">1</button>
+                <button class="scope-level-btn" data-level="2" type="button">2</button>
+                <button class="scope-level-btn" data-level="3" type="button">3</button>
+              </div>
+            </div>
+            <div class="scope-row" data-scope-key="req">
+              <div class="scope-chip-wrap"><span class="cell-chip required">required</span></div>
+              <input id="req" type="hidden" value="1">
+              <div class="scope-segments" role="group" aria-label="Required scope level">
+                <button class="scope-level-btn" data-level="0" type="button">0</button>
+                <button class="scope-level-btn active" data-level="1" type="button">1</button>
+                <button class="scope-level-btn" data-level="2" type="button">2</button>
+                <button class="scope-level-btn" data-level="3" type="button">3</button>
+              </div>
+            </div>
+          </div>
+          <div class="scope-footer">
+            <button class="btn primary scope-generate-btn" id="generate-btn" disabled>Generate tests</button>
+          </div>
+        </section>
+      </div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>Generation scope (sliders)</h2>
-    <div class="panel-body">
-      <div class="sliders">
-        <div class="slider-row"><label>Form logic <span id="logic-v">1</span></label><input id="logic" type="range" min="0" max="3" value="1"></div>
-        <div class="slider-row"><label>Calculations <span id="calc-v">1</span></label><input id="calc" type="range" min="0" max="3" value="1"></div>
-        <div class="slider-row"><label>Validations <span id="val-v">1</span></label><input id="val" type="range" min="0" max="3" value="1"></div>
-        <div class="slider-row"><label>Value ranges <span id="range-v">1</span></label><input id="range" type="range" min="0" max="3" value="1"></div>
-        <div class="slider-row"><label>Required fields <span id="req-v">1</span></label><input id="req" type="range" min="0" max="3" value="1"></div>
-      </div>
-      <div class="row" style="margin-top:0.7rem;">
-        <button class="btn primary" id="generate-btn" disabled>Generate tests</button>
-        <button class="btn" id="run-btn" disabled>Run tests (headless instruction)</button>
+    <h2>Test suite / list</h2>
+    <div class="panel-body test-grid-wrap">
+      <div id="test-suite-grid"></div>
+      <div class="row table-actions">
         <button class="btn" id="export-btn" disabled>Export .cy.js</button>
+        <button class="btn" id="run-btn" disabled>Run selected tests</button>
       </div>
+      <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
       <div class="results" id="last-run">Last run: not executed.</div>
     </div>
   </section>
@@ -129,6 +226,7 @@
         <button class="btn" id="save-target">Save target</button>
         <button class="btn" id="load-target">Load latest</button>
         <button class="btn" id="open-editor">Open in separate window</button>
+        <button class="btn" id="add-group-btn">Add Group</button>
       </div>
       <p class="small">Saved targets are stored in browser localStorage (last 10).</p>
       <div id="code-editor-wrap" class="full">
@@ -156,10 +254,28 @@
   </div>
 </div>
 
+<div id="group-modal" class="modal">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>Add describe group</h3>
+      <button class="btn small" id="close-group-modal-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="small" for="group-name-input">Group name</label>
+      <input class="group-name-input" type="text" id="group-name-input" placeholder="smoke" maxlength="60">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="cancel-group-btn">Cancel</button>
+      <button class="btn primary" id="confirm-group-btn">Add group</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script src="tree.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="vendor/tabulator/tabulator.min.js"></script>
 <script>
 (() => {
   const storageKey = 'kintegrate.cypressTester.targets';
@@ -169,14 +285,534 @@
   let fieldTree = null;
   let currentFieldInput = null;
   let formRawData = null;
+  let testSuiteTable = null;
+  let editorSyncTimer = null;
+  let suppressEditorSync = false;
+  let lastParsedSuiteModel = null;
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
   const statusEl = $('form-status');
+  const scopeControlRows = [...document.querySelectorAll('.scope-row')];
+  const categoryAliases = {
+    logic: 'logic',
+    dependencies: 'logic',
+    'form-logic': 'logic',
+    calculations: 'calc',
+    calc: 'calc',
+    validation: 'validation',
+    validations: 'validation',
+    ranges: 'ranges',
+    'value-ranges': 'ranges',
+    valuerranges: 'ranges',
+    required: 'required',
+    'required-fields': 'required',
+    requiredfields: 'required'
+  };
+  const generatedSectionNames = ['logic', 'calc', 'validation', 'ranges', 'required'];
+
+  function getScopeValue(id) {
+    const element = $(id);
+    return Number(element?.value ?? 1);
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderChip(value, kind) {
+    const safeValue = escapeHtml(value);
+    return `<span class="cell-chip ${kind}">${safeValue}</span>`;
+  }
+
+  function sanitizeTestTitle(text) {
+    return String(text || '')
+      .replace(/\s+/g, ' ')
+      .replace(/['`]/g, '')
+      .trim();
+  }
+
+  function sanitizeGroupName(text) {
+    return String(text || '')
+      .replace(/\s+/g, ' ')
+      .replace(/["'`]/g, '')
+      .trim();
+  }
+
+  function quoteSingle(value) {
+    return `'${String(value || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")}'`;
+  }
+
+  function unescapeQuoted(value) {
+    return String(value || '')
+      .replace(/\\'/g, "'")
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+  }
+
+  function currentDateStamp() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function normalizeCategoryKey(value) {
+    const key = String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
+    return categoryAliases[key] || null;
+  }
+
+  function inferTestType(title, groupName) {
+    const match = /^\[([^\]]+)\]/.exec(String(title || ''));
+    return normalizeCategoryKey(match?.[1]) || normalizeCategoryKey(groupName) || 'custom';
+  }
+
+  function prefixCategoryTitle(category, text) {
+    const cleaned = sanitizeTestTitle(String(text || '').replace(/^\[[^\]]+\]\s*/, ''));
+    return sanitizeTestTitle(`[${category}] ${cleaned}`);
+  }
+
+  function indentText(text, spaces) {
+    const pad = ' '.repeat(spaces);
+    return String(text || '')
+      .split('\n')
+      .map((line) => (line ? `${pad}${line}` : ''))
+      .join('\n');
+  }
+
+  function stripIndent(line, spaces) {
+    const pad = ' '.repeat(spaces);
+    return line.startsWith(pad) ? line.slice(spaces) : line.replace(/^\s+/, '');
+  }
+
+  function getEditorValue() {
+    return editor ? editor.getValue() : '';
+  }
+
+  function setTableSyncStatus(message, kind = 'small') {
+    const status = $('table-sync-status');
+    status.className = `small table-sync-status ${kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : ''}`.trim();
+    status.textContent = message;
+  }
+
+  function serializeTestCase(test) {
+    const body = String(test?.body || '').trimEnd();
+    const bodyBlock = body ? `\n${indentText(body, 6)}\n` : '\n';
+    return `    ${(test?.callType || 'it')}(${quoteSingle(test?.title || 'unnamed test')}, () => {${bodyBlock}    });`;
+  }
+
+  function serializeSuiteModel(model) {
+    const groupBlocks = (model?.groups || []).map((group) => {
+      const innerBlocks = [];
+      if (group.tests?.length) {
+        innerBlocks.push(group.tests.map((test) => serializeTestCase(test)).join('\n\n'));
+      }
+      if (group.extrasText && group.extrasText.trim()) {
+        innerBlocks.push(group.extrasText.trimEnd());
+      }
+      if (!innerBlocks.length) {
+        return `  describe(${quoteSingle(group.name)}, () => {\n  });`;
+      }
+      return `  describe(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
+    }).join('\n\n');
+    const trailingText = model?.trailingText && model.trailingText.trim() ? `\n\n${model.trailingText.trimEnd()}` : '';
+    return `describe(${quoteSingle(model?.suiteName || 'generated-form - autogenerated form tests')}, () => {\n${groupBlocks}${trailingText}\n});\n`;
+  }
+
+  function parseGroupBlock(groupName, lines) {
+    const tests = [];
+    const extras = [];
+    let index = 0;
+
+    while (index < lines.length) {
+      const line = lines[index];
+      if (!line.trim()) {
+        extras.push(line);
+        index += 1;
+        continue;
+      }
+
+      const testMatch = line.match(/^    (it(?:\.skip)?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      if (!testMatch) {
+        extras.push(line);
+        index += 1;
+        continue;
+      }
+
+      const callType = testMatch[1];
+      const title = unescapeQuoted(testMatch[3]);
+      const bodyLines = [];
+      index += 1;
+
+      while (index < lines.length && lines[index] !== '    });') {
+        bodyLines.push(stripIndent(lines[index], 6));
+        index += 1;
+      }
+
+      if (index >= lines.length) {
+        return null;
+      }
+
+      tests.push({
+        title,
+        callType,
+        body: bodyLines.join('\n').trimEnd()
+      });
+      index += 1;
+    }
+
+    return {
+      name: groupName,
+      tests,
+      extrasText: extras.join('\n').trimEnd()
+    };
+  }
+
+  function parseSuiteModelFromCode(code) {
+    const normalized = String(code || '').replace(/\r\n/g, '\n').trim();
+    if (!normalized) {
+      return {
+        suiteName: `${loadedForm?.name || 'generated-form'} - autogenerated form tests`,
+        groups: [],
+        trailingText: ''
+      };
+    }
+
+    const lines = normalized.split('\n');
+    const suiteMatch = lines[0].match(/^describe\((['"])(.*?)\1,\s*\(\)\s*=>\s*\{$/);
+    if (!suiteMatch || lines[lines.length - 1].trim() !== '});') {
+      return null;
+    }
+
+    const groups = [];
+    const trailing = [];
+    const bodyLines = lines.slice(1, -1);
+    let index = 0;
+
+    while (index < bodyLines.length) {
+      const line = bodyLines[index];
+      if (!line.trim()) {
+        trailing.push(line);
+        index += 1;
+        continue;
+      }
+
+      const groupMatch = line.match(/^  describe\((['"])(.*?)\1,\s*\(\)\s*=>\s*\{$/);
+      if (!groupMatch) {
+        trailing.push(line);
+        index += 1;
+        continue;
+      }
+
+      const groupName = unescapeQuoted(groupMatch[2]);
+      const groupLines = [];
+      index += 1;
+
+      while (index < bodyLines.length && bodyLines[index] !== '  });') {
+        groupLines.push(bodyLines[index]);
+        index += 1;
+      }
+
+      if (index >= bodyLines.length) {
+        return null;
+      }
+
+      const parsedGroup = parseGroupBlock(groupName, groupLines);
+      if (!parsedGroup) {
+        return null;
+      }
+
+      groups.push(parsedGroup);
+      index += 1;
+    }
+
+    return {
+      suiteName: unescapeQuoted(suiteMatch[2]),
+      groups,
+      trailingText: trailing.join('\n').trimEnd()
+    };
+  }
+
+  function buildTableRowsFromSuiteModel(model, previousRows = []) {
+    const previousByKey = new Map((previousRows || []).map((row) => [row.syncKey, row]));
+    const rows = [];
+    const syncKeyCounts = new Map();
+
+    (model?.groups || []).forEach((group) => {
+      const groupBaseKey = `group::${group.name}`;
+      const groupCount = (syncKeyCounts.get(groupBaseKey) || 0) + 1;
+      syncKeyCounts.set(groupBaseKey, groupCount);
+      rows.push({
+        syncKey: `${groupBaseKey}::${groupCount}`,
+        rowKind: 'group',
+        groupName: group.name,
+        displayName: group.name,
+        type: 'section',
+        modified: '',
+        result: '',
+        selected: false,
+        testsCount: group.tests.length
+      });
+
+      const testKeyCounts = new Map();
+      group.tests.forEach((test) => {
+        const testBaseKey = `test::${group.name}::${test.title}`;
+        const testCount = (testKeyCounts.get(testBaseKey) || 0) + 1;
+        testKeyCounts.set(testBaseKey, testCount);
+        const syncKey = `${testBaseKey}::${testCount}`;
+        const previous = previousByKey.get(syncKey);
+        rows.push({
+          syncKey,
+          rowKind: 'test',
+          groupName: group.name,
+          displayName: test.title,
+          title: test.title,
+          type: inferTestType(test.title, group.name),
+          modified: previous?.modified || currentDateStamp(),
+          result: previous?.result || 'Not run',
+          selected: previous?.selected || false,
+          callType: test.callType || 'it',
+          body: test.body || ''
+        });
+      });
+    });
+
+    return rows;
+  }
+
+  function getTableRows() {
+    return testSuiteTable ? testSuiteTable.getData() : [];
+  }
+
+  function updateActionButtons() {
+    const rows = getTableRows();
+    const selectedRows = rows.filter((row) => row.rowKind === 'test' && row.selected);
+    $('run-btn').disabled = selectedRows.length === 0;
+    $('export-btn').disabled = !getEditorValue().trim();
+  }
+
+  function renderTestSuiteTable(rows = []) {
+    const container = $('test-suite-grid');
+    if (!container || typeof Tabulator === 'undefined') {
+      setTableSyncStatus('Tabulator did not load.', 'warn');
+      return;
+    }
+
+    if (testSuiteTable) {
+      testSuiteTable.destroy();
+      testSuiteTable = null;
+      container.innerHTML = '';
+    }
+
+    testSuiteTable = new Tabulator(container, {
+      data: rows,
+      layout: 'fitColumns',
+      height: '320px',
+      movableRows: true,
+      index: 'syncKey',
+      placeholder: 'Generate tests or edit the Cypress code to populate the table.',
+      rowHeader: {
+        formatter: () => '<span class="drag-handle-cell">⋮⋮</span>',
+        width: 34,
+        hozAlign: 'center',
+        headerSort: false,
+        resizable: false
+      },
+      columns: [
+        {
+          title: '',
+          field: 'selected',
+          width: 42,
+          hozAlign: 'center',
+          headerSort: false,
+          formatter(cell) {
+            const row = cell.getData();
+            if (row.rowKind !== 'test') {
+              return '';
+            }
+            return `<input class="row-select-toggle" type="checkbox" ${row.selected ? 'checked' : ''} aria-label="Select test row">`;
+          },
+          cellClick(event, cell) {
+            const row = cell.getRow().getData();
+            if (row.rowKind !== 'test') {
+              return;
+            }
+            row.selected = !row.selected;
+            cell.setValue(row.selected, true);
+            updateActionButtons();
+            event.stopPropagation();
+          }
+        },
+        {
+          title: 'Test / section',
+          field: 'displayName',
+          minWidth: 320,
+          formatter(cell) {
+            const row = cell.getData();
+            if (row.rowKind === 'group') {
+              return `<span class="group-name-cell">describe(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
+            }
+            return escapeHtml(row.displayName || '');
+          }
+        },
+        {
+          title: 'Type',
+          field: 'type',
+          width: 110,
+          headerSort: false,
+          formatter(cell) {
+            const row = cell.getData();
+            if (row.rowKind === 'group') {
+              return renderChip('section', 'section');
+            }
+            return renderChip(row.type || 'custom', row.type || 'custom');
+          }
+        },
+        {
+          title: 'Modified',
+          field: 'modified',
+          width: 116,
+          headerSort: false,
+          formatter(cell) {
+            const row = cell.getData();
+            return row.rowKind === 'group' ? '' : escapeHtml(cell.getValue() || '');
+          }
+        },
+        {
+          title: 'Result',
+          field: 'result',
+          width: 104,
+          headerSort: false,
+          formatter(cell) {
+            const row = cell.getData();
+            if (row.rowKind === 'group') {
+              return '';
+            }
+            const kind = String(cell.getValue() || 'not-run').toLowerCase().replace(/\s+/g, '-');
+            return renderChip(cell.getValue() || 'Not run', kind);
+          }
+        }
+      ],
+      rowFormatter(row) {
+        const data = row.getData();
+        if (data.rowKind === 'group') {
+          row.getElement().classList.add('group-row');
+        }
+      },
+      rowMoved() {
+        syncEditorFromTable('Cypress code reordered from table rows.');
+      }
+    });
+
+    updateActionButtons();
+  }
+
+  function syncTableFromEditor(reason = 'Table synced from code editor.') {
+    const parsedModel = parseSuiteModelFromCode(getEditorValue());
+    if (!parsedModel) {
+      setTableSyncStatus('Could not parse grouped Cypress code. Keep the outer describe and nested describe sections intact.', 'warn');
+      updateActionButtons();
+      return false;
+    }
+
+    const previousRows = getTableRows();
+    lastParsedSuiteModel = parsedModel;
+    renderTestSuiteTable(buildTableRowsFromSuiteModel(parsedModel, previousRows));
+    setTableSyncStatus(reason, 'ok');
+    return true;
+  }
+
+  function buildSuiteModelFromTable() {
+    const tableRows = getTableRows();
+    const currentModel = parseSuiteModelFromCode(getEditorValue()) || lastParsedSuiteModel || {
+      suiteName: `${loadedForm?.name || 'generated-form'} - autogenerated form tests`,
+      groups: [],
+      trailingText: ''
+    };
+    const extrasByName = new Map();
+
+    currentModel.groups.forEach((group) => {
+      if (!extrasByName.has(group.name)) {
+        extrasByName.set(group.name, []);
+      }
+      extrasByName.get(group.name).push(group.extrasText || '');
+    });
+
+    const nextModel = {
+      suiteName: currentModel.suiteName,
+      groups: [],
+      trailingText: currentModel.trailingText || ''
+    };
+    let currentGroup = null;
+
+    tableRows.forEach((row) => {
+      if (row.rowKind === 'group') {
+        const extrasQueue = extrasByName.get(row.groupName) || [];
+        currentGroup = {
+          name: row.groupName,
+          tests: [],
+          extrasText: extrasQueue.shift() || ''
+        };
+        nextModel.groups.push(currentGroup);
+        return;
+      }
+
+      if (row.rowKind !== 'test') {
+        return;
+      }
+
+      if (!currentGroup) {
+        currentGroup = { name: 'ungrouped', tests: [], extrasText: '' };
+        nextModel.groups.push(currentGroup);
+      }
+
+      currentGroup.tests.push({
+        title: row.title || row.displayName,
+        callType: row.callType || 'it',
+        body: row.body || ''
+      });
+    });
+
+    return nextModel;
+  }
+
+  function setEditorContent(code, reason) {
+    suppressEditorSync = true;
+    editor.setValue(code);
+    suppressEditorSync = false;
+    syncTableFromEditor(reason);
+  }
+
+  function syncEditorFromTable(reason) {
+    const model = buildSuiteModelFromTable();
+    setEditorContent(serializeSuiteModel(model), reason);
+  }
 
   function updateSliderLabels() {
-    [['logic','logic-v'],['calc','calc-v'],['val','val-v'],['range','range-v'],['req','req-v']].forEach(([k,v]) => {
-      $(v).textContent = $(k).value;
+    ['logic', 'calc', 'val', 'range', 'req'].forEach((key) => {
+      const value = String(getScopeValue(key));
+      const row = document.querySelector(`.scope-row[data-scope-key="${key}"]`);
+      if (!row) return;
+      row.querySelectorAll('.scope-level-btn').forEach((button) => {
+        button.classList.toggle('active', button.dataset.level === value);
+      });
+    });
+  }
+
+  function initializeScopeControls() {
+    scopeControlRows.forEach((row) => {
+      const scopeKey = row.dataset.scopeKey;
+      const input = $(scopeKey);
+      row.querySelectorAll('.scope-level-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          input.value = button.dataset.level;
+          updateSliderLabels();
+        });
+      });
     });
   }
 
@@ -187,14 +823,32 @@
         lineNumbers: true,
         tabSize: 2
       });
-      editor.setValue('// Load a form to generate Cypress tests.\n');
+      editor.setValue("describe('generated-form - autogenerated form tests', () => {\n});\n");
+      editor.on('change', () => {
+        if (suppressEditorSync) {
+          return;
+        }
+        clearTimeout(editorSyncTimer);
+        editorSyncTimer = window.setTimeout(() => {
+          syncTableFromEditor('Table refreshed from code editor changes.');
+        }, 250);
+      });
       return;
     }
     const fallback = $('code-preview');
     fallback.style.width = '100%';
     fallback.style.height = '250px';
     fallback.style.border = '1px solid #d7dbe0';
-    fallback.value = '// CodeMirror not available in this environment. Using plain textarea editor.\n';
+    fallback.value = "describe('generated-form - autogenerated form tests', () => {\n});\n";
+    fallback.addEventListener('input', () => {
+      if (suppressEditorSync) {
+        return;
+      }
+      clearTimeout(editorSyncTimer);
+      editorSyncTimer = window.setTimeout(() => {
+        syncTableFromEditor('Table refreshed from code editor changes.');
+      }, 250);
+    });
     editor = {
       setValue(value) { fallback.value = value; },
       getValue() { return fallback.value; }
@@ -276,36 +930,130 @@
 
   function selectedCategories() {
     const categories = [];
-    if (Number($('logic').value) > 0) categories.push('logic');
-    if (Number($('calc').value) > 0) categories.push('calculations');
-    if (Number($('val').value) > 0) categories.push('validations');
-    if (Number($('range').value) > 0) categories.push('value-ranges');
-    if (Number($('req').value) > 0) categories.push('required-fields');
+    if (getScopeValue('logic') > 0) categories.push('logic');
+    if (getScopeValue('calc') > 0) categories.push('calc');
+    if (getScopeValue('val') > 0) categories.push('validation');
+    if (getScopeValue('range') > 0) categories.push('ranges');
+    if (getScopeValue('req') > 0) categories.push('required');
     return categories;
   }
 
   function renderRules(parsed) {
     ruleList.innerHTML = '';
     const entries = [
-      ...parsed.dependencies.slice(0, 25).map((r) => `[logic] ${r.description}`),
-      ...parsed.calculations.slice(0, 10).map((r) => `[calc] ${r.field} = ${r.expression}`),
-      ...parsed.validations.slice(0, 15).map((r) => `[validation] ${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}`)
+      ...parsed.dependencies.slice(0, 25).map((r) => ({ kind: 'logic', text: r.description })),
+      ...parsed.calculations.slice(0, 10).map((r) => ({ kind: 'calc', text: `${r.field} = derived expression` })),
+      ...parsed.validations.slice(0, 15).map((r) => ({ kind: 'validation', text: `${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}` }))
     ];
-    entries.forEach((text) => {
-      const li = document.createElement('li');
-      li.textContent = text;
-      ruleList.appendChild(li);
+    entries.forEach((entry) => {
+      const item = document.createElement('div');
+      item.className = 'rule-item';
+      item.innerHTML = `${renderChip(entry.kind, entry.kind)}<span class="rule-item-text">${escapeHtml(entry.text)}</span>`;
+      ruleList.appendChild(item);
     });
     if (!entries.length) {
-      const li = document.createElement('li');
-      li.textContent = 'No rules discovered in form data.';
-      ruleList.appendChild(li);
+      const empty = document.createElement('div');
+      empty.className = 'rule-empty';
+      empty.textContent = 'No rules discovered in form data.';
+      ruleList.appendChild(empty);
     }
   }
 
-  function buildCode(parsed) {
-    const categories = selectedCategories();
-    const blocks = [];
+  function buildLogicTests(parsed) {
+    return parsed.dependencies.map((rule) => {
+      const hide = rule.triggerValue === true ? false : true;
+      return {
+        title: prefixCategoryTitle('logic', sanitizeTestTitle(rule.description) || `${rule.target} visibility toggles from ${rule.trigger}`),
+        callType: 'it',
+        body: [
+          `cy.visit('/form-viewer.html?testMode=1&autoLoad=0');`,
+          'cy.formViewerReady();',
+          '',
+          `cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(hide)});`,
+          `cy.expectHidden(${JSON.stringify(rule.target)});`,
+          `cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(rule.triggerValue)});`,
+          `cy.expectVisible(${JSON.stringify(rule.target)});`
+        ].join('\n')
+      };
+    });
+  }
+
+  function buildCalcTests(parsed) {
+    return parsed.calculations.map((rule, index) => ({
+      title: prefixCategoryTitle('calc', rule?.field ? `${rule.field} metadata exists` : `rule ${index + 1} metadata exists`),
+      callType: 'it.skip',
+      body: [
+        `const field = ${JSON.stringify(rule?.field || null)};`,
+        `const expression = ${JSON.stringify(rule?.expression || '')};`,
+        '',
+        "expect(field).to.be.a('string').and.not.to.equal('');",
+        "expect(expression).to.be.a('string');",
+        'expect(expression.trim().length).to.be.greaterThan(0);'
+      ].join('\n')
+    }));
+  }
+
+  function deriveRangeSamples(rule) {
+    const min = Number.isFinite(rule.min) ? rule.min : null;
+    const max = Number.isFinite(rule.max) ? rule.max : null;
+    const valid = [];
+    const invalid = [];
+    if (min !== null && max !== null) {
+      valid.push(min, max, (min + max) / 2);
+      invalid.push(min - 1, max + 1);
+    } else if (min !== null) {
+      valid.push(min);
+      invalid.push(min - 0.1);
+    } else if (max !== null) {
+      valid.push(max);
+      invalid.push(max + 0.1);
+    }
+    return {
+      validSamples: [...new Set(valid.filter((value) => Number.isFinite(value)))],
+      invalidSamples: [...new Set(invalid.filter((value) => Number.isFinite(value)))]
+    };
+  }
+
+  function buildValidationTests(parsed) {
+    return parsed.validations.map((rule, index) => {
+      const samples = deriveRangeSamples(rule);
+      const label = `validation ${rule.field || 'field'} #${index + 1}`;
+      return {
+        title: prefixCategoryTitle('validation', `${rule.field || 'field'} #${index + 1}`),
+        callType: 'it',
+        body: `cy.assertRangeSamples(${JSON.stringify({
+          label,
+          min: Number.isFinite(rule.min) ? rule.min : null,
+          max: Number.isFinite(rule.max) ? rule.max : null,
+          minOp: '>=',
+          maxOp: '<=',
+          validSamples: samples.validSamples,
+          invalidSamples: samples.invalidSamples,
+          expectedUnit: null
+        })});`
+      };
+    });
+  }
+
+  function buildRangeTests(parsed) {
+    const generated = parsed.valueRanges.map((rule, index) => {
+      const samples = deriveRangeSamples(rule);
+      const label = `value range ${rule.field || 'field'} #${index + 1}`;
+      return {
+        title: prefixCategoryTitle('ranges', `${rule.field || 'field'} #${index + 1}`),
+        callType: 'it',
+        body: `cy.assertRangeSamples(${JSON.stringify({
+          label,
+          min: Number.isFinite(rule.min) ? rule.min : null,
+          max: Number.isFinite(rule.max) ? rule.max : null,
+          minOp: '>=',
+          maxOp: '<=',
+          validSamples: samples.validSamples,
+          invalidSamples: samples.invalidSamples,
+          expectedUnit: null
+        })});`
+      };
+    });
 
     const parseSampleTokens = (text) => {
       const raw = String(text || '').trim();
@@ -339,79 +1087,7 @@
         return { magnitude: Number(sample), unit };
       });
 
-    const deriveRangeSamples = (rule) => {
-      const min = Number.isFinite(rule.min) ? rule.min : null;
-      const max = Number.isFinite(rule.max) ? rule.max : null;
-      const valid = [];
-      const invalid = [];
-      if (min !== null && max !== null) {
-        valid.push(min, max, (min + max) / 2);
-        invalid.push(min - 1, max + 1);
-      } else if (min !== null) {
-        valid.push(min);
-        invalid.push(min - 0.1);
-      } else if (max !== null) {
-        valid.push(max);
-        invalid.push(max + 0.1);
-      }
-      return {
-        validSamples: [...new Set(valid.filter((v) => Number.isFinite(v)))],
-        invalidSamples: [...new Set(invalid.filter((v) => Number.isFinite(v)))]
-      };
-    };
-
-    if (categories.includes('logic')) {
-      parsed.dependencies.forEach((rule) => {
-        const hide = rule.triggerValue === true ? false : true;
-        blocks.push(`  it('${rule.target} visibility toggles from ${rule.trigger}', () => {\n    cy.visit('/form-viewer.html?testMode=1&autoLoad=0');\n    cy.formViewerReady();\n    cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(hide)});\n    cy.expectHidden(${JSON.stringify(rule.target)});\n    cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(rule.triggerValue)});\n    cy.expectVisible(${JSON.stringify(rule.target)});\n  });`);
-      });
-    }
-
-    if (categories.includes('calculations')) {
-      parsed.calculations.forEach((rule) => blocks.push(`  it.skip('calculation ${rule.field}', () => {\n    cy.log('Complete calculation test for expression: ${String(rule.expression).replace(/'/g, '')}');\n  });`));
-    }
-    if (categories.includes('validations')) {
-      parsed.validations.forEach((rule, index) => {
-        const samples = deriveRangeSamples(rule);
-        blocks.push(`  it('validation ${rule.field || 'field'} #${index + 1}', () => {\n    cy.assertRangeSamples(${JSON.stringify({
-          label: `validation ${rule.field || 'field'} #${index + 1}`,
-          min: Number.isFinite(rule.min) ? rule.min : null,
-          max: Number.isFinite(rule.max) ? rule.max : null,
-          minOp: '>=',
-          maxOp: '<=',
-          validSamples: samples.validSamples,
-          invalidSamples: samples.invalidSamples,
-          expectedUnit: null
-        })});\n  });`);
-      });
-    }
-    if (categories.includes('value-ranges')) {
-      parsed.valueRanges.forEach((rule, index) => {
-        const samples = deriveRangeSamples(rule);
-        blocks.push(`  it('value range ${rule.field || 'field'} #${index + 1}', () => {\n    cy.assertRangeSamples(${JSON.stringify({
-          label: `value range ${rule.field || 'field'} #${index + 1}`,
-          min: Number.isFinite(rule.min) ? rule.min : null,
-          max: Number.isFinite(rule.max) ? rule.max : null,
-          minOp: '>=',
-          maxOp: '<=',
-          validSamples: samples.validSamples,
-          invalidSamples: samples.invalidSamples,
-          expectedUnit: null
-        })});\n  });`);
-      });
-    }
-    if (categories.includes('required-fields')) {
-      parsed.requiredFields.forEach((rule) => blocks.push(`  it.skip('required ${rule.field}', () => {\n    cy.log('Complete required-field check.');\n  });`));
-    }
-
-    const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
-      const action = step.querySelector('.step-action').value;
-      const field = step.querySelector('.step-field').value;
-      const value = step.querySelector('.step-value').value;
-      return `  // Custom step ${index + 1}: ${action} ${field}${value ? ` => ${value}` : ''}`;
-    }).join('\n');
-
-    const manualRangeBlocks = [...document.querySelectorAll('#manual-range-list .range-case')]
+    const manual = [...document.querySelectorAll('#manual-range-list .range-case')]
       .map((row, index) => {
         const field = row.querySelector('.range-field').value.trim();
         if (!field) return null;
@@ -421,23 +1097,88 @@
         const validSamples = unit ? toQuantitySamples(valid, unit) : valid;
         const invalidSamples = unit ? toQuantitySamples(invalid, unit) : invalid;
 
-        return `  it('manual range ${field} #${index + 1}', () => {\n    cy.assertRangeSamples(${JSON.stringify({
-          label: `manual range ${field} #${index + 1}`,
-          min: null,
-          max: null,
-          minOp: '>=',
-          maxOp: '<=',
-          validSamples,
-          invalidSamples,
-          expectedUnit: unit || null
-        })});\n  });`;
+        return {
+          title: prefixCategoryTitle('ranges', `manual ${field} #${index + 1}`),
+          callType: 'it',
+          body: `cy.assertRangeSamples(${JSON.stringify({
+            label: `manual range ${field} #${index + 1}`,
+            min: null,
+            max: null,
+            minOp: '>=',
+            maxOp: '<=',
+            validSamples,
+            invalidSamples,
+            expectedUnit: unit || null
+          })});`
+        };
       })
-      .filter(Boolean)
-      .join('\n\n');
+      .filter(Boolean);
 
-    const allBlocks = [...blocks, ...(manualRangeBlocks ? [manualRangeBlocks] : [])];
-    const body = allBlocks.length ? allBlocks.join('\n\n') : "  it('no rules discovered for selected categories', () => {\n    cy.log('No generated tests.');\n  });";
-    return `describe('${parsed.name} - autogenerated form tests', () => {\n${body}\n\n${stepComments}\n});\n`;
+    return [...generated, ...manual];
+  }
+
+  function buildRequiredTests(parsed) {
+    return parsed.requiredFields.map((rule, index) => ({
+      title: prefixCategoryTitle('required', `${rule?.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`) || `required field rule ${index + 1}`,
+      callType: 'it.skip',
+      body: [
+        `const min = ${JSON.stringify(Number.isFinite(rule?.min) ? rule.min : 1)};`,
+        '',
+        'const hasRequiredCardinality = (value) => {',
+        '  if (value === null || value === undefined) {',
+        '    return false;',
+        '  }',
+        '  if (Array.isArray(value)) {',
+        '    return value.length >= min;',
+        '  }',
+        "  if (typeof value === 'string') {",
+        '    return value.length >= min;',
+        '  }',
+        '  return min <= 1;',
+        '};',
+        '',
+        'expect(hasRequiredCardinality(null)).to.equal(false);',
+        'expect(hasRequiredCardinality(undefined)).to.equal(false);'
+      ].join('\n')
+    }));
+  }
+
+  function buildCode(parsed) {
+    const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
+      const action = step.querySelector('.step-action').value;
+      const field = step.querySelector('.step-field').value;
+      const value = step.querySelector('.step-value').value;
+      return `  // Custom step ${index + 1}: ${action} ${field}${value ? ` => ${value}` : ''}`;
+    }).join('\n');
+
+    const existingModel = parseSuiteModelFromCode(getEditorValue());
+    const preservedCustomGroups = (existingModel?.groups || []).filter((group) => !generatedSectionNames.includes(normalizeCategoryKey(group.name)));
+    const groups = [];
+    const categories = selectedCategories();
+
+    if (categories.includes('logic')) {
+      groups.push({ name: 'logic', tests: buildLogicTests(parsed), extrasText: '' });
+    }
+    if (categories.includes('calc')) {
+      groups.push({ name: 'calc', tests: buildCalcTests(parsed), extrasText: '' });
+    }
+    if (categories.includes('validation')) {
+      groups.push({ name: 'validation', tests: buildValidationTests(parsed), extrasText: '' });
+    }
+    if (categories.includes('ranges')) {
+      groups.push({ name: 'ranges', tests: buildRangeTests(parsed), extrasText: '' });
+    }
+    if (categories.includes('required')) {
+      groups.push({ name: 'required', tests: buildRequiredTests(parsed), extrasText: '' });
+    }
+
+    preservedCustomGroups.forEach((group) => groups.push(group));
+
+    return serializeSuiteModel({
+      suiteName: `${sanitizeTestTitle(parsed.name)} - autogenerated form tests`,
+      groups,
+      trailingText: stepComments
+    });
   }
 
   function updateCounts(parsed) {
@@ -673,9 +1414,39 @@
   function regenerateCode() {
     if (!loadedForm) return;
     generatedCode = buildCode(loadedForm);
-    editor.setValue(generatedCode);
-    $('run-btn').disabled = false;
-    $('export-btn').disabled = false;
+    setEditorContent(generatedCode, 'Generated groups synced to table.');
+  }
+
+  function openGroupModal() {
+    $('group-name-input').value = '';
+    $('group-modal').classList.add('active');
+    $('group-name-input').focus();
+  }
+
+  function closeGroupModal() {
+    $('group-modal').classList.remove('active');
+  }
+
+  function addDescribeGroup() {
+    const groupName = sanitizeGroupName($('group-name-input').value);
+    if (!groupName) {
+      alert('Group name is required.');
+      return;
+    }
+
+    const parsedModel = parseSuiteModelFromCode(getEditorValue()) || {
+      suiteName: `${loadedForm?.name || 'generated-form'} - autogenerated form tests`,
+      groups: [],
+      trailingText: ''
+    };
+    if (parsedModel.groups.some((group) => group.name.toLowerCase() === groupName.toLowerCase())) {
+      alert('A group with that name already exists.');
+      return;
+    }
+
+    parsedModel.groups.push({ name: groupName, tests: [], extrasText: '' });
+    setEditorContent(serializeSuiteModel(parsedModel), `Added describe group '${groupName}'.`);
+    closeGroupModal();
   }
 
   $('form-file').addEventListener('change', async (e) => {
@@ -710,8 +1481,9 @@
 
   $('run-btn').addEventListener('click', () => {
     const stamp = new Date().toISOString();
-    const selected = selectedCategories().join(', ') || 'none';
-    $('last-run').textContent = `Last run (simulated) ${stamp}: categories=${selected}. Use terminal command: npm run test`;
+    const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
+    const selected = selectedTests.map((row) => row.title).join(', ') || 'none';
+    $('last-run').textContent = `Last run (simulated) ${stamp}: tests=${selected}. Use terminal command: npm run test`;
   });
 
   $('export-btn').addEventListener('click', () => {
@@ -738,6 +1510,7 @@
   });
   $('save-target').addEventListener('click', saveTarget);
   $('load-target').addEventListener('click', loadTarget);
+  $('add-group-btn').addEventListener('click', openGroupModal);
 
   $('open-editor').addEventListener('click', () => {
     const win = window.open('', '_blank', 'width=900,height=700');
@@ -754,6 +1527,14 @@
   $('close-modal-btn').addEventListener('click', closeFieldBrowser);
   $('cancel-field-btn').addEventListener('click', closeFieldBrowser);
   $('select-field-btn').addEventListener('click', selectFieldFromTree);
+  $('close-group-modal-btn').addEventListener('click', closeGroupModal);
+  $('cancel-group-btn').addEventListener('click', closeGroupModal);
+  $('confirm-group-btn').addEventListener('click', addDescribeGroup);
+  $('group-name-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      addDescribeGroup();
+    }
+  });
   
   // Close modal on background click
   $('field-browser-modal').addEventListener('click', (e) => {
@@ -761,9 +1542,15 @@
       closeFieldBrowser();
     }
   });
+  $('group-modal').addEventListener('click', (event) => {
+    if (event.target.id === 'group-modal') {
+      closeGroupModal();
+    }
+  });
 
-  ['logic','calc','val','range','req'].forEach((id) => $(id).addEventListener('input', updateSliderLabels));
+  initializeScopeControls();
   createEditor();
+  syncTableFromEditor('Table synced from code editor.');
   updateSliderLabels();
   addStep('Fill Field', 'sample_triage_logic/pregnant', 'true');
   addStep('Expect Visible', 'sample_triage_logic/gestational_age', '');

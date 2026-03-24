@@ -5,6 +5,24 @@ function sanitizeTestTitle(text) {
     .trim();
 }
 
+function quoteSingle(value) {
+  return `'${String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")}'`;
+}
+
+function prefixCategoryTitle(category, text) {
+  const cleaned = sanitizeTestTitle(String(text || '').replace(/^\[[^\]]+\]\s*/, ''));
+  return sanitizeTestTitle(`[${category}] ${cleaned}`);
+}
+
+function wrapDescribeSection(name, body) {
+  if (!body) {
+    return `  describe(${quoteSingle(name)}, () => {\n  });`;
+  }
+  return `  describe(${quoteSingle(name)}, () => {\n${body}\n  });`;
+}
+
 function asLiteral(value) {
   return JSON.stringify(value);
 }
@@ -135,12 +153,15 @@ const CATEGORY_ALIASES = {
   logic: 'logic',
   dependencies: 'logic',
   'form-logic': 'logic',
-  calculations: 'calculations',
-  validations: 'validations',
-  'required-fields': 'requiredFields',
-  required: 'requiredFields',
-  valueRanges: 'valueRanges',
-  'value-ranges': 'valueRanges'
+  calculations: 'calc',
+  calc: 'calc',
+  validation: 'validation',
+  validations: 'validation',
+  'required-fields': 'required',
+  required: 'required',
+  valueRanges: 'ranges',
+  ranges: 'ranges',
+  'value-ranges': 'ranges'
 };
 
 function normalizeCategories(categories) {
@@ -160,14 +181,15 @@ function buildDependencyTests(parsedForm) {
 
       if (!trigger || !target) {
         const missing = [!trigger ? 'trigger' : null, !target ? 'target' : null].filter(Boolean).join(' and ');
-        return `  it('dependency rule ${index + 1} has unresolved field identifiers', () => {\n    throw new Error('Generator could not resolve ${missing} identifier for dependency rule ${index + 1}.');\n  });`;
+        return `    it(${quoteSingle(prefixCategoryTitle('logic', `dependency rule ${index + 1} has unresolved field identifiers`))}, () => {\n      throw new Error('Generator could not resolve ${missing} identifier for dependency rule ${index + 1}.');\n    });`;
       }
 
-      const name =
+      const baseName =
         sanitizeTestTitle(rule.description) ||
         `${target} visibility toggles from ${trigger}`;
+      const name = prefixCategoryTitle('logic', baseName);
 
-      return `  it('${name}', () => {\n    cy.visit('/form-viewer.html#testMode=1&autoLoad=1');\n    cy.formViewerReady();\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.hideValue)});\n    cy.expectHidden(${asLiteral(target)});\n\n    cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.showValue)});\n    cy.expectVisible(${asLiteral(target)});\n  });`;
+      return `    it(${quoteSingle(name)}, () => {\n      cy.visit('/form-viewer.html#testMode=1&autoLoad=1');\n      cy.formViewerReady();\n\n      cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.hideValue)});\n      cy.expectHidden(${asLiteral(target)});\n\n      cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.showValue)});\n      cy.expectVisible(${asLiteral(target)});\n    });`;
     })
     .join('\n\n');
 }
@@ -175,12 +197,12 @@ function buildDependencyTests(parsedForm) {
 function buildCalculationTests(parsedForm) {
   return (parsedForm.calculations || [])
     .map((rule, index) => {
-      const title = sanitizeTestTitle(
+      const title = prefixCategoryTitle('calc',
         rule?.field
-          ? `calculation metadata exists for ${rule.field}`
-          : `calculation rule ${index + 1} has metadata`
+          ? `${rule.field} metadata exists`
+          : `rule ${index + 1} metadata exists`
       );
-      return `  it('${title}', () => {\n    const field = ${asLiteral(rule?.field || null)};\n    const expression = ${asLiteral(rule?.expression || '')};\n\n    expect(field).to.be.a('string').and.not.to.equal('');\n    expect(expression).to.be.a('string');\n    expect(expression.trim().length).to.be.greaterThan(0);\n  });`;
+      return `    it(${quoteSingle(title)}, () => {\n      const field = ${asLiteral(rule?.field || null)};\n      const expression = ${asLiteral(rule?.expression || '')};\n\n      expect(field).to.be.a('string').and.not.to.equal('');\n      expect(expression).to.be.a('string');\n      expect(expression.trim().length).to.be.greaterThan(0);\n    });`;
     })
     .join('\n\n');
 }
@@ -191,20 +213,11 @@ function buildRangeValidationTests(parsedForm) {
     .map((rule, index) => {
       const samples = buildRangeSamples(rule);
       const assertionPayload = buildRangeAssertionPayload(rule, samples);
-      const limits = [
-        samples.min !== null ? `min ${samples.minOp} ${samples.min}` : null,
-        samples.max !== null ? `max ${samples.maxOp} ${samples.max}` : null
-      ]
-        .filter(Boolean)
-        .join(', ');
-      const unitText = assertionPayload.expectedUnit ? `, unit ${assertionPayload.expectedUnit}` : '';
+      const plainLabel = `validation ${rule?.field || 'field'} #${index + 1}`;
+      const title = prefixCategoryTitle('validation', `${rule?.field || 'field'} #${index + 1}`);
 
-      const title = sanitizeTestTitle(
-        `${ruleFieldLabel(rule)} range rule ${index + 1} accepts valid values and rejects invalid values (${limits || 'unbounded'}${unitText})`
-      );
-
-      return `  it('${title}', () => {\n    cy.assertRangeSamples(${asLiteral({
-        label: title,
+      return `    it(${quoteSingle(title)}, () => {\n      cy.assertRangeSamples(${asLiteral({
+        label: plainLabel,
         min: assertionPayload.min,
         max: assertionPayload.max,
         minOp: assertionPayload.minOp,
@@ -212,7 +225,7 @@ function buildRangeValidationTests(parsedForm) {
         validSamples: assertionPayload.validSamples,
         invalidSamples: assertionPayload.invalidSamples,
         expectedUnit: assertionPayload.expectedUnit
-      })});\n  });`;
+      })});\n    });`;
     })
     .join('\n\n');
 }
@@ -223,17 +236,15 @@ function buildValueRangeMetadataTests(parsedForm) {
     .map((rule, index) => {
       const minOp = normalizeOperator(rule?.minOp, 'min');
       const maxOp = normalizeOperator(rule?.maxOp, 'max');
-      const title = sanitizeTestTitle(
-        `${ruleFieldLabel(rule)} declares value range metadata ${index + 1}`
-      );
-      return `  it('${title}', () => {\n    const rule = ${asLiteral({
+      const title = prefixCategoryTitle('ranges', `${ruleFieldLabel(rule)} #${index + 1}`);
+      return `    it(${quoteSingle(title)}, () => {\n      const rule = ${asLiteral({
       field: rule?.field || null,
       suffix: rule?.suffix || null,
       min: Number.isFinite(rule?.min) ? rule.min : null,
       max: Number.isFinite(rule?.max) ? rule.max : null,
       minOp,
       maxOp
-    })};\n\n    expect(rule.field).to.be.a('string').and.not.to.equal('');\n    expect(rule.min !== null || rule.max !== null).to.equal(true);\n    if (rule.min !== null) {\n      expect(rule.minOp === '>' || rule.minOp === '>=').to.equal(true);\n    }\n    if (rule.max !== null) {\n      expect(rule.maxOp === '<' || rule.maxOp === '<=').to.equal(true);\n    }\n  });`;
+    })};\n\n      expect(rule.field).to.be.a('string').and.not.to.equal('');\n      expect(rule.min !== null || rule.max !== null).to.equal(true);\n      if (rule.min !== null) {\n        expect(rule.minOp === '>' || rule.minOp === '>=').to.equal(true);\n      }\n      if (rule.max !== null) {\n        expect(rule.maxOp === '<' || rule.maxOp === '<=').to.equal(true);\n      }\n    });`;
     })
     .join('\n\n');
 }
@@ -243,11 +254,9 @@ function buildRequiredFieldTests(parsedForm) {
   return (rules || [])
     .map((rule, index) => {
       const min = Number.isFinite(rule?.min) ? rule.min : 1;
-      const title = sanitizeTestTitle(
-        `${rule?.field || 'field'} required cardinality enforces min ${min}`
-      ) || `required field rule ${index + 1}`;
+      const title = prefixCategoryTitle('required', `${rule?.field || 'field'} min ${min}`) || `required field rule ${index + 1}`;
 
-      return `  it('${title}', () => {\n    const min = ${asLiteral(min)};\n\n    const hasRequiredCardinality = (value) => {\n      if (value === null || value === undefined) {\n        return false;\n      }\n      if (Array.isArray(value)) {\n        return value.length >= min;\n      }\n      if (typeof value === 'string') {\n        return value.length >= min;\n      }\n      return min <= 1;\n    };\n\n    expect(hasRequiredCardinality(null)).to.equal(false);\n    expect(hasRequiredCardinality(undefined)).to.equal(false);\n\n    if (min > 1) {\n      const tooShort = Array.from({ length: min - 1 }, () => 'x');\n      const enough = Array.from({ length: min }, () => 'x');\n      expect(hasRequiredCardinality(tooShort)).to.equal(false);\n      expect(hasRequiredCardinality(enough)).to.equal(true);\n      expect(hasRequiredCardinality('x'.repeat(min - 1))).to.equal(false);\n      expect(hasRequiredCardinality('x'.repeat(min))).to.equal(true);\n      expect(hasRequiredCardinality(1)).to.equal(false);\n    } else {\n      expect(hasRequiredCardinality('x')).to.equal(true);\n      expect(hasRequiredCardinality([1])).to.equal(true);\n      expect(hasRequiredCardinality(1)).to.equal(true);\n      expect(hasRequiredCardinality('')).to.equal(false);\n      expect(hasRequiredCardinality([])).to.equal(false);\n    }\n  });`;
+      return `    it(${quoteSingle(title)}, () => {\n      const min = ${asLiteral(min)};\n\n      const hasRequiredCardinality = (value) => {\n        if (value === null || value === undefined) {\n          return false;\n        }\n        if (Array.isArray(value)) {\n          return value.length >= min;\n        }\n        if (typeof value === 'string') {\n          return value.length >= min;\n        }\n        return min <= 1;\n      };\n\n      expect(hasRequiredCardinality(null)).to.equal(false);\n      expect(hasRequiredCardinality(undefined)).to.equal(false);\n\n      if (min > 1) {\n        const tooShort = Array.from({ length: min - 1 }, () => 'x');\n        const enough = Array.from({ length: min }, () => 'x');\n        expect(hasRequiredCardinality(tooShort)).to.equal(false);\n        expect(hasRequiredCardinality(enough)).to.equal(true);\n        expect(hasRequiredCardinality('x'.repeat(min - 1))).to.equal(false);\n        expect(hasRequiredCardinality('x'.repeat(min))).to.equal(true);\n        expect(hasRequiredCardinality(1)).to.equal(false);\n      } else {\n        expect(hasRequiredCardinality('x')).to.equal(true);\n        expect(hasRequiredCardinality([1])).to.equal(true);\n        expect(hasRequiredCardinality(1)).to.equal(true);\n        expect(hasRequiredCardinality('')).to.equal(false);\n        expect(hasRequiredCardinality([])).to.equal(false);\n      }\n    });`;
     })
     .join('\n\n');
 }
@@ -258,32 +267,31 @@ function buildDependencySpec(parsedForm, options = {}) {
   const sections = [];
 
   if (selected.includes('logic')) {
-    sections.push(buildDependencyTests(parsedForm));
+    sections.push(wrapDescribeSection('logic', buildDependencyTests(parsedForm)));
   }
 
-  if (selected.includes('calculations')) {
-    sections.push(buildCalculationTests(parsedForm));
+  if (selected.includes('calc')) {
+    sections.push(wrapDescribeSection('calc', buildCalculationTests(parsedForm)));
   }
 
-  const includeValidations = selected.includes('validations');
-  const includeValueRanges = selected.includes('valueRanges');
+  const includeValidations = selected.includes('validation');
+  const includeValueRanges = selected.includes('ranges');
 
   if (includeValidations) {
-    sections.push(buildRangeValidationTests(parsedForm));
+    sections.push(wrapDescribeSection('validation', buildRangeValidationTests(parsedForm)));
   }
 
-  if (includeValueRanges && !includeValidations) {
-    sections.push(buildValueRangeMetadataTests(parsedForm));
+  if (includeValueRanges) {
+    sections.push(wrapDescribeSection('ranges', buildValueRangeMetadataTests(parsedForm)));
   }
 
-  if (selected.includes('requiredFields')) {
-    sections.push(buildRequiredFieldTests(parsedForm));
+  if (selected.includes('required')) {
+    sections.push(wrapDescribeSection('required', buildRequiredFieldTests(parsedForm)));
   }
 
   const testBlocks = sections.filter(Boolean).join('\n\n');
-  const fallback = "  it('no rules discovered for selected categories', () => {\n    cy.log('No rules were discovered in this form definition for the selected categories.');\n  });";
 
-  return `describe('${suiteName} - autogenerated form tests', () => {\n${testBlocks || fallback}\n});\n`;
+  return `describe(${quoteSingle(`${suiteName} - autogenerated form tests`)}, () => {\n${testBlocks}\n});\n`;
 }
 
 module.exports = {

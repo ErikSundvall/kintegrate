@@ -23,7 +23,7 @@ const config = {
     // Exclude proprietary vendor files, but allow open source ones like codemirror
     excludeDirs: includeVendor ? [] : ['vendor'],
     // Files within vendor that ARE allowed (open source)
-    allowedVendorDirs: ['codemirror'],
+    allowedVendorDirs: ['codemirror', 'tabulator'],
     excludeFiles: ['index2.html', 'index3.html'],
     topLevelFiles: ['LICENSE', 'README.md']
 };

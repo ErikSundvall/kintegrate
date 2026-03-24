@@ -33,7 +33,8 @@
     "fs-extra": "^11.2.0"
   },
   "dependencies": {
-    "codemirror": "^5.65.16"
+    "codemirror": "^5.65.16",
+    "tabulator-tables": "^6.4.0"
   },
   "optionalDependencies": {
     "@better/form-renderer": "^3.14.5"
