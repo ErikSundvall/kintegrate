@@ -248,7 +248,9 @@
       <h1>Form Viewer</h1>
       <span id="form-name">No form loaded</span>
       <span id="sync-indicator" class="sync-off">⏸ Sync: OFF</span>
-      <span id="status">Ready</span>
+      <span id="status">Ready</span>¨
+      <button id="open-tester-btn" title="Open Form Tester" disabled style="margin-left:8px;padding:6px 10px;">🧪 Open Tester</button>
+
     </div>
     
     <!-- Server Configuration Panel (shown in server mode) -->
@@ -302,8 +304,7 @@
           </svg>
           Load Form
         </button>
-      </div>
-      
+      </div>      
       
       <span class="separator"></span>
       
@@ -879,6 +880,11 @@
                           'Unnamed form';
           formNameEl.textContent = formName;
           document.title = `Form: ${formName} - Kintegrate`;
+          // Ensure Open Tester button is enabled (query DOM at runtime)
+          try {
+            const __openTester = document.getElementById('open-tester-btn');
+            if (__openTester) __openTester.disabled = false;
+          } catch (e) { /* ignore */ }
           setStatus('Loading...', '');
 
           // Notify parent that we're loading
@@ -899,6 +905,7 @@
             requestAnimationFrame(() => {
               formRenderer.webTemplate = formData.formDescription;
             });
+          if (openTesterBtn) openTesterBtn.disabled = false;
           } else {
             showError('No form description provided');
           }
@@ -1108,6 +1115,7 @@
       
       const loadFormBtn = document.getElementById('load-form-btn');
       const formPackageInput = document.getElementById('form-package-input');
+      const openTesterBtn = document.getElementById('open-tester-btn');
       
       loadFormBtn?.addEventListener('click', () => {
         formPackageInput?.click();
@@ -1136,7 +1144,20 @@
         
         // Reset file input so same file can be loaded again
         formPackageInput.value = '';
+        if (openTesterBtn) openTesterBtn.disabled = !formLoaded;
       });
+
+      // Open the Cypress form tester window and send current form data
+      if (openTesterBtn) {
+        openTesterBtn.addEventListener('click', () => {
+          if (!formLoaded || !currentFormData) return;
+          const win = window.open(new URL('cypress-form-tester.html', window.location.href), '_blank');
+          if (!win) return;
+          const payload = { type: 'loadForm', formData: currentFormData, hideSelector: true };
+          // Send after small delay to ensure the new window is ready to receive messages
+          setTimeout(() => win.postMessage(payload, '*'), 250);
+        });
+      }
       
       async function loadFormPackageZip(file) {
         console.log('[Popup] Loading ZIP file:', file.name);

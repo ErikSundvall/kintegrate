@@ -297,6 +297,7 @@
   let testSuiteTable = null;
   let editorSyncTimer = null;
   let suppressEditorSync = false;
+  let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
 
   const $ = (id) => document.getElementById(id);
@@ -594,7 +595,102 @@
   }
 
   function getTableRows() {
-    return testSuiteTable ? testSuiteTable.getData() : [];
+    if (!testSuiteTable) {
+      return [];
+    }
+
+    if (typeof testSuiteTable.getRows === 'function') {
+      return testSuiteTable.getRows().map((row) => row.getData());
+    }
+
+    return testSuiteTable.getData();
+  }
+
+  function findSectionRange(rows, groupName, occurrenceIndex) {
+    let currentOccurrence = -1;
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index];
+      if (row.rowKind !== 'group' || row.groupName !== groupName) {
+        continue;
+      }
+
+      currentOccurrence += 1;
+      if (currentOccurrence !== occurrenceIndex) {
+        continue;
+      }
+
+      let endIndex = index + 1;
+      while (endIndex < rows.length && rows[endIndex].rowKind !== 'group') {
+        endIndex += 1;
+      }
+
+      return { startIndex: index, endIndex };
+    }
+
+    return null;
+  }
+
+  function rebuildTableInOrder(rows) {
+    renderTestSuiteTable(rows);
+  }
+
+  function reorderGroupSection(movedRow, targetRow) {
+    const rows = getTableRows();
+    const movedIndex = rows.findIndex((row) => row.syncKey === movedRow.syncKey);
+    if (movedIndex === -1) {
+      return false;
+    }
+
+    const groupOccurrencesBeforeMoved = rows
+      .slice(0, movedIndex + 1)
+      .filter((row) => row.rowKind === 'group' && row.groupName === movedRow.groupName).length - 1;
+
+    const sectionRange = findSectionRange(rows, movedRow.groupName, groupOccurrencesBeforeMoved);
+    if (!sectionRange) {
+      return false;
+    }
+
+    const sectionRows = rows.slice(sectionRange.startIndex, sectionRange.endIndex);
+    const remainingRows = rows.slice(0, sectionRange.startIndex).concat(rows.slice(sectionRange.endIndex));
+    let insertIndex = remainingRows.findIndex((row) => row.syncKey === targetRow.syncKey);
+
+    if (insertIndex === -1) {
+      insertIndex = remainingRows.length;
+    }
+
+    const reordered = remainingRows.slice(0, insertIndex).concat(sectionRows, remainingRows.slice(insertIndex));
+    rebuildTableInOrder(reordered);
+    syncEditorFromTable(`Moved describe group '${movedRow.groupName}'.`);
+    return true;
+  }
+
+  function handleRowMoved(row) {
+    if (suppressTableMoveSync) {
+      return;
+    }
+
+    const movedData = row.getData();
+    const prevRow = row.getPrevRow();
+    const nextRow = row.getNextRow();
+    const prevData = prevRow ? prevRow.getData() : null;
+    const nextData = nextRow ? nextRow.getData() : null;
+
+    if (movedData.rowKind === 'group') {
+      const targetData = prevData || nextData;
+      if (targetData) {
+        suppressTableMoveSync = true;
+        try {
+          if (reorderGroupSection(movedData, targetData)) {
+            return;
+          }
+        } finally {
+          suppressTableMoveSync = false;
+        }
+      }
+    }
+
+    syncEditorFromTable('Cypress code reordered from table rows.');
   }
 
   function updateActionButtons() {
@@ -625,6 +721,7 @@
       index: 'syncKey',
       placeholder: 'Generate tests or edit the Cypress code to populate the table.',
       rowHeader: {
+        rowHandle: true,
         formatter: () => '<span class="drag-handle-cell">⋮⋮</span>',
         width: 34,
         hozAlign: 'center',
@@ -711,11 +808,12 @@
         if (data.rowKind === 'group') {
           row.getElement().classList.add('group-row');
         }
-      },
-      rowMoved() {
-        syncEditorFromTable('Cypress code reordered from table rows.');
       }
     });
+
+    if (typeof testSuiteTable.on === 'function') {
+      testSuiteTable.on('rowMoved', handleRowMoved);
+    }
 
     updateActionButtons();
   }
@@ -1554,6 +1652,27 @@
   $('group-modal').addEventListener('click', (event) => {
     if (event.target.id === 'group-modal') {
       closeGroupModal();
+    }
+  });
+
+  // Accept form data posted from other windows (e.g. form-viewer)
+  window.addEventListener('message', (event) => {
+    if (!event.data || !event.data.type) return;
+    try {
+      if (event.data.type === 'loadForm') {
+        const payload = event.data.formData || event.data.form || null;
+        if (payload) {
+          loadForm(payload);
+        }
+        if (event.data.hideSelector) {
+          const fileEl = document.getElementById('form-file');
+          const sampleBtn = document.getElementById('load-sample-btn');
+          if (fileEl) fileEl.style.display = 'none';
+          if (sampleBtn) sampleBtn.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Error handling incoming message:', err);
     }
   });
 
