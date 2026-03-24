@@ -145,3 +145,26 @@ The auth token should be base64 encoded `username:password`. This keeps secrets 
 
 See [ROADMAP.md](ROADMAP.md) for the full roadmap.
 
+## Further documentation
+
+- [docs/FORM-RENDERER-REFERENCE.md](docs/FORM-RENDERER-REFERENCE.md) — quick API reference for Better Form Renderer integration.
+- [docs/OFFLINE-FORM-RENDERING.md](docs/OFFLINE-FORM-RENDERING.md) — Service Worker-based offline renderer loading.
+- [docs/FETCHING-DOCS.md](docs/FETCHING-DOCS.md) — how cached third-party docs are fetched/updated.
+
+### Testing and planning docs
+
+- [tasks/prd-form-testing-cypress.md](tasks/prd-form-testing-cypress.md) — Cypress form-testing PRD and scope.
+- [tasks/test-framework-discussion.md](tasks/test-framework-discussion.md) — test framework trade-offs and decisions.
+- [tasks/cypress-poc/README.md](tasks/cypress-poc/README.md) — Cypress proof-of-concept notes.
+
+### History and implementation notes
+
+- [docs/history/IMPLEMENTATION-SUMMARY.md](docs/history/IMPLEMENTATION-SUMMARY.md) — implementation summary snapshots.
+- [docs/history/FORM-TESTING-COMPARISON.md](docs/history/FORM-TESTING-COMPARISON.md) — testing approach comparison notes.
+- [docs/history/implementation-plan-form-renderer-popup-v3.md](docs/history/implementation-plan-form-renderer-popup-v3.md) — form renderer popup implementation plan.
+- [docs/history/SESSION-NOTES-2026-01-29.md](docs/history/SESSION-NOTES-2026-01-29.md) — archived session notes.
+
+### Contributor/agent instructions
+
+- [AGENTS.md](AGENTS.md) — project-specific AI agent and workflow instructions.
+
