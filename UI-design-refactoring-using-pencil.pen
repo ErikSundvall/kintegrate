@@ -2400,13 +2400,166 @@
                               "fontWeight": "600"
                             },
                             {
-                              "type": "text",
-                              "id": "JZcJs",
-                              "fill": "#6B7280",
-                              "content": "No rules discovered in form data.",
-                              "fontFamily": "Inter",
-                              "fontSize": 12,
-                              "fontWeight": "normal"
+                              "type": "frame",
+                              "id": "fY0e3",
+                              "name": "Rule Item 1",
+                              "width": "fill_container",
+                              "height": 28,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#E3E7EB"
+                              },
+                              "gap": 8,
+                              "padding": [
+                                4,
+                                6
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "LabDq",
+                                  "name": "Logic Chip",
+                                  "height": 18,
+                                  "fill": "#E8F1FD",
+                                  "cornerRadius": 9,
+                                  "padding": [
+                                    2,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "ySHO9",
+                                      "fill": "#1976D2",
+                                      "content": "logic",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "4vtoc",
+                                  "fill": "#1F2937",
+                                  "content": "gestational_age when pregnant=true",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "3XdaP",
+                              "name": "Rule Item 2",
+                              "width": "fill_container",
+                              "height": 28,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#E3E7EB"
+                              },
+                              "gap": 8,
+                              "padding": [
+                                4,
+                                6
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "n1RzG",
+                                  "name": "Calc Chip",
+                                  "height": 18,
+                                  "fill": "#EEF7EE",
+                                  "cornerRadius": 9,
+                                  "padding": [
+                                    2,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "vUOav",
+                                      "fill": "#2E7D32",
+                                      "content": "calc",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "IC5kf",
+                                  "fill": "#1F2937",
+                                  "content": "score_total = derived expression",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "OB5CL",
+                              "name": "Rule Item 3",
+                              "width": "fill_container",
+                              "height": 28,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#E3E7EB"
+                              },
+                              "gap": 8,
+                              "padding": [
+                                4,
+                                6
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "DE44i",
+                                  "name": "Validation Chip",
+                                  "height": 18,
+                                  "fill": "#FFF4E8",
+                                  "cornerRadius": 9,
+                                  "padding": [
+                                    2,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "7oxek",
+                                      "fill": "#ED6C02",
+                                      "content": "validation",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "hpq1H",
+                                  "fill": "#1F2937",
+                                  "content": "temperature min:35 max:42",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             }
                           ]
                         }
@@ -2467,448 +2620,167 @@
                       "height": "fill_container",
                       "fill": "#FFFFFF",
                       "layout": "vertical",
-                      "gap": 8,
+                      "gap": 6,
                       "padding": 16,
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "vb315",
-                          "name": "Logic Slider",
+                          "id": "AkdLv",
+                          "type": "ref",
+                          "ref": "Ixy7Y",
                           "width": "fill_container",
-                          "height": 52,
-                          "fill": "#FFFFFF",
-                          "cornerRadius": 6,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "#D7DBE0"
-                          },
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "E6mZG",
-                              "name": "Logic Row",
+                          "height": 300,
+                          "name": "scopeStackInstance",
+                          "x": 16,
+                          "y": 16,
+                          "descendants": {
+                            "fj9mE": {
                               "width": "fill_container",
-                              "height": 18,
-                              "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "B55vm",
-                                  "fill": "#1F2937",
-                                  "content": "Form logic",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
+                                  "id": "kAEeT",
+                                  "type": "ref",
+                                  "ref": "n57q7",
+                                  "width": "fill_container",
+                                  "name": "logicItem",
+                                  "x": 0,
+                                  "y": 0,
+                                  "descendants": {
+                                    "2Dyks": {
+                                      "width": "fill_container"
+                                    },
+                                    "pPzdi": {
+                                      "content": "Form logic"
+                                    },
+                                    "Rwu7S": {
+                                      "content": "1"
+                                    },
+                                    "jUgIz": {
+                                      "width": "fill_container"
+                                    },
+                                    "QsqAy": {
+                                      "x": 120
+                                    }
+                                  }
                                 },
                                 {
-                                  "type": "frame",
-                                  "id": "mU1qV",
-                                  "name": "Logic Value",
-                                  "height": 18,
-                                  "fill": "#F3F4F6",
-                                  "cornerRadius": 9,
-                                  "padding": [
-                                    2,
-                                    6
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "zYTt8",
-                                      "fill": "#1F2937",
-                                      "content": "1",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 11,
-                                      "fontWeight": "normal"
+                                  "id": "3Vm6u",
+                                  "type": "ref",
+                                  "ref": "n57q7",
+                                  "width": "fill_container",
+                                  "name": "calcItem",
+                                  "x": 0,
+                                  "y": 60,
+                                  "descendants": {
+                                    "2Dyks": {
+                                      "width": "fill_container"
+                                    },
+                                    "pPzdi": {
+                                      "content": "Calculations"
+                                    },
+                                    "xsAE0": {
+                                      "x": 70
+                                    },
+                                    "Rwu7S": {
+                                      "content": "1"
+                                    },
+                                    "jUgIz": {
+                                      "width": "fill_container"
+                                    },
+                                    "QsqAy": {
+                                      "x": 120
                                     }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "Y5bLu",
-                              "name": "Logic Track",
-                              "width": "fill_container",
-                              "height": 8,
-                              "fill": "#D7DBE0",
-                              "cornerRadius": 99,
-                              "alignItems": "center",
-                              "children": [
+                                  }
+                                },
                                 {
-                                  "type": "frame",
-                                  "id": "1AsQV",
-                                  "layoutPosition": "absolute",
-                                  "x": 120,
-                                  "y": -4,
-                                  "name": "Logic Thumb",
-                                  "width": 16,
-                                  "height": 16,
-                                  "fill": "#1976D2",
-                                  "cornerRadius": 99
+                                  "id": "ym8Rb",
+                                  "type": "ref",
+                                  "ref": "n57q7",
+                                  "width": "fill_container",
+                                  "name": "valItem",
+                                  "x": 0,
+                                  "y": 120,
+                                  "descendants": {
+                                    "2Dyks": {
+                                      "width": "fill_container"
+                                    },
+                                    "pPzdi": {
+                                      "content": "Validations"
+                                    },
+                                    "xsAE0": {
+                                      "x": 62
+                                    },
+                                    "Rwu7S": {
+                                      "content": "1"
+                                    },
+                                    "jUgIz": {
+                                      "width": "fill_container"
+                                    },
+                                    "QsqAy": {
+                                      "x": 120
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "TRtvK",
+                                  "type": "ref",
+                                  "ref": "n57q7",
+                                  "width": "fill_container",
+                                  "name": "rangeItem",
+                                  "x": 0,
+                                  "y": 180,
+                                  "descendants": {
+                                    "2Dyks": {
+                                      "width": "fill_container"
+                                    },
+                                    "pPzdi": {
+                                      "content": "Value ranges"
+                                    },
+                                    "xsAE0": {
+                                      "x": 74
+                                    },
+                                    "Rwu7S": {
+                                      "content": "1"
+                                    },
+                                    "jUgIz": {
+                                      "width": "fill_container"
+                                    },
+                                    "QsqAy": {
+                                      "x": 120
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "nht5l",
+                                  "type": "ref",
+                                  "ref": "n57q7",
+                                  "width": "fill_container",
+                                  "name": "reqItem",
+                                  "x": 0,
+                                  "y": 240,
+                                  "descendants": {
+                                    "2Dyks": {
+                                      "width": "fill_container"
+                                    },
+                                    "pPzdi": {
+                                      "content": "Required fields"
+                                    },
+                                    "xsAE0": {
+                                      "x": 85
+                                    },
+                                    "Rwu7S": {
+                                      "content": "1"
+                                    },
+                                    "jUgIz": {
+                                      "width": "fill_container"
+                                    },
+                                    "QsqAy": {
+                                      "x": 120
+                                    }
+                                  }
                                 }
                               ]
                             }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "detUT",
-                          "name": "Calc Slider",
-                          "width": "fill_container",
-                          "height": 52,
-                          "fill": "#FFFFFF",
-                          "cornerRadius": 6,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "#D7DBE0"
-                          },
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "tmzXm",
-                              "name": "Calc Row",
-                              "width": "fill_container",
-                              "height": 18,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "V2vAl",
-                                  "fill": "#1F2937",
-                                  "content": "Calculations",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "dPCJC",
-                                  "name": "Calc Value",
-                                  "height": 18,
-                                  "fill": "#F3F4F6",
-                                  "cornerRadius": 9,
-                                  "padding": [
-                                    2,
-                                    6
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "gCXZd",
-                                      "fill": "#1F2937",
-                                      "content": "1",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 11,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "tQwd2",
-                              "name": "Calc Track",
-                              "width": "fill_container",
-                              "height": 8,
-                              "fill": "#D7DBE0",
-                              "cornerRadius": 99,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "r8OaD",
-                                  "layoutPosition": "absolute",
-                                  "x": 120,
-                                  "y": -4,
-                                  "name": "Calc Thumb",
-                                  "width": 16,
-                                  "height": 16,
-                                  "fill": "#1976D2",
-                                  "cornerRadius": 99
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "lLKiB",
-                          "name": "Validation Slider",
-                          "width": "fill_container",
-                          "height": 52,
-                          "fill": "#FFFFFF",
-                          "cornerRadius": 6,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "#D7DBE0"
-                          },
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "ST68Q",
-                              "name": "Validation Row",
-                              "width": "fill_container",
-                              "height": 18,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "RW9pq",
-                                  "fill": "#1F2937",
-                                  "content": "Validations",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "a2BHJ",
-                                  "name": "Validation Value",
-                                  "height": 18,
-                                  "fill": "#F3F4F6",
-                                  "cornerRadius": 9,
-                                  "padding": [
-                                    2,
-                                    6
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "3uniw",
-                                      "fill": "#1F2937",
-                                      "content": "1",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 11,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "o2Hd3",
-                              "name": "Validation Track",
-                              "width": "fill_container",
-                              "height": 8,
-                              "fill": "#D7DBE0",
-                              "cornerRadius": 99,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "L52Ak",
-                                  "layoutPosition": "absolute",
-                                  "x": 120,
-                                  "y": -4,
-                                  "name": "Validation Thumb",
-                                  "width": 16,
-                                  "height": 16,
-                                  "fill": "#1976D2",
-                                  "cornerRadius": 99
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "q3bzY",
-                          "name": "Range Slider",
-                          "width": "fill_container",
-                          "height": 52,
-                          "fill": "#FFFFFF",
-                          "cornerRadius": 6,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "#D7DBE0"
-                          },
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "0P8gi",
-                              "name": "Range Row",
-                              "width": "fill_container",
-                              "height": 18,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ANQE5",
-                                  "fill": "#1F2937",
-                                  "content": "Value ranges",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "3q1oe",
-                                  "name": "Range Value",
-                                  "height": 18,
-                                  "fill": "#F3F4F6",
-                                  "cornerRadius": 9,
-                                  "padding": [
-                                    2,
-                                    6
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "d8os2",
-                                      "fill": "#1F2937",
-                                      "content": "1",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 11,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "KjORL",
-                              "name": "Range Track",
-                              "width": "fill_container",
-                              "height": 8,
-                              "fill": "#D7DBE0",
-                              "cornerRadius": 99,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "LuzPo",
-                                  "layoutPosition": "absolute",
-                                  "x": 120,
-                                  "y": -4,
-                                  "name": "Range Thumb",
-                                  "width": 16,
-                                  "height": 16,
-                                  "fill": "#1976D2",
-                                  "cornerRadius": 99
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "Jovhn",
-                          "name": "Required Slider",
-                          "width": "fill_container",
-                          "height": 52,
-                          "fill": "#FFFFFF",
-                          "cornerRadius": 6,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "#D7DBE0"
-                          },
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "aZ0YV",
-                              "name": "Required Row",
-                              "width": "fill_container",
-                              "height": 18,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "JQrJS",
-                                  "fill": "#1F2937",
-                                  "content": "Required fields",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "Hc67s",
-                                  "name": "Required Value",
-                                  "height": 18,
-                                  "fill": "#F3F4F6",
-                                  "cornerRadius": 9,
-                                  "padding": [
-                                    2,
-                                    6
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "y5DZ0",
-                                      "fill": "#1F2937",
-                                      "content": "1",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 11,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "KWSQz",
-                              "name": "Required Track",
-                              "width": "fill_container",
-                              "height": 8,
-                              "fill": "#D7DBE0",
-                              "cornerRadius": 99,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "RZBJ1",
-                                  "layoutPosition": "absolute",
-                                  "x": 120,
-                                  "y": -4,
-                                  "name": "Required Thumb",
-                                  "width": 16,
-                                  "height": 16,
-                                  "fill": "#1976D2",
-                                  "cornerRadius": 99
-                                }
-                              ]
-                            }
-                          ]
+                          }
                         },
                         {
                           "type": "frame",
@@ -3040,7 +2912,7 @@
                           "id": "DWfJo",
                           "name": "Last Run",
                           "width": "fill_container",
-                          "height": 44,
+                          "height": 40,
                           "fill": "#FBFDFF",
                           "cornerRadius": 6,
                           "stroke": {
@@ -3048,7 +2920,7 @@
                             "fill": "#D7DBE0"
                           },
                           "padding": [
-                            8,
+                            6,
                             12
                           ],
                           "alignItems": "center",
@@ -3870,21 +3742,112 @@
                           "padding": 12,
                           "children": [
                             {
+                              "type": "frame",
+                              "id": "ZIjlo",
+                              "name": "Code Header",
+                              "width": "fill_container",
+                              "height": 28,
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "sLpEA",
+                                  "name": "Generated File Chip",
+                                  "height": 20,
+                                  "fill": "#F3F4F6",
+                                  "cornerRadius": 9,
+                                  "padding": [
+                                    2,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Zdi3Q",
+                                      "fill": "#1F2937",
+                                      "content": "generated.cy.js",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "nRtgR",
+                                  "name": "Language Chip",
+                                  "height": 20,
+                                  "fill": "#F3F4F6",
+                                  "cornerRadius": 9,
+                                  "padding": [
+                                    2,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "RpTSa",
+                                      "fill": "#1F2937",
+                                      "content": "JavaScript",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
                               "type": "text",
-                              "id": "lvjra",
+                              "id": "bs5Tz",
+                              "name": "codeLine1",
                               "fill": "#1F2937",
-                              "content": "JavaScript code preview editor",
+                              "content": "describe('generated-form - autogenerated form tests', () => {",
                               "fontFamily": "Inter",
-                              "fontSize": 12,
+                              "fontSize": 11,
                               "fontWeight": "normal"
                             },
                             {
                               "type": "text",
-                              "id": "GmqLe",
-                              "fill": "#6B7280",
-                              "content": "// Load a form to generate Cypress tests.",
+                              "id": "bUM6A",
+                              "name": "codeLine2",
+                              "fill": "#4B5563",
+                              "content": "  it('no rules discovered for selected categories', () => {",
                               "fontFamily": "Inter",
-                              "fontSize": 12,
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "12Z65",
+                              "name": "codeLine3",
+                              "fill": "#4B5563",
+                              "content": "    cy.log('No generated tests.');",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "0wp5d",
+                              "name": "codeLine4",
+                              "fill": "#4B5563",
+                              "content": "  });",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fOmgE",
+                              "name": "codeLine5",
+                              "fill": "#1F2937",
+                              "content": "});",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
                               "fontWeight": "normal"
                             }
                           ]
@@ -4280,6 +4243,962 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "3yUF6",
+      "x": 4700,
+      "y": 0,
+      "name": "UI Component Shelf",
+      "clip": true,
+      "width": 980,
+      "height": 1240,
+      "fill": "#FCFCFD",
+      "stroke": {
+        "thickness": 1,
+        "fill": "#D7DBE0"
+      },
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 20,
+      "children": [
+        {
+          "type": "frame",
+          "id": "LiTlx",
+          "name": "Library Header",
+          "width": "fill_container",
+          "height": 60,
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "QigsR",
+              "fill": "#1F2937",
+              "content": "Reusable UI Components",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "Ya5H7",
+              "fill": "#6B7280",
+              "content": "Components copied from the Kintegrate screens for future redesign work.",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rS6Yf",
+          "name": "Buttons Row",
+          "width": "fill_container",
+          "height": 80,
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "blL6F",
+              "name": "Button/Secondary",
+              "height": 30,
+              "fill": "#FFFFFF",
+              "cornerRadius": 6,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D7DBE0"
+              },
+              "gap": 6,
+              "padding": [
+                5,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "zuw1g",
+                  "width": 14,
+                  "height": 14,
+                  "iconFontName": "save",
+                  "iconFontFamily": "Material Symbols Rounded",
+                  "fill": "#1F2937"
+                },
+                {
+                  "type": "text",
+                  "id": "2r6eg",
+                  "fill": "#1F2937",
+                  "content": "Save target",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "SKGYl",
+              "name": "Button/Primary",
+              "height": 30,
+              "fill": "#1976D2",
+              "cornerRadius": 6,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#1976D2"
+              },
+              "gap": 6,
+              "padding": [
+                5,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "n1Kpp",
+                  "width": 14,
+                  "height": 14,
+                  "iconFontName": "play_arrow",
+                  "iconFontFamily": "Material Symbols Rounded",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "sYg9a",
+                  "fill": "#FFFFFF",
+                  "content": "Generate tests",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bWQBl",
+              "name": "Button/Icon Secondary",
+              "height": 28,
+              "fill": "#FFFFFF",
+              "cornerRadius": 6,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#CFCFCF"
+              },
+              "gap": 6,
+              "padding": [
+                5,
+                9
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "2ya0E",
+                  "fill": "#2F3D4B",
+                  "content": "Form Viewer",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "Yi1Ic",
+                  "width": 14,
+                  "height": 14,
+                  "iconFontName": "open_in_new",
+                  "iconFontFamily": "Material Symbols Rounded",
+                  "fill": "#2F3D4B"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "9IKHL",
+          "name": "Fields Row",
+          "width": "fill_container",
+          "height": 90,
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "9Uw8C",
+              "name": "Input/Text Field",
+              "height": 30,
+              "fill": "#FFFFFF",
+              "cornerRadius": 6,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D7DBE0"
+              },
+              "padding": [
+                5,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ICS99",
+                  "fill": "#6B7280",
+                  "content": "owner",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "8umE4",
+              "name": "Chip/Value",
+              "height": 18,
+              "fill": "#F3F4F6",
+              "cornerRadius": 9,
+              "padding": [
+                2,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "x7p73",
+                  "fill": "#1F2937",
+                  "content": "1",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Kuc3R",
+              "name": "Chip/Rule Category",
+              "height": 18,
+              "fill": "#FFF4E8",
+              "cornerRadius": 9,
+              "padding": [
+                2,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b06eR",
+                  "fill": "#ED6C02",
+                  "content": "validation",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "lDJnF",
+          "name": "Structure Row",
+          "width": "fill_container",
+          "height": 360,
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "frame",
+              "id": "l0KCE",
+              "name": "Panel/Header",
+              "width": 420,
+              "height": 46,
+              "fill": "#FFFFFF",
+              "stroke": {
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#D7DBE0"
+              },
+              "padding": [
+                12,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RsIbg",
+                  "fill": "#1F2937",
+                  "content": "Form + Discovery",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Uf7OC",
+              "name": "Modal/Browse Fields",
+              "clip": true,
+              "width": 420,
+              "height": 260,
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D7DBE0"
+              },
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000022",
+                "offset": {
+                  "x": 0,
+                  "y": 12
+                },
+                "blur": 28
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "feSAV",
+                  "name": "Modal Header",
+                  "width": "fill_container",
+                  "height": 52,
+                  "fill": "#FFFFFF",
+                  "stroke": {
+                    "thickness": {
+                      "bottom": 1
+                    },
+                    "fill": "#D7DBE0"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gFGxo",
+                      "fill": "#1F2937",
+                      "content": "Browse Form Fields",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fwvWP",
+                      "name": "Close Modal Button",
+                      "height": 28,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "gap": 6,
+                      "padding": [
+                        4,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "IvEdn",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "close",
+                          "iconFontFamily": "Material Symbols Rounded",
+                          "fill": "#1F2937"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AAjYg",
+                  "name": "Modal Body",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "LBAx7",
+                      "fill": "#6B7280",
+                      "content": "Select a field from the form structure:",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rGb2r",
+                      "name": "Field Tree Container",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IGE6a",
+                          "fill": "#1F2937",
+                          "content": "Tree field browser",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kwkYs",
+                  "name": "Modal Footer",
+                  "width": "fill_container",
+                  "height": 52,
+                  "fill": "#FFFFFF",
+                  "stroke": {
+                    "thickness": {
+                      "top": 1
+                    },
+                    "fill": "#D7DBE0"
+                  },
+                  "gap": 8,
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "1h4iq",
+                      "name": "Cancel Button",
+                      "height": 30,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "padding": [
+                        5,
+                        10
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HnSO9",
+                          "fill": "#1F2937",
+                          "content": "Cancel",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "O4vZx",
+                      "name": "Select Field Button",
+                      "height": 30,
+                      "fill": "#1976D2",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#1976D2"
+                      },
+                      "padding": [
+                        5,
+                        10
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hUmb0",
+                          "fill": "#FFFFFF",
+                          "content": "Select Field",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "sjcWX",
+          "name": "compactTitle",
+          "fill": "#1F2937",
+          "content": "Compact alternatives for generation scope",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "H1Ao0",
+          "name": "compactNote",
+          "fill": "#6B7280",
+          "content": "Two denser patterns to reclaim space while preserving per-category control.",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "r9lKL",
+          "name": "Compact Variants Row",
+          "width": "fill_container",
+          "height": 120,
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "gS7pF",
+              "name": "Scope Selector/Segmented Compact",
+              "reusable": true,
+              "width": 300,
+              "height": 40,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D7DBE0"
+              },
+              "gap": 10,
+              "padding": [
+                8,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FmbYr",
+                  "name": "Selector Label",
+                  "fill": "#1F2937",
+                  "content": "Form logic",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Wa0u9",
+                  "name": "Segment Group",
+                  "height": 24,
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "C1B3v",
+                      "name": "Level 0",
+                      "height": 22,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "padding": [
+                        2,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "T1RL8",
+                          "fill": "#6B7280",
+                          "content": "0",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "es1H2",
+                      "name": "Level 1",
+                      "height": 22,
+                      "fill": "#1976D2",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#1976D2"
+                      },
+                      "padding": [
+                        2,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "7J0ld",
+                          "fill": "#FFFFFF",
+                          "content": "1",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "3QG9L",
+                      "name": "Level 2",
+                      "height": 22,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "padding": [
+                        2,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gDmKz",
+                          "fill": "#6B7280",
+                          "content": "2",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SIYUo",
+                      "name": "Level 3",
+                      "height": 22,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D7DBE0"
+                      },
+                      "padding": [
+                        2,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FbW8o",
+                          "fill": "#6B7280",
+                          "content": "3",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AVqny",
+              "name": "Scope Selector/Menu Summary",
+              "reusable": true,
+              "width": 280,
+              "height": 40,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D7DBE0"
+              },
+              "gap": 8,
+              "padding": [
+                8,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KQoIM",
+                  "name": "Summary Label",
+                  "fill": "#1F2937",
+                  "content": "Form logic",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "VNmRc",
+                  "name": "Summary Value Chip",
+                  "height": 20,
+                  "fill": "#E8F1FD",
+                  "cornerRadius": 9,
+                  "padding": [
+                    2,
+                    6
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9LE6e",
+                      "fill": "#1976D2",
+                      "content": "Level 1",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "4Dxpd",
+                  "name": "Edit Button",
+                  "height": 22,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#D7DBE0"
+                  },
+                  "gap": 4,
+                  "padding": [
+                    2,
+                    6
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "0E4jM",
+                      "width": 12,
+                      "height": 12,
+                      "iconFontName": "tune",
+                      "iconFontFamily": "Material Symbols Rounded",
+                      "fill": "#1F2937"
+                    },
+                    {
+                      "type": "text",
+                      "id": "I3TxU",
+                      "fill": "#1F2937",
+                      "content": "Edit",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "gVhvk",
+      "x": 4700,
+      "y": 1010,
+      "name": "Baseline Sync Note",
+      "width": 980,
+      "height": 96,
+      "fill": "#FFF7E6",
+      "cornerRadius": 8,
+      "stroke": {
+        "thickness": 1,
+        "fill": "#E6C98A"
+      },
+      "layout": "vertical",
+      "gap": 6,
+      "padding": [
+        12,
+        16
+      ],
+      "children": [
+        {
+          "type": "text",
+          "id": "ou5ng",
+          "fill": "#6B4E16",
+          "content": "Baseline sync point",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "Cj6ii",
+          "fill": "#6B4E16",
+          "textGrowth": "fixed-width",
+          "width": 930,
+          "content": "This .pen file is aligned to the current committed Kintegrate codebase as of 2026-03-24 and is intended as the pre-refactor UI baseline.",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "n57q7",
+      "x": 4700,
+      "y": 1130,
+      "name": "Scope Slider Component",
+      "reusable": true,
+      "width": 300,
+      "height": 52,
+      "fill": "#FFFFFF",
+      "cornerRadius": 6,
+      "stroke": {
+        "thickness": 1,
+        "fill": "#D7DBE0"
+      },
+      "layout": "vertical",
+      "gap": 6,
+      "padding": [
+        8,
+        10
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "2Dyks",
+          "name": "Header Row",
+          "width": "fill_container",
+          "height": 18,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "pPzdi",
+              "name": "Label Text",
+              "fill": "#1F2937",
+              "content": "Form logic",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "xsAE0",
+              "name": "Value Chip",
+              "height": 18,
+              "fill": "#F3F4F6",
+              "cornerRadius": 9,
+              "padding": [
+                2,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Rwu7S",
+                  "name": "Value Text",
+                  "fill": "#1F2937",
+                  "content": "1",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "jUgIz",
+          "name": "Track",
+          "width": "fill_container",
+          "height": 8,
+          "fill": "#D7DBE0",
+          "cornerRadius": 99,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "QsqAy",
+              "layoutPosition": "absolute",
+              "x": 120,
+              "y": -4,
+              "name": "Thumb",
+              "width": 16,
+              "height": 16,
+              "fill": "#1976D2",
+              "cornerRadius": 99
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Ixy7Y",
+      "x": 5020,
+      "y": 1130,
+      "name": "Scope Slider Stack",
+      "reusable": true,
+      "width": 340,
+      "height": 300,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 8,
+      "children": [
+        {
+          "type": "frame",
+          "id": "fj9mE",
+          "name": "Items Slot",
+          "slot": [
+            "#scopeSlider"
+          ],
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 8
         }
       ]
     }
