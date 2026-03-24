@@ -1587,10 +1587,62 @@
   $('generate-btn').addEventListener('click', regenerateCode);
 
   $('run-btn').addEventListener('click', () => {
-    const stamp = new Date().toISOString();
     const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
-    const selected = selectedTests.map((row) => row.title).join(', ') || 'none';
-    $('last-run').textContent = `Last run (simulated) ${stamp}: tests=${selected}. Use terminal command: npm run test`;
+    if (!selectedTests.length) return;
+
+    // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
+    const allActions = [];
+    selectedTests.forEach((t) => {
+      const body = t.body || '';
+      const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+      lines.forEach((ln) => {
+        let m;
+        if ((m = ln.match(/cy\.fillField\(([^,]+),\s*([^\)]+)\)/))) {
+          try {
+            const target = JSON.parse(m[1]);
+            const value = JSON.parse(m[2]);
+            allActions.push({ type: 'fill', target, value });
+          } catch (e) { /* ignore parse errors */ }
+        } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
+          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]) }); } catch (e) {}
+        } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
+          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]) }); } catch (e) {}
+        } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
+          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]) }); } catch (e) {}
+        }
+      });
+    });
+
+    if (!allActions.length) {
+      $('last-run').textContent = `No runnable actions found in selected tests.`;
+      return;
+    }
+
+    // Send actions to opener (form viewer) for live execution
+    try {
+      const targetWindow = window.opener;
+      if (!targetWindow) {
+        $('last-run').textContent = 'Form viewer window not available.';
+        return;
+      }
+
+      const runId = Date.now();
+      $('last-run').textContent = `Running ${allActions.length} actions...`;
+
+      const resultHandler = (event) => {
+        if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
+        window.removeEventListener('message', resultHandler);
+        const results = event.data.payload?.results || [];
+        const summary = results.map((r, i) => `${r.ok ? 'OK' : 'FAIL'}: ${r.action.type} ${r.action.target}`).join('; ');
+        $('last-run').textContent = `Run complete: ${summary}`;
+      };
+
+      window.addEventListener('message', resultHandler);
+      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId } }, '*');
+    } catch (err) {
+      console.error('[Tester] Failed to send TEST_ACTIONS:', err);
+      $('last-run').textContent = 'Run failed: see console.';
+    }
   });
 
   $('export-btn').addEventListener('click', () => {
@@ -1656,6 +1708,23 @@
   });
 
   // Accept form data posted from other windows (e.g. form-viewer)
+  function loadForm(formData) {
+    try {
+      formRawData = formData; // store raw
+      loadedForm = parseFormDefinition(formData);
+      statusEl.className = 'status ok';
+      statusEl.textContent = `Loaded external form: ${loadedForm.name}`;
+      updateCounts(loadedForm);
+      renderRules(loadedForm);
+      $('generate-btn').disabled = false;
+      console.log('[Tester] Loaded form from external message:', loadedForm.name);
+    } catch (err) {
+      console.error('[Tester] Error loading form payload:', err);
+      statusEl.className = 'status warn';
+      statusEl.textContent = 'Could not load form payload';
+    }
+  }
+
   window.addEventListener('message', (event) => {
     if (!event.data || !event.data.type) return;
     try {

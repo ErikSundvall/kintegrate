@@ -2235,9 +2235,8 @@ Närvarolista i ankomstordning:
         
         console.log('[Main] Input updated from composition');
       
-        // --- Tooltip for specific design nodes ---
+        // --- Tooltip for Test / section cells ---
         (function() {
-          const TARGET_IDS = new Set(['fY0e3', '3XdaP']);
           let tooltipEl = null;
           let currentTarget = null;
 
@@ -2249,19 +2248,24 @@ Närvarolista i ankomstordning:
             }
           }
 
+          function decodeHtmlEntities(str) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = str || '';
+            return tmp.textContent || tmp.innerText || '';
+          }
+
           function showTooltipFor(el, clientX, clientY) {
             ensureTooltip();
-            // Prefer explicit data-name, then name/title/aria-label, then trimmed text
-            const text = el.getAttribute('data-name') || el.getAttribute('name') || el.getAttribute('title') || el.getAttribute('aria-label') || (el.textContent || '').trim();
+            // Use explicit data-tooltip if present, otherwise fall back to attributes/text
+            let text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('aria-label') || (el.textContent || '').trim();
             if (!text) return;
+            // decode any HTML entities produced by escaping in the formatter
+            text = decodeHtmlEntities(text);
             tooltipEl.textContent = text;
             tooltipEl.style.display = 'block';
-            // position with small offset, keep on-screen
             const offset = 10;
-            const x = clientX + offset;
-            const y = clientY + offset;
-            tooltipEl.style.left = x + 'px';
-            tooltipEl.style.top = y + 'px';
+            tooltipEl.style.left = (clientX + offset) + 'px';
+            tooltipEl.style.top = (clientY + offset) + 'px';
           }
 
           function hideTooltip() {
@@ -2269,19 +2273,16 @@ Närvarolista i ankomstordning:
             currentTarget = null;
           }
 
-          // Delegate hover handling: show tooltip when hovering elements with matching data-id
+          // Delegate hover handling to elements with class .test-section-cell
           document.addEventListener('mouseover', (ev) => {
-            const el = ev.target.closest('[data-id]');
+            const el = ev.target.closest('.test-section-cell');
             if (!el) return;
-            const id = el.getAttribute('data-id') || el.dataset.id;
-            if (!id || !TARGET_IDS.has(id)) return;
             currentTarget = el;
             showTooltipFor(el, ev.clientX, ev.clientY);
           }, true);
 
           document.addEventListener('mousemove', (ev) => {
             if (!currentTarget) return;
-            // update tooltip position
             const offset = 10;
             tooltipEl.style.left = (ev.clientX + offset) + 'px';
             tooltipEl.style.top = (ev.clientY + offset) + 'px';
@@ -2295,7 +2296,6 @@ Närvarolista i ankomstordning:
             }
           }, true);
 
-          // Also hide on scroll or resize to avoid stuck tooltip
           window.addEventListener('scroll', hideTooltip, true);
           window.addEventListener('resize', hideTooltip);
         })();
