@@ -36,10 +36,22 @@
     .discovery-scope-row { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
     .rules-card, .scope-card { display:flex; flex-direction:column; gap:0.55rem; min-height:0; border:1px solid var(--line); border-radius:6px; background:#fbfdff; padding:0.75rem; }
     .section-label { font-size:0.75rem; font-weight:600; color:#6b7280; }
-    .rule-list { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
-    .rule-item { display:flex; align-items:center; gap:0.5rem; min-height:28px; padding:0.25rem 0.4rem; border:1px solid #e3e7eb; border-radius:6px; background:#fff; font-size:0.72rem; color:#1f2937; }
-    .rule-item-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .rule-empty { padding:0.6rem 0.7rem; border:1px dashed #d7dbe0; border-radius:6px; background:#fff; color:#6b7280; font-size:0.75rem; }
+    .rules-toolbar { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; }
+    .rules-grouping { display:flex; align-items:center; gap:0.45rem; }
+    .rules-grouping label { font-size:0.72rem; color:#6b7280; }
+    #rule-table { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; }
+    #rule-table .tabulator { border:none; background:#fff; font-size:0.78rem; }
+    #rule-table .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
+    #rule-table .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.74rem; font-weight:600; }
+    #rule-table .tabulator-row { background:#fff; }
+    #rule-table .tabulator-row:hover { background:#fbfdff; }
+    #rule-table .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.4rem 0.45rem; vertical-align:middle; }
+    #rule-table .tabulator-row.tabulator-group-level-0,
+    #rule-table .tabulator-row.tabulator-group-level-1 { background:#f8fafc; }
+    .rule-path-cell, .rule-summary-cell { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rule-path-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.72rem; color:#475569; }
+    .rule-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .rule-table-status { margin-top:0.45rem; }
     .scope-card { padding:0.6rem; gap:0.45rem; }
     .scope-controls { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.35rem; }
     .scope-row { display:flex; align-items:center; justify-content:center; gap:0.35rem; min-width:0; padding:0.3rem 0.4rem; border:1px solid var(--line); border-radius:8px; background:#fff; min-height:34px; }
@@ -69,13 +81,7 @@
     .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
-    .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
-    .test-state-btn { border:none; border-right:1px solid var(--line); background:#fff; color:#6b7280; font-size:0.65rem; line-height:1; padding:5px 7px; min-width:32px; cursor:pointer; }
-    .test-state-btn:last-child { border-right:none; }
-    .test-state-btn.is-selected[data-state="skip"] { background:#f3f4f6; color:#6b7280; }
-    .test-state-btn.is-selected[data-state="run"] { background:#eef7ee; color:#2e7d32; }
-    .test-state-btn.is-selected[data-state="only"] { background:#fff4e8; color:#ed6c02; }
-    .test-state-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:-2px; }
+    .row-select-toggle { width:14px; height:14px; accent-color:var(--primary); }
     .cell-chip { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px; font-size:0.68rem; line-height:1.2; white-space:nowrap; }
     .cell-chip.logic, .cell-chip.recorded { background:#e8f1fd; color:#1976d2; }
     .cell-chip.calc { background:#eef7ee; color:#2e7d32; }
@@ -119,8 +125,18 @@
       </div>
       <div class="discovery-scope-row">
         <section class="rules-card">
+          <div class="rules-toolbar">
           <div class="section-label">Discovered rules</div>
-          <div id="rule-list" class="rule-list"></div>
+           <div class="rules-grouping">
+              <label for="rule-group-mode">Group by</label>
+              <select id="rule-group-mode">
+                <option value="kind">Kind of test</option>
+                <option value="path">Form/template path</option>
+              </select>
+            </div>
+          </div>
+          <div id="rule-table"></div>
+          <div id="rule-table-status" class="small rule-table-status">No rules discovered yet.</div>
         </section>
         <section class="scope-card">
           <div class="section-label">Generation scope</div>
@@ -191,7 +207,7 @@
       <div id="test-suite-grid"></div>
       <div class="row table-actions">
         <button class="btn" id="export-btn" disabled>Export .cy.js</button>
-        <button class="btn" id="run-btn">Run active tests</button>
+        <button class="btn" id="run-btn" disabled>Run selected tests</button>
       </div>
       <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
       <div class="results" id="last-run">Last run: not executed.</div>
@@ -303,9 +319,12 @@
   let suppressEditorSync = false;
   let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
+  let discoveredRuleTable = null;
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
+  const ruleTableEl = $('rule-table');
+  const ruleTableStatusEl = $('rule-table-status');
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
   const categoryAliases = {
@@ -344,6 +363,15 @@
     return `<span class="cell-chip ${kind}">${safeValue}</span>`;
   }
 
+  function setRuleTableStatus(message, kind = 'small') {
+    if (!ruleTableStatusEl) {
+      return;
+    }
+
+    ruleTableStatusEl.className = `small rule-table-status ${kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : ''}`.trim();
+    ruleTableStatusEl.textContent = message;
+  }
+
   function sanitizeTestTitle(text) {
     return String(text || '')
       .replace(/\s+/g, ' ')
@@ -356,20 +384,6 @@
       .replace(/\s+/g, ' ')
       .replace(/["'`]/g, '')
       .trim();
-  }
-
-  function callTypeToExecutionState(callType) {
-    if (callType === 'it.skip') return 'skip';
-    if (callType === 'it.only') return 'only';
-    if (callType === 'describe.skip') return 'skip';
-    if (callType === 'describe.only') return 'only';
-    return 'run';
-  }
-
-  function executionStateToCallType(state, baseType = 'it') {
-    if (state === 'skip') return `${baseType}.skip`;
-    if (state === 'only') return `${baseType}.only`;
-    return baseType;
   }
 
   function quoteSingle(value) {
@@ -435,7 +449,6 @@
 
   function serializeSuiteModel(model) {
     const groupBlocks = (model?.groups || []).map((group) => {
-      const groupCallType = group?.callType || 'describe';
       const innerBlocks = [];
       if (group.tests?.length) {
         innerBlocks.push(group.tests.map((test) => serializeTestCase(test)).join('\n\n'));
@@ -444,15 +457,15 @@
         innerBlocks.push(group.extrasText.trimEnd());
       }
       if (!innerBlocks.length) {
-        return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n  });`;
+        return `  describe(${quoteSingle(group.name)}, () => {\n  });`;
       }
-      return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
+      return `  describe(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
     }).join('\n\n');
     const trailingText = model?.trailingText && model.trailingText.trim() ? `\n\n${model.trailingText.trimEnd()}` : '';
     return `describe(${quoteSingle(model?.suiteName || 'generated-form - autogenerated form tests')}, () => {\n${groupBlocks}${trailingText}\n});\n`;
   }
 
-  function parseGroupBlock(groupName, lines, groupCallType = 'describe') {
+  function parseGroupBlock(groupName, lines) {
     const tests = [];
     const extras = [];
     let index = 0;
@@ -465,7 +478,7 @@
         continue;
       }
 
-      const testMatch = line.match(/^    (it(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      const testMatch = line.match(/^    (it(?:\.skip)?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
       if (!testMatch) {
         extras.push(line);
         index += 1;
@@ -496,7 +509,6 @@
 
     return {
       name: groupName,
-      callType: groupCallType,
       tests,
       extrasText: extras.join('\n').trimEnd()
     };
@@ -531,15 +543,14 @@
         continue;
       }
 
-      const groupMatch = line.match(/^  (describe(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      const groupMatch = line.match(/^  describe\((['"])(.*?)\1,\s*\(\)\s*=>\s*\{$/);
       if (!groupMatch) {
         trailing.push(line);
         index += 1;
         continue;
       }
 
-      const groupCallType = groupMatch[1] || 'describe';
-      const groupName = unescapeQuoted(groupMatch[3]);
+      const groupName = unescapeQuoted(groupMatch[2]);
       const groupLines = [];
       index += 1;
 
@@ -552,7 +563,7 @@
         return null;
       }
 
-      const parsedGroup = parseGroupBlock(groupName, groupLines, groupCallType);
+      const parsedGroup = parseGroupBlock(groupName, groupLines);
       if (!parsedGroup) {
         return null;
       }
@@ -577,19 +588,16 @@
       const groupBaseKey = `group::${group.name}`;
       const groupCount = (syncKeyCounts.get(groupBaseKey) || 0) + 1;
       syncKeyCounts.set(groupBaseKey, groupCount);
-      const groupSyncKey = `${groupBaseKey}::${groupCount}`;
-      const previousGroup = previousByKey.get(groupSyncKey);
       rows.push({
-        syncKey: groupSyncKey,
+        syncKey: `${groupBaseKey}::${groupCount}`,
         rowKind: 'group',
         groupName: group.name,
         displayName: group.name,
         type: 'section',
         modified: '',
         result: '',
-        testsCount: group.tests.length,
-        executionState: previousGroup?.executionState || callTypeToExecutionState(group.callType || 'describe'),
-        callType: group.callType || 'describe'
+        selected: false,
+        testsCount: group.tests.length
       });
 
       const testKeyCounts = new Map();
@@ -608,7 +616,7 @@
           type: inferTestType(test.title, group.name),
           modified: previous?.modified || currentDateStamp(),
           result: previous?.result || 'Not run',
-          executionState: previous?.executionState || callTypeToExecutionState(test.callType || 'it'),
+          selected: previous?.selected || false,
           callType: test.callType || 'it',
           body: test.body || ''
         });
@@ -628,37 +636,6 @@
     }
 
     return testSuiteTable.getData();
-  }
-
-  function getRunnableTestsFromRows(rows) {
-    const runnableTests = [];
-    const onlyTests = [];
-    let currentGroupState = 'run';
-
-    rows.forEach((row) => {
-      if (row.rowKind === 'group') {
-        currentGroupState = row.executionState || callTypeToExecutionState(row.callType || 'describe');
-        return;
-      }
-
-      if (row.rowKind !== 'test') {
-        return;
-      }
-
-      const testState = row.executionState || callTypeToExecutionState(row.callType || 'it');
-      if (currentGroupState === 'skip' || testState === 'skip') {
-        return;
-      }
-
-      const runnable = { ...row, groupExecutionState: currentGroupState };
-      runnableTests.push(runnable);
-
-      if (currentGroupState === 'only' || testState === 'only') {
-        onlyTests.push(runnable);
-      }
-    });
-
-    return onlyTests.length ? onlyTests : runnableTests;
   }
 
   function findSectionRange(rows, groupName, occurrenceIndex) {
@@ -750,7 +727,8 @@
 
   function updateActionButtons() {
     const rows = getTableRows();
-    $('run-btn').disabled = getRunnableTestsFromRows(rows).length === 0;
+    const selectedRows = rows.filter((row) => row.rowKind === 'test' && row.selected);
+    $('run-btn').disabled = selectedRows.length === 0;
     $('export-btn').disabled = !getEditorValue().trim();
   }
 
@@ -784,37 +762,26 @@
       },
       columns: [
         {
-          title: 'State',
-          field: 'executionState',
-          width: 118,
+          title: '',
+          field: 'selected',
+          width: 42,
           hozAlign: 'center',
           headerSort: false,
           formatter(cell) {
             const row = cell.getData();
-            const baseType = row.rowKind === 'group' ? 'describe' : 'it';
-            const current = row.executionState || callTypeToExecutionState(row.callType || baseType);
-            const label = row.rowKind === 'group' ? 'Suite execution state' : 'Test execution state';
-            return `<div class="test-state-control" aria-label="${label}">`
-              + `<button class="test-state-btn ${current === 'skip' ? 'is-selected' : ''}" data-state="skip" type="button">skip</button>`
-              + `<button class="test-state-btn ${current === 'run' ? 'is-selected' : ''}" data-state="run" type="button">run</button>`
-              + `<button class="test-state-btn ${current === 'only' ? 'is-selected' : ''}" data-state="only" type="button">only</button>`
-              + `</div>`;
+            if (row.rowKind !== 'test') {
+              return '';
+            }
+            return `<input class="row-select-toggle" type="checkbox" ${row.selected ? 'checked' : ''} aria-label="Select test row">`;
           },
           cellClick(event, cell) {
             const row = cell.getRow().getData();
-            if (row.rowKind !== 'test' && row.rowKind !== 'group') {
+            if (row.rowKind !== 'test') {
               return;
             }
-            const button = event.target.closest('[data-state]');
-            if (!button) {
-              return;
-            }
-            const nextState = button.dataset.state;
-            row.executionState = nextState;
-            row.callType = executionStateToCallType(nextState, row.rowKind === 'group' ? 'describe' : 'it');
-            cell.getRow().update({ executionState: nextState, callType: row.callType });
+            row.selected = !row.selected;
+            cell.setValue(row.selected, true);
             updateActionButtons();
-            syncEditorFromTable(`Updated ${row.rowKind === 'group' ? 'suite' : 'test'} state to '${nextState}' for '${row.title || row.displayName}'.`);
             event.stopPropagation();
           }
         },
@@ -926,7 +893,6 @@
         const extrasQueue = extrasByName.get(row.groupName) || [];
         currentGroup = {
           name: row.groupName,
-          callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'describe'), 'describe'),
           tests: [],
           extrasText: extrasQueue.shift() || ''
         };
@@ -945,7 +911,7 @@
 
       currentGroup.tests.push({
         title: row.title || row.displayName,
-        callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'it'), 'it'),
+        callType: row.callType || 'it',
         body: row.body || ''
       });
     });
@@ -1112,12 +1078,57 @@
   }
 
   function renderRules(parsed) {
-    ruleList.innerHTML = '';
     const entries = [
       ...parsed.dependencies.slice(0, 25).map((r) => ({ kind: 'logic', text: r.description })),
       ...parsed.calculations.slice(0, 10).map((r) => ({ kind: 'calc', text: `${r.field} = derived expression` })),
       ...parsed.validations.slice(0, 15).map((r) => ({ kind: 'validation', text: `${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}` }))
     ];
+
+    if (ruleTableEl && typeof Tabulator !== 'undefined') {
+      if (discoveredRuleTable) {
+        discoveredRuleTable.destroy();
+        discoveredRuleTable = null;
+        ruleTableEl.innerHTML = '';
+      }
+
+      discoveredRuleTable = new Tabulator(ruleTableEl, {
+        data: entries,
+        layout: 'fitColumns',
+        height: '320px',
+        placeholder: 'No rules discovered in form data.',
+        columns: [
+          {
+            title: 'Kind',
+            field: 'kind',
+            width: 120,
+            headerSort: false,
+            formatter(cell) {
+              const value = cell.getValue() || 'custom';
+              return renderChip(value, value);
+            }
+          },
+          {
+            title: 'Summary',
+            field: 'text',
+            minWidth: 360,
+            headerSort: false,
+            formatter(cell) {
+              return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+            }
+          }
+        ]
+      });
+
+      setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
+      return;
+    }
+
+    if (!ruleList) {
+      setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
+      return;
+    }
+
+    ruleList.innerHTML = '';
     entries.forEach((entry) => {
       const item = document.createElement('div');
       item.className = 'rule-item';
@@ -1130,6 +1141,8 @@
       empty.textContent = 'No rules discovered in form data.';
       ruleList.appendChild(empty);
     }
+
+    setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
   }
 
   function buildLogicTests(parsed) {
@@ -1653,15 +1666,12 @@
   $('generate-btn').addEventListener('click', regenerateCode);
 
   $('run-btn').addEventListener('click', () => {
-    const activeTests = getRunnableTestsFromRows(getTableRows());
-    if (!activeTests.length) {
-      $('last-run').textContent = 'No active tests to run.';
-      return;
-    }
+    const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
+    if (!selectedTests.length) return;
 
     // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
     const allActions = [];
-    activeTests.forEach((t) => {
+    selectedTests.forEach((t) => {
       const body = t.body || '';
       const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
       lines.forEach((ln) => {
@@ -1670,20 +1680,20 @@
           try {
             const target = JSON.parse(m[1]);
             const value = JSON.parse(m[2]);
-            allActions.push({ type: 'fill', target, value, meta: { groupName: t.groupName, testTitle: t.title || t.displayName } });
+            allActions.push({ type: 'fill', target, value });
           } catch (e) { /* ignore parse errors */ }
         } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]), meta: { groupName: t.groupName, testTitle: t.title || t.displayName } }); } catch (e) {}
+          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]) }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]), meta: { groupName: t.groupName, testTitle: t.title || t.displayName } }); } catch (e) {}
+          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]) }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]), meta: { groupName: t.groupName, testTitle: t.title || t.displayName } }); } catch (e) {}
+          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]) }); } catch (e) {}
         }
       });
     });
 
     if (!allActions.length) {
-      $('last-run').textContent = 'No runnable actions found in active tests.';
+      $('last-run').textContent = `No runnable actions found in selected tests.`;
       return;
     }
 
