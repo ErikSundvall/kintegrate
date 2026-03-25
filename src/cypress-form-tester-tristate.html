@@ -13,8 +13,8 @@
     body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: 1.1fr 1fr; gap:1rem; padding:1rem; }
-    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; }
+    .grid { display:grid; grid-template-columns: 1.1fr 1fr; grid-template-areas:"discovery editor" "steps suite"; gap:1rem; padding:1rem; align-items:start; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
     .panel-body { padding:1rem; }
@@ -32,14 +32,26 @@
     .slider-row label { display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.3rem; }
     .small { font-size:0.75rem; color:#6b7280; }
     .full { grid-column:1 / -1; }
-    .results { border:1px solid var(--line); border-radius:6px; padding:0.5rem; font-size:0.82rem; background:#fbfdff; }
+    .results { border:1px solid var(--line); border-radius:6px; padding:0.5rem; font-size:0.82rem; background:#fbfdff; max-height:260px; overflow:auto; }
     .discovery-scope-row { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
     .rules-card, .scope-card { display:flex; flex-direction:column; gap:0.55rem; min-height:0; border:1px solid var(--line); border-radius:6px; background:#fbfdff; padding:0.75rem; }
     .section-label { font-size:0.75rem; font-weight:600; color:#6b7280; }
-    .rule-list { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
-    .rule-item { display:flex; align-items:center; gap:0.5rem; min-height:28px; padding:0.25rem 0.4rem; border:1px solid #e3e7eb; border-radius:6px; background:#fff; font-size:0.72rem; color:#1f2937; }
-    .rule-item-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .rule-empty { padding:0.6rem 0.7rem; border:1px dashed #d7dbe0; border-radius:6px; background:#fff; color:#6b7280; font-size:0.75rem; }
+    .rules-toolbar { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; }
+    .rules-grouping { display:flex; align-items:center; gap:0.45rem; }
+    .rules-grouping label { font-size:0.72rem; color:#6b7280; }
+    #rule-table { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; }
+    #rule-table .tabulator { border:none; background:#fff; font-size:0.78rem; }
+    #rule-table .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
+    #rule-table .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.74rem; font-weight:600; }
+    #rule-table .tabulator-row { background:#fff; }
+    #rule-table .tabulator-row:hover { background:#fbfdff; }
+    #rule-table .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.4rem 0.45rem; vertical-align:middle; }
+    #rule-table .tabulator-row.tabulator-group-level-0,
+    #rule-table .tabulator-row.tabulator-group-level-1 { background:#f8fafc; }
+    .rule-path-cell, .rule-summary-cell { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rule-path-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.72rem; color:#475569; }
+    .rule-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .rule-table-status { margin-top:0.45rem; }
     .scope-card { padding:0.6rem; gap:0.45rem; }
     .scope-controls { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.35rem; }
     .scope-row { display:flex; align-items:center; justify-content:center; gap:0.35rem; min-width:0; padding:0.3rem 0.4rem; border:1px solid var(--line); border-radius:8px; background:#fff; min-height:34px; }
@@ -49,12 +61,19 @@
     .scope-level-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
     .scope-generate-btn { width:100%; min-height:34px; justify-content:center; grid-column:auto; }
     #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px 70px auto; gap:0.4rem; margin-bottom:0.35rem; align-items:center; }
+    .tab-strip { display:inline-flex; gap:0.2rem; padding:0.2rem; border:1px solid var(--line); border-radius:10px; background:#f8fafc; }
+    .tab-btn { border:none; background:transparent; color:#6b7280; border-radius:8px; padding:0.35rem 0.65rem; font-size:0.78rem; cursor:pointer; }
+    .tab-btn.is-active { background:#fff; color:#1f2937; box-shadow:0 1px 2px rgba(15, 23, 42, 0.08); }
+    .tab-panel { display:none; }
+    .tab-panel.is-active { display:block; }
+    .tab-panel-stack { display:flex; flex-direction:column; gap:0.75rem; }
+    .recorder-panel { border:1px solid var(--line); border-radius:8px; background:#fbfdff; padding:0.85rem; }
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .test-grid-wrap { min-height:0; }
-    .table-actions { margin-top:0.7rem; margin-bottom:0; }
+    .test-grid-wrap { display:flex; flex-direction:column; gap:0.55rem; min-height:0; overflow:hidden; }
+    .table-actions { margin-top:0; margin-bottom:0; justify-content:space-between; }
     .table-sync-status { margin-top:0.45rem; }
-    #test-suite-grid { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+    #test-suite-grid { height:320px; min-height:0; max-height:320px; width:100%; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
     #test-suite-grid .tabulator { border:none; background:#fff; font-size:0.82rem; }
     #test-suite-grid .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
     #test-suite-grid .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.78rem; font-weight:600; }
@@ -69,7 +88,28 @@
     .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
-    .row-select-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
+    .test-state-btn { border:none; border-right:1px solid var(--line); background:#fff; color:#6b7280; font-size:0.65rem; line-height:1; padding:5px 7px; min-width:32px; cursor:pointer; }
+    .test-state-btn:last-child { border-right:none; }
+    .test-state-btn.is-selected[data-state="skip"] { background:#f3f4f6; color:#6b7280; }
+    .test-state-btn.is-selected[data-state="run"] { background:#eef7ee; color:#2e7d32; }
+    .test-state-btn.is-selected[data-state="only"] { background:#fff4e8; color:#ed6c02; }
+    .test-state-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:-2px; }
+    .jump-to-code { cursor:pointer; }
+    .CodeMirror .cm-line-target { background:#fff4e8; }
+    .run-summary { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.45rem; }
+    .run-summary-title { font-weight:700; }
+    .run-groups { display:flex; flex-direction:column; gap:0.5rem; }
+    .run-group { border-top:1px solid #e6eef6; padding-top:0.45rem; }
+    .run-group:first-child { border-top:none; padding-top:0; }
+    .run-group-title { font-weight:600; margin-bottom:0.25rem; }
+    .results-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.35rem; }
+    .result-item { display:grid; grid-template-columns:auto 1fr; gap:0.5rem; align-items:start; }
+    .result-badge { min-width:48px; text-align:center; border-radius:999px; padding:2px 8px; font-size:0.68rem; font-weight:700; }
+    .result-ok { background:#eef7ee; color:#2e7d32; }
+    .result-fail { background:#fff4e8; color:#ed6c02; }
+    .result-action { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .result-msg { color:#6b7280; margin-top:0.15rem; }
     .cell-chip { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px; font-size:0.68rem; line-height:1.2; white-space:nowrap; }
     .cell-chip.logic, .cell-chip.recorded { background:#e8f1fd; color:#1976d2; }
     .cell-chip.calc { background:#eef7ee; color:#2e7d32; }
@@ -88,17 +128,27 @@
     .modal-footer { padding:1rem; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:0.5rem; }
     .tree-container { max-height:400px; overflow:auto; border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
     .group-name-input { width:100%; }
+
+    #discovery-panel { grid-area:discovery; }
+    #step-builder-panel { grid-area:steps; }
+    #code-editor-panel { grid-area:editor; }
+    #test-suite-panel { grid-area:suite; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "editor" "suite" "steps"; }
+      .results { max-height:none; }
+    }
   </style>
 </head>
 <body>
 <header>
-  <h1>🧪 Better Form Tester (Cypress)</h1>
+  <h1>­ƒº¬ Better Form Tester (Cypress)</h1>
   <button class="btn" id="open-viewer-btn">Open Form Viewer</button>
   <span class="small">Main feature</span>
 </header>
 
 <div class="grid">
-  <section class="panel">
+  <section class="panel" id="discovery-panel">
     <div class="panel-header">
       <h2>Form + Discovery</h2>
     </div>
@@ -113,8 +163,18 @@
       </div>
       <div class="discovery-scope-row">
         <section class="rules-card">
-          <div class="section-label">Discovered rules</div>
-          <div id="rule-list" class="rule-list"></div>
+          <div class="rules-toolbar">
+            <div class="section-label">Discovered rules</div>
+            <div class="rules-grouping">
+              <label for="rule-group-mode">Group by</label>
+              <select id="rule-group-mode">
+                <option value="kind">Kind of test</option>
+                <option value="path">Form/template path</option>
+              </select>
+            </div>
+          </div>
+          <div id="rule-table"></div>
+          <div id="rule-table-status" class="small rule-table-status">No rules discovered yet.</div>
         </section>
         <section class="scope-card">
           <div class="section-label">Generation scope</div>
@@ -176,50 +236,47 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="step-builder-panel">
     <div class="panel-header">
-      <h2>Test suite / list</h2>
-      <button class="btn" id="add-group-btn">Add Group</button>
-    </div>
-    <div class="panel-body test-grid-wrap">
-      <div id="test-suite-grid"></div>
-      <div class="row table-actions">
-        <button class="btn" id="export-btn" disabled>Export .cy.js</button>
-        <button class="btn" id="run-btn" disabled>Run selected tests</button>
+      <h2>Custom test builder</h2>
+      <div class="tab-strip" role="tablist" aria-label="Custom test tools">
+        <button class="tab-btn is-active" id="custom-builder-tab" data-tab-target="custom-builder-panel" role="tab" aria-selected="true" aria-controls="custom-builder-panel" type="button">Custom test builder</button>
+        <button class="tab-btn" id="custom-recorder-tab" data-tab-target="custom-recorder-panel" role="tab" aria-selected="false" aria-controls="custom-recorder-panel" type="button">Custom test recorder</button>
       </div>
-      <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
-      <div class="results" id="last-run">Last run: not executed.</div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-header">
-      <h2>Custom step builder</h2>
     </div>
     <div class="panel-body">
-      <div id="step-list"></div>
-      <button class="btn" id="add-step">+ Add step</button>
-      <hr style="border:none;border-top:1px solid var(--line);margin:0.8rem 0;">
-      <h3 class="small" style="margin:0 0 0.5rem;">Manual range case</h3>
-      <div class="row">
-        <input type="text" id="manual-range-field" placeholder="field/tag/aqlPath" size="28">
-        <input type="text" id="manual-range-unit" placeholder="unit (optional, DV_QUANTITY)" size="20">
-      </div>
-      <div class="row">
-        <input type="text" id="manual-range-valid" placeholder='valid samples, e.g. [0,50,100] or 0,50,100' size="56">
-      </div>
-      <div class="row">
-        <input type="text" id="manual-range-invalid" placeholder='invalid samples, e.g. [-1,101] or -1,101' size="56">
-      </div>
-      <div class="row">
-        <button class="btn" id="add-range-case">+ Add range case</button>
-      </div>
-      <div id="manual-range-list"></div>
-      <p class="small">Steps are appended as editable comments in the generated code preview.</p>
+      <section class="tab-panel tab-panel-stack is-active" id="custom-builder-panel" role="tabpanel" aria-labelledby="custom-builder-tab">
+        <div id="step-list"></div>
+        <button class="btn" id="add-step">+ Add step</button>
+        <hr style="border:none;border-top:1px solid var(--line);margin:0.05rem 0;">
+        <h3 class="small" style="margin:0 0 0.5rem;">Manual range case</h3>
+        <div class="row">
+          <input type="text" id="manual-range-field" placeholder="field/tag/aqlPath" size="28">
+          <input type="text" id="manual-range-unit" placeholder="unit (optional, DV_QUANTITY)" size="20">
+        </div>
+        <div class="row">
+          <input type="text" id="manual-range-valid" placeholder='valid samples, e.g. [0,50,100] or 0,50,100' size="56">
+        </div>
+        <div class="row">
+          <input type="text" id="manual-range-invalid" placeholder='invalid samples, e.g. [-1,101] or -1,101' size="56">
+        </div>
+        <div class="row">
+          <button class="btn" id="add-range-case">+ Add range case</button>
+        </div>
+        <div id="manual-range-list"></div>
+        <p class="small">Steps are appended as editable comments in the generated code preview.</p>
+      </section>
+      <section class="tab-panel" id="custom-recorder-panel" role="tabpanel" aria-labelledby="custom-recorder-tab">
+        <div class="recorder-panel">
+          <div class="section-label">Recorder</div>
+          <p class="small">This tab is reserved for interactive recording of custom test steps. The manual builder remains available in the first tab.</p>
+          <p class="small">Next step for this pane is to capture viewer interactions and append them as editable custom test steps.</p>
+        </div>
+      </section>
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="code-editor-panel">
     <div class="panel-header">
       <h2>GitHub target + Code editor</h2>
     </div>
@@ -241,6 +298,22 @@
       </div>
     </div>
   </section>
+
+  <section class="panel" id="test-suite-panel">
+    <div class="panel-header">
+      <h2>Test suite / list</h2>
+      <button class="btn" id="add-group-btn">Add Group</button>
+    </div>
+    <div class="panel-body test-grid-wrap">
+      <div id="test-suite-grid"></div>
+      <div class="row table-actions">
+        <button class="btn" id="export-btn" disabled>Export .cy.js</button>
+        <button class="btn" id="run-btn">Run active tests</button>
+      </div>
+      <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
+      <div class="results" id="last-run">Last run: not executed.</div>
+    </div>
+  </section>
 </div>
 
 <!-- Field Browser Modal -->
@@ -248,7 +321,7 @@
   <div class="modal-content">
     <div class="modal-header">
       <h3>Browse Form Fields</h3>
-      <button class="btn small" id="close-modal-btn">✕</button>
+      <button class="btn small" id="close-modal-btn">Ô£ò</button>
     </div>
     <div class="modal-body">
       <p class="small">Select a field from the form structure:</p>
@@ -265,7 +338,7 @@
   <div class="modal-content" style="max-width:420px;">
     <div class="modal-header">
       <h3>Add describe group</h3>
-      <button class="btn small" id="close-group-modal-btn">✕</button>
+      <button class="btn small" id="close-group-modal-btn">Ô£ò</button>
     </div>
     <div class="modal-body">
       <label class="small" for="group-name-input">Group name</label>
@@ -293,15 +366,19 @@
   let currentFieldInput = null;
   let formRawData = null;
   let testSuiteTable = null;
+  let discoveredRuleTable = null;
+  let discoveredRuleRows = [];
   let editorSyncTimer = null;
   let suppressEditorSync = false;
   let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
+  let editorHighlightedLine = null;
+  let editorHighlightTimer = null;
 
   const $ = (id) => document.getElementById(id);
-  const ruleList = $('rule-list');
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
+  const ruleGroupModeEl = $('rule-group-mode');
   const categoryAliases = {
     logic: 'logic',
     dependencies: 'logic',
@@ -333,9 +410,334 @@
       .replace(/'/g, '&#39;');
   }
 
+  function escapeRegExp(value) {
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function renderChip(value, kind) {
     const safeValue = escapeHtml(value);
     return `<span class="cell-chip ${kind}">${safeValue}</span>`;
+  }
+
+  function uniqueValues(values) {
+    return [...new Set((values || []).filter(Boolean))];
+  }
+
+  function formatBoundSummary(rule) {
+    const pieces = [];
+    if (Number.isFinite(rule?.min)) {
+      pieces.push(`min:${rule.min}`);
+    }
+    if (Number.isFinite(rule?.max)) {
+      pieces.push(`max:${rule.max}`);
+    }
+    if (rule?.unit) {
+      pieces.push(`unit:${rule.unit}`);
+    }
+    if (Number.isFinite(rule?.min) || Number.isFinite(rule?.max)) {
+      return pieces.join(' ');
+    }
+    return 'metadata';
+  }
+
+  function formatIdentifierList(values) {
+    const items = uniqueValues(values);
+    if (!items.length) {
+      return '';
+    }
+    return items.join(', ');
+  }
+
+  function buildFieldIndex(source) {
+    const tagToPaths = new Map();
+
+    function walk(node, context = { structuralPath: [] }) {
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+
+      const identifier = node.formId || node.tag || node.alias || node.id || null;
+      const explicitPath = node.aqlPath || node.path || null;
+      const nextStructuralPath = identifier
+        ? [...context.structuralPath, identifier]
+        : context.structuralPath;
+      const structuralPath = nextStructuralPath.length ? nextStructuralPath.join('/') : null;
+      const preferredPath = explicitPath || structuralPath || identifier;
+
+      if (identifier) {
+        if (!tagToPaths.has(identifier)) {
+          tagToPaths.set(identifier, []);
+        }
+        const knownPaths = tagToPaths.get(identifier);
+        if (preferredPath && !knownPaths.includes(preferredPath)) {
+          knownPaths.push(preferredPath);
+        }
+      }
+
+      Object.values(node).forEach((value) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => walk(item, { structuralPath: nextStructuralPath }));
+        } else if (value && typeof value === 'object') {
+          walk(value, { structuralPath: nextStructuralPath });
+        }
+      });
+    }
+
+    walk(source);
+
+    return {
+      allPathsFor(identifier) {
+        if (!identifier) {
+          return [];
+        }
+        return [...(tagToPaths.get(identifier) || [])];
+      },
+      preferredPathFor(identifier) {
+        return this.allPathsFor(identifier)[0] || null;
+      }
+    };
+  }
+
+  function resolveRulePath(fieldIndex, identifier, explicitPath) {
+    const candidates = uniqueValues([
+      explicitPath,
+      ...(fieldIndex?.allPathsFor(identifier) || [])
+    ]);
+
+    return {
+      candidates,
+      primary: candidates[0] || identifier || 'unknown'
+    };
+  }
+
+  function updateRuleTableStatus() {
+    const status = $('rule-table-status');
+    if (!status) {
+      return;
+    }
+
+    if (!discoveredRuleRows.length) {
+      status.textContent = 'No rules discovered in form data.';
+      return;
+    }
+
+    const enabledCount = discoveredRuleRows.filter((row) => row.enabled).length;
+    const modeLabel = ruleGroupModeEl?.value === 'path' ? 'form/template path' : 'kind of test';
+    status.textContent = `${enabledCount} of ${discoveredRuleRows.length} rules enabled. Grouped by ${modeLabel}.`;
+  }
+
+  function buildDiscoveredRuleRows(parsed) {
+    const fieldIndex = parsed?.fieldIndex;
+    const rows = [];
+
+    (parsed?.dependencies || []).forEach((rule, index) => {
+      const triggerPath = resolveRulePath(fieldIndex, rule.trigger, rule.triggerPath);
+      const targetPath = resolveRulePath(fieldIndex, rule.target, rule.targetPath);
+      rows.push({
+        rowId: `logic::${index}`,
+        enabled: true,
+        kind: 'logic',
+        kindLabel: 'logic',
+        scopeSection: 'logic',
+        scopeInput: 'logic',
+        summary: rule.description || `${rule.target || 'target'} when ${rule.trigger || 'trigger'}=${rule.triggerValue}`,
+        trigger: formatIdentifierList([rule.trigger, ...triggerPath.candidates]),
+        subject: formatIdentifierList([rule.target, ...targetPath.candidates]),
+        formPath: targetPath.primary || triggerPath.primary,
+        formPathSort: (targetPath.primary || triggerPath.primary || '').toLowerCase(),
+        sortSummary: (rule.description || '').toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.calculations || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `calc::${index}`,
+        enabled: true,
+        kind: 'calc',
+        kindLabel: 'calc',
+        scopeSection: 'calc',
+        scopeInput: 'calc',
+        summary: `${rule.field || 'field'} = derived expression`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${(rule.expression || '')}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.validations || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `validation::${index}`,
+        enabled: true,
+        kind: 'validation',
+        kindLabel: 'validation',
+        scopeSection: 'validation',
+        scopeInput: 'val',
+        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.valueRanges || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `ranges::${index}`,
+        enabled: true,
+        kind: 'ranges',
+        kindLabel: 'ranges',
+        scopeSection: 'ranges',
+        scopeInput: 'range',
+        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.requiredFields || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `required::${index}`,
+        enabled: true,
+        kind: 'required',
+        kindLabel: 'required',
+        scopeSection: 'required',
+        scopeInput: 'req',
+        summary: `${rule.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${rule.min || 1}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    return rows;
+  }
+
+  function discoveredRuleGroupConfig() {
+    if (ruleGroupModeEl?.value === 'path') {
+      return {
+        groupBy: 'formPath',
+        sorters: [
+          { column: 'formPathSort', dir: 'asc' },
+          { column: 'kindLabel', dir: 'asc' },
+          { column: 'sortSummary', dir: 'asc' }
+        ]
+      };
+    }
+
+    return {
+      groupBy: 'kindLabel',
+      sorters: [
+        { column: 'kindLabel', dir: 'asc' },
+        { column: 'formPathSort', dir: 'asc' },
+        { column: 'sortSummary', dir: 'asc' }
+      ]
+    };
+  }
+
+  function renderDiscoveredRuleTable(rows = discoveredRuleRows) {
+    const container = $('rule-table');
+    if (!container || typeof Tabulator === 'undefined') {
+      updateRuleTableStatus();
+      return;
+    }
+
+    const grouping = discoveredRuleGroupConfig();
+
+    if (discoveredRuleTable) {
+      discoveredRuleTable.destroy();
+      discoveredRuleTable = null;
+      container.innerHTML = '';
+    }
+
+    discoveredRuleTable = new Tabulator(container, {
+      data: rows,
+      layout: 'fitColumns',
+      height: '320px',
+      index: 'rowId',
+      placeholder: 'No rules discovered in form data.',
+      groupBy: grouping.groupBy,
+      groupStartOpen: true,
+      initialSort: grouping.sorters,
+      columns: [
+        {
+          title: '',
+          field: 'enabled',
+          width: 42,
+          hozAlign: 'center',
+          headerSort: false,
+          formatter(cell) {
+            return `<input class="rule-toggle" type="checkbox" ${cell.getValue() ? 'checked' : ''} aria-label="Include rule in generated tests">`;
+          },
+          cellClick(event, cell) {
+            const row = cell.getRow().getData();
+            row.enabled = !row.enabled;
+            cell.setValue(row.enabled, true);
+            updateRuleTableStatus();
+            event.stopPropagation();
+          }
+        },
+        {
+          title: 'Kind',
+          field: 'kindLabel',
+          width: 110,
+          formatter(cell) {
+            const kind = cell.getValue() || 'custom';
+            return renderChip(kind, kind);
+          }
+        },
+        {
+          title: 'Rule summary',
+          field: 'summary',
+          minWidth: 280,
+          formatter(cell) {
+            return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Trigger',
+          field: 'trigger',
+          minWidth: 170,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Target / field',
+          field: 'subject',
+          minWidth: 200,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Form/template path',
+          field: 'formPath',
+          minWidth: 230,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        }
+      ]
+    });
+
+    updateRuleTableStatus();
   }
 
   function sanitizeTestTitle(text) {
@@ -350,6 +752,20 @@
       .replace(/\s+/g, ' ')
       .replace(/["'`]/g, '')
       .trim();
+  }
+
+  function callTypeToExecutionState(callType) {
+    if (callType === 'it.skip') return 'skip';
+    if (callType === 'it.only') return 'only';
+    if (callType === 'describe.skip') return 'skip';
+    if (callType === 'describe.only') return 'only';
+    return 'run';
+  }
+
+  function executionStateToCallType(state, baseType = 'it') {
+    if (state === 'skip') return `${baseType}.skip`;
+    if (state === 'only') return `${baseType}.only`;
+    return baseType;
   }
 
   function quoteSingle(value) {
@@ -415,6 +831,7 @@
 
   function serializeSuiteModel(model) {
     const groupBlocks = (model?.groups || []).map((group) => {
+      const groupCallType = group?.callType || 'describe';
       const innerBlocks = [];
       if (group.tests?.length) {
         innerBlocks.push(group.tests.map((test) => serializeTestCase(test)).join('\n\n'));
@@ -423,15 +840,15 @@
         innerBlocks.push(group.extrasText.trimEnd());
       }
       if (!innerBlocks.length) {
-        return `  describe(${quoteSingle(group.name)}, () => {\n  });`;
+        return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n  });`;
       }
-      return `  describe(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
+      return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
     }).join('\n\n');
     const trailingText = model?.trailingText && model.trailingText.trim() ? `\n\n${model.trailingText.trimEnd()}` : '';
     return `describe(${quoteSingle(model?.suiteName || 'generated-form - autogenerated form tests')}, () => {\n${groupBlocks}${trailingText}\n});\n`;
   }
 
-  function parseGroupBlock(groupName, lines) {
+  function parseGroupBlock(groupName, lines, groupCallType = 'describe') {
     const tests = [];
     const extras = [];
     let index = 0;
@@ -444,7 +861,7 @@
         continue;
       }
 
-      const testMatch = line.match(/^    (it(?:\.skip)?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      const testMatch = line.match(/^    (it(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
       if (!testMatch) {
         extras.push(line);
         index += 1;
@@ -475,6 +892,7 @@
 
     return {
       name: groupName,
+      callType: groupCallType,
       tests,
       extrasText: extras.join('\n').trimEnd()
     };
@@ -509,14 +927,15 @@
         continue;
       }
 
-      const groupMatch = line.match(/^  describe\((['"])(.*?)\1,\s*\(\)\s*=>\s*\{$/);
+      const groupMatch = line.match(/^  (describe(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
       if (!groupMatch) {
         trailing.push(line);
         index += 1;
         continue;
       }
 
-      const groupName = unescapeQuoted(groupMatch[2]);
+      const groupCallType = groupMatch[1] || 'describe';
+      const groupName = unescapeQuoted(groupMatch[3]);
       const groupLines = [];
       index += 1;
 
@@ -529,7 +948,7 @@
         return null;
       }
 
-      const parsedGroup = parseGroupBlock(groupName, groupLines);
+      const parsedGroup = parseGroupBlock(groupName, groupLines, groupCallType);
       if (!parsedGroup) {
         return null;
       }
@@ -554,16 +973,19 @@
       const groupBaseKey = `group::${group.name}`;
       const groupCount = (syncKeyCounts.get(groupBaseKey) || 0) + 1;
       syncKeyCounts.set(groupBaseKey, groupCount);
+      const groupSyncKey = `${groupBaseKey}::${groupCount}`;
+      const previousGroup = previousByKey.get(groupSyncKey);
       rows.push({
-        syncKey: `${groupBaseKey}::${groupCount}`,
+        syncKey: groupSyncKey,
         rowKind: 'group',
         groupName: group.name,
         displayName: group.name,
         type: 'section',
         modified: '',
         result: '',
-        selected: false,
-        testsCount: group.tests.length
+        testsCount: group.tests.length,
+        executionState: previousGroup?.executionState || callTypeToExecutionState(group.callType || 'describe'),
+        callType: group.callType || 'describe'
       });
 
       const testKeyCounts = new Map();
@@ -582,7 +1004,7 @@
           type: inferTestType(test.title, group.name),
           modified: previous?.modified || currentDateStamp(),
           result: previous?.result || 'Not run',
-          selected: previous?.selected || false,
+          executionState: previous?.executionState || callTypeToExecutionState(test.callType || 'it'),
           callType: test.callType || 'it',
           body: test.body || ''
         });
@@ -602,6 +1024,275 @@
     }
 
     return testSuiteTable.getData();
+  }
+
+  function getRunnableTestsFromRows(rows) {
+    const runnableTests = [];
+    const onlyTests = [];
+    let currentGroupState = 'run';
+
+    rows.forEach((row) => {
+      if (row.rowKind === 'group') {
+        currentGroupState = row.executionState || callTypeToExecutionState(row.callType || 'describe');
+        return;
+      }
+
+      if (row.rowKind !== 'test') {
+        return;
+      }
+
+      const testState = row.executionState || callTypeToExecutionState(row.callType || 'it');
+      if (currentGroupState === 'skip' || testState === 'skip') {
+        return;
+      }
+
+      const runnable = { ...row, groupExecutionState: currentGroupState };
+      runnableTests.push(runnable);
+
+      if (currentGroupState === 'only' || testState === 'only') {
+        onlyTests.push(runnable);
+      }
+    });
+
+    return onlyTests.length ? onlyTests : runnableTests;
+  }
+
+  function findRowIndex(rows, targetRow) {
+    const exactIndex = rows.findIndex((row) => row === targetRow);
+    if (exactIndex !== -1) {
+      return exactIndex;
+    }
+    return rows.findIndex((row) => row.syncKey === targetRow.syncKey && row.rowKind === targetRow.rowKind);
+  }
+
+  function getGroupOccurrenceBeforeIndex(rows, groupName, endIndex) {
+    let occurrence = 0;
+    for (let index = 0; index < endIndex; index += 1) {
+      if (rows[index].rowKind === 'group' && rows[index].groupName === groupName) {
+        occurrence += 1;
+      }
+    }
+    return occurrence;
+  }
+
+  function getTestOccurrenceWithinSection(rows, sectionStartIndex, targetIndex, targetRow) {
+    let occurrence = 0;
+    for (let index = sectionStartIndex + 1; index < targetIndex; index += 1) {
+      const row = rows[index];
+      if (row.rowKind !== 'test') {
+        continue;
+      }
+      if (row.groupName === targetRow.groupName && (row.title || row.displayName) === (targetRow.title || targetRow.displayName)) {
+        occurrence += 1;
+      }
+    }
+    return occurrence;
+  }
+
+  function findEditorLineForTableRow(targetRow) {
+    const codeLines = getEditorValue().replace(/\r\n/g, '\n').split('\n');
+    const tableRows = getTableRows();
+    const targetIndex = findRowIndex(tableRows, targetRow);
+
+    if (targetIndex === -1) {
+      return -1;
+    }
+
+    if (targetRow.rowKind === 'group') {
+      const targetOccurrence = getGroupOccurrenceBeforeIndex(tableRows, targetRow.groupName, targetIndex);
+      const groupMatcher = new RegExp(`^\\s{2}${escapeRegExp(targetRow.callType || 'describe')}\\((['"])${escapeRegExp(targetRow.groupName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+      let matches = 0;
+      for (let lineIndex = 0; lineIndex < codeLines.length; lineIndex += 1) {
+        if (!groupMatcher.test(codeLines[lineIndex])) {
+          continue;
+        }
+        if (matches === targetOccurrence) {
+          return lineIndex;
+        }
+        matches += 1;
+      }
+      return -1;
+    }
+
+    let sectionStartIndex = targetIndex - 1;
+    while (sectionStartIndex >= 0 && tableRows[sectionStartIndex].rowKind !== 'group') {
+      sectionStartIndex -= 1;
+    }
+    if (sectionStartIndex < 0) {
+      return -1;
+    }
+
+    const targetGroupOccurrence = getGroupOccurrenceBeforeIndex(tableRows, targetRow.groupName, sectionStartIndex);
+    const targetTestOccurrence = getTestOccurrenceWithinSection(tableRows, sectionStartIndex, targetIndex, targetRow);
+    const groupMatcher = new RegExp(`^\\s{2}describe(?:\\.(?:skip|only))?\\((['"])${escapeRegExp(targetRow.groupName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+    const testMatcher = new RegExp(`^\\s{4}${escapeRegExp(targetRow.callType || 'it')}\\((['"])${escapeRegExp(targetRow.title || targetRow.displayName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+    let groupOccurrence = -1;
+    let withinTargetGroup = false;
+    let testOccurrence = 0;
+
+    for (let lineIndex = 0; lineIndex < codeLines.length; lineIndex += 1) {
+      const line = codeLines[lineIndex];
+      if (groupMatcher.test(line)) {
+        groupOccurrence += 1;
+        withinTargetGroup = groupOccurrence === targetGroupOccurrence;
+        testOccurrence = 0;
+        continue;
+      }
+
+      if (withinTargetGroup && /^  \}\);$/.test(line)) {
+        withinTargetGroup = false;
+      }
+
+      if (withinTargetGroup && testMatcher.test(line)) {
+        if (testOccurrence === targetTestOccurrence) {
+          return lineIndex;
+        }
+        testOccurrence += 1;
+      }
+    }
+
+    return -1;
+  }
+
+  function focusEditorLine(lineIndex) {
+    if (lineIndex < 0) {
+      return false;
+    }
+
+    if (editor && typeof editor.scrollIntoView === 'function') {
+      if (editorHighlightedLine !== null) {
+        editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+      }
+      if (editorHighlightTimer) {
+        window.clearTimeout(editorHighlightTimer);
+      }
+
+      editor.scrollIntoView({ line: lineIndex, ch: 0 }, 80);
+      editor.setCursor({ line: lineIndex, ch: 0 });
+      editor.focus();
+      editor.addLineClass(lineIndex, 'background', 'cm-line-target');
+      editorHighlightedLine = lineIndex;
+      editorHighlightTimer = window.setTimeout(() => {
+        if (editorHighlightedLine !== null) {
+          editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+          editorHighlightedLine = null;
+        }
+      }, 1800);
+      return true;
+    }
+
+    const fallback = $('code-preview');
+    const value = String(fallback?.value || '');
+    if (!fallback || !value) {
+      return false;
+    }
+    const lines = value.replace(/\r\n/g, '\n').split('\n');
+    const start = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
+    const end = start + (lines[lineIndex] || '').length;
+    fallback.focus();
+    fallback.setSelectionRange(start, end);
+    return true;
+  }
+
+  function jumpToEditorRow(row) {
+    const lineIndex = findEditorLineForTableRow(row);
+    if (!focusEditorLine(lineIndex)) {
+      setTableSyncStatus('Could not locate that test or section in the code editor.', 'warn');
+      return;
+    }
+    setTableSyncStatus(`Jumped to ${row.rowKind === 'group' ? 'section' : 'test'} '${row.title || row.groupName || row.displayName}'.`, 'ok');
+  }
+
+  function formatActionTarget(target) {
+    if (typeof target === 'string') {
+      return target;
+    }
+    try {
+      return JSON.stringify(target);
+    } catch (_error) {
+      return String(target);
+    }
+  }
+
+  function renderRunResultsHTML(results, runId) {
+    const okCount = results.filter((result) => result.ok).length;
+    const failCount = results.length - okCount;
+    const groups = new Map();
+
+    results.forEach((result) => {
+      const groupName = result.action?.meta?.groupName || '';
+      const testTitle = result.action?.meta?.testTitle || 'ungrouped';
+      const groupKey = `${groupName}::${testTitle}`;
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { groupName, testTitle, items: [] });
+      }
+      groups.get(groupKey).items.push(result);
+    });
+
+    const groupHtml = Array.from(groups.values()).map((group) => {
+      const title = `${group.groupName ? `${escapeHtml(group.groupName)} / ` : ''}${escapeHtml(group.testTitle)}`;
+      const items = group.items.map((result) => {
+        const badgeClass = result.ok ? 'result-ok' : 'result-fail';
+        const actionText = escapeHtml(`${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`);
+        const details = result.message ? `<div class="result-msg">${escapeHtml(String(result.message))}</div>` : '';
+        return `<li class="result-item"><div class="result-badge ${badgeClass}">${result.ok ? 'OK' : 'FAIL'}</div><div><div class="result-action">${actionText}</div>${details}</div></li>`;
+      }).join('');
+      return `<div class="run-group"><div class="run-group-title">${title}</div><ul class="results-list">${items}</ul></div>`;
+    }).join('');
+
+    return `<div class="run-summary"><div class="run-summary-title">Run ${escapeHtml(String(runId))} complete: <span class="ok">${okCount} OK</span> / <span class="warn">${failCount} FAIL</span> (${results.length} actions)</div><button class="btn small" id="open-report-${runId}" type="button">Open full report</button></div><div class="run-groups">${groupHtml}</div>`;
+  }
+
+  function openFullReportWindow(results, runId) {
+    try {
+      const reportWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!reportWindow) {
+        return;
+      }
+
+      const doc = reportWindow.document;
+      const okCount = results.filter((result) => result.ok).length;
+      const failCount = results.length - okCount;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Test Report</title><style>body{font-family:Arial,Helvetica,sans-serif;margin:16px;background:#f7fafc;color:#111827}pre{background:#fff;border:1px solid #e6eef6;padding:12px;border-radius:6px;overflow:auto}h1{font-size:1.1rem;margin:0 0 8px}.summary{margin-bottom:12px}.entry{padding:8px 0;border-bottom:1px solid #e6eef6}.entry-title{font-weight:600}.entry-action{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:6px}.entry-message{color:#6b7280;margin-top:6px}</style></head><body><h1>Test Report ${escapeHtml(String(runId))}</h1><div class="summary">Actions: ${results.length} | OK: ${okCount} | FAIL: ${failCount}</div><h2>Formatted results</h2><div id="formatted"></div><h2>Raw JSON</h2><pre id="raw"></pre></body></html>`;
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      const formatted = doc.getElementById('formatted');
+      const raw = doc.getElementById('raw');
+      if (raw) {
+        raw.textContent = JSON.stringify(results, null, 2);
+      }
+      if (formatted) {
+        results.forEach((result) => {
+          const entry = doc.createElement('div');
+          entry.className = 'entry';
+
+          const title = doc.createElement('div');
+          title.className = 'entry-title';
+          title.textContent = `${result.action?.meta?.groupName ? `${result.action.meta.groupName} / ` : ''}${result.action?.meta?.testTitle || 'ungrouped'}`;
+
+          const action = doc.createElement('div');
+          action.className = 'entry-action';
+          action.textContent = `${result.ok ? 'OK' : 'FAIL'}: ${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`;
+
+          entry.appendChild(title);
+          entry.appendChild(action);
+
+          if (result.message) {
+            const message = doc.createElement('div');
+            message.className = 'entry-message';
+            message.textContent = String(result.message);
+            entry.appendChild(message);
+          }
+
+          formatted.appendChild(entry);
+        });
+      }
+    } catch (error) {
+      console.error('openFullReportWindow error', error);
+      alert('Failed to open report window');
+    }
   }
 
   function findSectionRange(rows, groupName, occurrenceIndex) {
@@ -692,9 +1383,7 @@
   }
 
   function updateActionButtons() {
-    const rows = getTableRows();
-    const selectedRows = rows.filter((row) => row.rowKind === 'test' && row.selected);
-    $('run-btn').disabled = selectedRows.length === 0;
+    $('run-btn').disabled = false;
     $('export-btn').disabled = !getEditorValue().trim();
   }
 
@@ -720,7 +1409,7 @@
       placeholder: 'Generate tests or edit the Cypress code to populate the table.',
       rowHeader: {
         rowHandle: true,
-        formatter: () => '<span class="drag-handle-cell">⋮⋮</span>',
+        formatter: () => '<span class="drag-handle-cell">Ôï«Ôï«</span>',
         width: 34,
         hozAlign: 'center',
         headerSort: false,
@@ -728,26 +1417,37 @@
       },
       columns: [
         {
-          title: '',
-          field: 'selected',
-          width: 42,
+          title: 'State',
+          field: 'executionState',
+          width: 118,
           hozAlign: 'center',
           headerSort: false,
           formatter(cell) {
             const row = cell.getData();
-            if (row.rowKind !== 'test') {
-              return '';
-            }
-            return `<input class="row-select-toggle" type="checkbox" ${row.selected ? 'checked' : ''} aria-label="Select test row">`;
+            const baseType = row.rowKind === 'group' ? 'describe' : 'it';
+            const current = row.executionState || callTypeToExecutionState(row.callType || baseType);
+            const label = row.rowKind === 'group' ? 'Suite execution state' : 'Test execution state';
+            return `<div class="test-state-control" aria-label="${label}">`
+              + `<button class="test-state-btn ${current === 'skip' ? 'is-selected' : ''}" data-state="skip" type="button">skip</button>`
+              + `<button class="test-state-btn ${current === 'run' ? 'is-selected' : ''}" data-state="run" type="button">run</button>`
+              + `<button class="test-state-btn ${current === 'only' ? 'is-selected' : ''}" data-state="only" type="button">only</button>`
+              + `</div>`;
           },
           cellClick(event, cell) {
             const row = cell.getRow().getData();
-            if (row.rowKind !== 'test') {
+            if (row.rowKind !== 'test' && row.rowKind !== 'group') {
               return;
             }
-            row.selected = !row.selected;
-            cell.setValue(row.selected, true);
+            const button = event.target.closest('[data-state]');
+            if (!button) {
+              return;
+            }
+            const nextState = button.dataset.state;
+            row.executionState = nextState;
+            row.callType = executionStateToCallType(nextState, row.rowKind === 'group' ? 'describe' : 'it');
+            cell.getRow().update({ executionState: nextState, callType: row.callType });
             updateActionButtons();
+            syncEditorFromTable(`Updated ${row.rowKind === 'group' ? 'suite' : 'test'} state to '${nextState}' for '${row.title || row.displayName}'.`);
             event.stopPropagation();
           }
         },
@@ -758,9 +1458,16 @@
           formatter(cell) {
             const row = cell.getData();
             if (row.rowKind === 'group') {
-              return `<span class="group-name-cell">describe(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
+              return `<span class="group-name-cell jump-to-code">${escapeHtml(row.callType || 'describe')}(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
             }
-            return escapeHtml(row.displayName || '');
+            return `<span class="jump-to-code">${escapeHtml(row.displayName || '')}</span>`;
+          },
+          cellClick(event, cell) {
+            if (!event.target.closest('.jump-to-code')) {
+              return;
+            }
+            jumpToEditorRow(cell.getData());
+            event.stopPropagation();
           }
         },
         {
@@ -859,6 +1566,7 @@
         const extrasQueue = extrasByName.get(row.groupName) || [];
         currentGroup = {
           name: row.groupName,
+          callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'describe'), 'describe'),
           tests: [],
           extrasText: extrasQueue.shift() || ''
         };
@@ -877,7 +1585,7 @@
 
       currentGroup.tests.push({
         title: row.title || row.displayName,
-        callType: row.callType || 'it',
+        callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'it'), 'it'),
         body: row.body || ''
       });
     });
@@ -972,7 +1680,8 @@
   function collectParsed(node, parsed, context = {}) {
     if (!node || typeof node !== 'object') return;
     const currentTag = node.formId || node.tag || node.alias || node.id || context.currentTag || null;
-    parsed.fields.add(currentTag || 'unknown');
+    const currentPath = node.aqlPath || node.path || context.currentPath || null;
+    parsed.fields.add(currentTag || currentPath || 'unknown');
 
     const conditionsPayload = node?.viewConfig?.annotations?.conditions;
     if (conditionsPayload) {
@@ -985,7 +1694,12 @@
           const target = action.target;
           const triggerValue = normalizeConditionValue(statement?.condition?.value?.value ?? statement?.condition?.value);
           if (trigger && target) {
-            parsed.dependencies.push({ trigger, target, triggerValue, description: `${target} when ${trigger}=${triggerValue}` });
+            parsed.dependencies.push({
+              trigger,
+              target,
+              triggerValue,
+              description: `${target} when ${trigger}=${triggerValue}`
+            });
           }
         });
       } catch (_e) {}
@@ -993,28 +1707,28 @@
 
     const range = node?.validation?.range;
     if (range && (Number.isFinite(range.min) || Number.isFinite(range.max))) {
-      parsed.validations.push({ field: currentTag, min: range.min ?? null, max: range.max ?? null });
-      parsed.valueRanges.push({ field: currentTag, min: range.min ?? null, max: range.max ?? null });
+      parsed.validations.push({ field: currentTag, fieldPath: currentPath, min: range.min ?? null, max: range.max ?? null });
+      parsed.valueRanges.push({ field: currentTag, fieldPath: currentPath, min: range.min ?? null, max: range.max ?? null });
     }
     (node.inputs || []).forEach((input) => {
       const r = input?.validation?.range;
       if (r && (Number.isFinite(r.min) || Number.isFinite(r.max))) {
-        parsed.validations.push({ field: currentTag, min: r.min ?? null, max: r.max ?? null });
-        parsed.valueRanges.push({ field: currentTag, min: r.min ?? null, max: r.max ?? null });
+        parsed.validations.push({ field: currentTag, fieldPath: currentPath, min: r.min ?? null, max: r.max ?? null, suffix: input?.suffix || null });
+        parsed.valueRanges.push({ field: currentTag, fieldPath: currentPath, min: r.min ?? null, max: r.max ?? null, suffix: input?.suffix || null });
       }
     });
 
-    if (Number.isFinite(node.min) && node.min > 0) parsed.requiredFields.push({ field: currentTag, min: node.min });
+    if (Number.isFinite(node.min) && node.min > 0) parsed.requiredFields.push({ field: currentTag, fieldPath: currentPath, min: node.min });
 
     Object.entries(node).forEach(([key, value]) => {
       if (/calculation|formula|derived/i.test(key) && value) {
-        parsed.calculations.push({ field: currentTag, expression: typeof value === 'string' ? value : JSON.stringify(value) });
+        parsed.calculations.push({ field: currentTag, fieldPath: currentPath, expression: typeof value === 'string' ? value : JSON.stringify(value) });
       }
     });
 
     Object.values(node).forEach((value) => {
-      if (Array.isArray(value)) value.forEach((item) => collectParsed(item, parsed, { currentTag }));
-      else if (value && typeof value === 'object') collectParsed(value, parsed, { currentTag });
+      if (Array.isArray(value)) value.forEach((item) => collectParsed(item, parsed, { currentTag, currentPath }));
+      else if (value && typeof value === 'object') collectParsed(value, parsed, { currentTag, currentPath });
     });
   }
 
@@ -1027,7 +1741,8 @@
       calculations: [],
       validations: [],
       valueRanges: [],
-      requiredFields: []
+      requiredFields: [],
+      fieldIndex: buildFieldIndex(source)
     };
     collectParsed(source, parsed);
     return parsed;
@@ -1044,24 +1759,20 @@
   }
 
   function renderRules(parsed) {
-    ruleList.innerHTML = '';
-    const entries = [
-      ...parsed.dependencies.slice(0, 25).map((r) => ({ kind: 'logic', text: r.description })),
-      ...parsed.calculations.slice(0, 10).map((r) => ({ kind: 'calc', text: `${r.field} = derived expression` })),
-      ...parsed.validations.slice(0, 15).map((r) => ({ kind: 'validation', text: `${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}` }))
-    ];
-    entries.forEach((entry) => {
-      const item = document.createElement('div');
-      item.className = 'rule-item';
-      item.innerHTML = `${renderChip(entry.kind, entry.kind)}<span class="rule-item-text">${escapeHtml(entry.text)}</span>`;
-      ruleList.appendChild(item);
-    });
-    if (!entries.length) {
-      const empty = document.createElement('div');
-      empty.className = 'rule-empty';
-      empty.textContent = 'No rules discovered in form data.';
-      ruleList.appendChild(empty);
-    }
+    discoveredRuleRows = buildDiscoveredRuleRows(parsed);
+    renderDiscoveredRuleTable(discoveredRuleRows);
+  }
+
+  function buildEnabledParsed(parsed) {
+    const enabledIds = new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId));
+    return {
+      ...parsed,
+      dependencies: (parsed.dependencies || []).filter((_rule, index) => enabledIds.has(`logic::${index}`)),
+      calculations: (parsed.calculations || []).filter((_rule, index) => enabledIds.has(`calc::${index}`)),
+      validations: (parsed.validations || []).filter((_rule, index) => enabledIds.has(`validation::${index}`)),
+      valueRanges: (parsed.valueRanges || []).filter((_rule, index) => enabledIds.has(`ranges::${index}`)),
+      requiredFields: (parsed.requiredFields || []).filter((_rule, index) => enabledIds.has(`required::${index}`))
+    };
   }
 
   function buildLogicTests(parsed) {
@@ -1249,6 +1960,7 @@
   }
 
   function buildCode(parsed) {
+    const filteredParsed = buildEnabledParsed(parsed);
     const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
       const action = step.querySelector('.step-action').value;
       const field = step.querySelector('.step-field').value;
@@ -1262,19 +1974,19 @@
     const categories = selectedCategories();
 
     if (categories.includes('logic')) {
-      groups.push({ name: 'logic', tests: buildLogicTests(parsed), extrasText: '' });
+      groups.push({ name: 'logic', tests: buildLogicTests(filteredParsed), extrasText: '' });
     }
     if (categories.includes('calc')) {
-      groups.push({ name: 'calc', tests: buildCalcTests(parsed), extrasText: '' });
+      groups.push({ name: 'calc', tests: buildCalcTests(filteredParsed), extrasText: '' });
     }
     if (categories.includes('validation')) {
-      groups.push({ name: 'validation', tests: buildValidationTests(parsed), extrasText: '' });
+      groups.push({ name: 'validation', tests: buildValidationTests(filteredParsed), extrasText: '' });
     }
     if (categories.includes('ranges')) {
-      groups.push({ name: 'ranges', tests: buildRangeTests(parsed), extrasText: '' });
+      groups.push({ name: 'ranges', tests: buildRangeTests(filteredParsed), extrasText: '' });
     }
     if (categories.includes('required')) {
-      groups.push({ name: 'required', tests: buildRequiredTests(parsed), extrasText: '' });
+      groups.push({ name: 'required', tests: buildRequiredTests(filteredParsed), extrasText: '' });
     }
 
     preservedCustomGroups.forEach((group) => groups.push(group));
@@ -1299,8 +2011,8 @@
       </select>
       <input class="step-field path" type="text" placeholder="field/tag/aqlPath" value="${field}">
       <input class="step-value" type="text" placeholder="value" value="${value}">
-      <button class="btn small browse-field-btn" type="button" title="Browse form fields">🔍</button>
-      <button class="btn" type="button">✕</button>`;
+      <button class="btn small browse-field-btn" type="button" title="Browse form fields">­ƒöì</button>
+      <button class="btn" type="button">Ô£ò</button>`;
     
     const actionSelect = row.querySelector('.step-action');
     const browseBtn = row.querySelector('.browse-field-btn');
@@ -1362,7 +2074,7 @@
       <div class="row">
         <input class="range-field" type="text" placeholder="field/tag/aqlPath" value="${field}">
         <input class="range-unit" type="text" placeholder="unit (optional)" value="${unit}">
-        <button class="btn" type="button">✕</button>
+        <button class="btn" type="button">Ô£ò</button>
       </div>
       <div class="row"><input class="range-valid" type="text" placeholder="valid samples" value="${valid}"></div>
       <div class="row"><input class="range-invalid" type="text" placeholder="invalid samples" value="${invalid}"></div>`;
@@ -1583,14 +2295,18 @@
   });
 
   $('generate-btn').addEventListener('click', regenerateCode);
+  ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
   $('run-btn').addEventListener('click', () => {
-    const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
-    if (!selectedTests.length) return;
+    const runnableTests = getRunnableTestsFromRows(getTableRows());
+    if (!runnableTests.length) {
+      $('last-run').textContent = 'No runnable actions found in active tests.';
+      return;
+    }
 
     // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
     const allActions = [];
-    selectedTests.forEach((t) => {
+    runnableTests.forEach((t) => {
       const body = t.body || '';
       const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
       lines.forEach((ln) => {
@@ -1599,20 +2315,20 @@
           try {
             const target = JSON.parse(m[1]);
             const value = JSON.parse(m[2]);
-            allActions.push({ type: 'fill', target, value });
+            allActions.push({ type: 'fill', target, value, meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } });
           } catch (e) { /* ignore parse errors */ }
         } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         }
       });
     });
 
     if (!allActions.length) {
-      $('last-run').textContent = `No runnable actions found in selected tests.`;
+      $('last-run').textContent = 'No runnable actions found in active tests.';
       return;
     }
 
@@ -1631,8 +2347,17 @@
         if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
         window.removeEventListener('message', resultHandler);
         const results = event.data.payload?.results || [];
-        const summary = results.map((r, i) => `${r.ok ? 'OK' : 'FAIL'}: ${r.action.type} ${r.action.target}`).join('; ');
-        $('last-run').textContent = `Run complete: ${summary}`;
+        const completedRunId = event.data.payload?.runId || runId;
+        try {
+          $('last-run').innerHTML = renderRunResultsHTML(results, completedRunId);
+          const reportButton = document.getElementById(`open-report-${completedRunId}`);
+          if (reportButton) {
+            reportButton.addEventListener('click', () => openFullReportWindow(results, completedRunId));
+          }
+        } catch (error) {
+          $('last-run').textContent = `Run complete: ${results.length} actions (see console for details).`;
+          console.error('[Tester] Error rendering run results', error, results);
+        }
       };
 
       window.addEventListener('message', resultHandler);
