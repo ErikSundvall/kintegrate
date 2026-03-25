@@ -54,6 +54,23 @@
         background: #43a047;
       }
     </style>
+      <style>
+        /* Tooltip for specific design nodes (multiline support) */
+        #kintegrate-tooltip {
+          position: fixed;
+          z-index: 2000;
+          background: rgba(0,0,0,0.85);
+          color: #fff;
+          padding: 6px 8px;
+          border-radius: 4px;
+          max-width: 28rem;
+          white-space: pre-wrap; /* allow multiline */
+          font-size: 13px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          pointer-events: none;
+          display: none;
+        }
+      </style>
 
 
   </head>
@@ -2217,6 +2234,71 @@ Närvarolista i ankomstordning:
         // - runConversion() if autoConvertEnabled
         
         console.log('[Main] Input updated from composition');
+      
+        // --- Tooltip for Test / section cells ---
+        (function() {
+          let tooltipEl = null;
+          let currentTarget = null;
+
+          function ensureTooltip() {
+            if (!tooltipEl) {
+              tooltipEl = document.createElement('div');
+              tooltipEl.id = 'kintegrate-tooltip';
+              document.body.appendChild(tooltipEl);
+            }
+          }
+
+          function decodeHtmlEntities(str) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = str || '';
+            return tmp.textContent || tmp.innerText || '';
+          }
+
+          function showTooltipFor(el, clientX, clientY) {
+            ensureTooltip();
+            // Use explicit data-tooltip if present, otherwise fall back to attributes/text
+            let text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('aria-label') || (el.textContent || '').trim();
+            if (!text) return;
+            // decode any HTML entities produced by escaping in the formatter
+            text = decodeHtmlEntities(text);
+            tooltipEl.textContent = text;
+            tooltipEl.style.display = 'block';
+            const offset = 10;
+            tooltipEl.style.left = (clientX + offset) + 'px';
+            tooltipEl.style.top = (clientY + offset) + 'px';
+          }
+
+          function hideTooltip() {
+            if (tooltipEl) tooltipEl.style.display = 'none';
+            currentTarget = null;
+          }
+
+          // Delegate hover handling to elements with class .test-section-cell
+          document.addEventListener('mouseover', (ev) => {
+            const el = ev.target.closest('.test-section-cell');
+            if (!el) return;
+            currentTarget = el;
+            showTooltipFor(el, ev.clientX, ev.clientY);
+          }, true);
+
+          document.addEventListener('mousemove', (ev) => {
+            if (!currentTarget) return;
+            const offset = 10;
+            tooltipEl.style.left = (ev.clientX + offset) + 'px';
+            tooltipEl.style.top = (ev.clientY + offset) + 'px';
+          }, true);
+
+          document.addEventListener('mouseout', (ev) => {
+            if (!currentTarget) return;
+            const related = ev.relatedTarget;
+            if (!related || !currentTarget.contains(related)) {
+              hideTooltip();
+            }
+          }, true);
+
+          window.addEventListener('scroll', hideTooltip, true);
+          window.addEventListener('resize', hideTooltip);
+        })();
       };
 
       }); // DOMContentLoaded

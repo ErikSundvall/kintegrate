@@ -248,7 +248,9 @@
       <h1>Form Viewer</h1>
       <span id="form-name">No form loaded</span>
       <span id="sync-indicator" class="sync-off">⏸ Sync: OFF</span>
-      <span id="status">Ready</span>
+      <span id="status">Ready</span>¨
+      <button id="open-tester-btn" title="Open Form Tester" disabled style="margin-left:8px;padding:6px 10px;">🧪 Open Tester</button>
+
     </div>
     
     <!-- Server Configuration Panel (shown in server mode) -->
@@ -302,8 +304,7 @@
           </svg>
           Load Form
         </button>
-      </div>
-      
+      </div>      
       
       <span class="separator"></span>
       
@@ -832,6 +833,11 @@
           getDataBtn.disabled = false;
           clearBtn.disabled = false;
           console.log('Form rendered successfully');
+          // Enable Open Tester button now that the renderer has finished rendering
+          try {
+            const __btn = document.getElementById('open-tester-btn');
+            if (__btn) __btn.disabled = false;
+          } catch (e) { /* ignore */ }
           installFormTestApi();
         });
 
@@ -899,6 +905,7 @@
             requestAnimationFrame(() => {
               formRenderer.webTemplate = formData.formDescription;
             });
+          if (openTesterBtn) openTesterBtn.disabled = false;
           } else {
             showError('No form description provided');
           }
@@ -976,6 +983,55 @@
             console.log('[Popup] Sync mode:', syncModeEnabled ? 'ON' : 'OFF');
             // Update visual indicator
             updateSyncIndicator();
+            break;
+
+          // Execute test actions sent from tester window
+          case 'TEST_ACTIONS':
+            (async () => {
+              const actions = event.data.payload?.actions || [];
+              const results = [];
+              try {
+                const api = formRenderer.getScriptApi?.();
+                for (const act of actions) {
+                  if (act.type === 'fill') {
+                    try {
+                      await api?.setFieldValue?.(act.target, act.value);
+                      results.push({ action: act, ok: true });
+                    } catch (e) {
+                      results.push({ action: act, ok: false, error: e?.message || String(e) });
+                    }
+                  } else if (act.type === 'expectVisible' || act.type === 'expectHidden') {
+                    try {
+                      const model = api?.getFieldModel?.(act.target);
+                      const hidden = model?.isHidden ?? null;
+                      const wantHidden = act.type === 'expectHidden';
+                      const ok = hidden === wantHidden || (hidden === null && model ? !wantHidden : false);
+                      results.push({ action: act, ok });
+                    } catch (e) {
+                      results.push({ action: act, ok: false, error: e?.message || String(e) });
+                    }
+                  } else if (act.type === 'expectValue') {
+                    try {
+                      const val = await api?.getFieldValue?.(act.target, undefined, undefined, undefined, true);
+                      const ok = String(val) === String(act.value);
+                      results.push({ action: act, ok, actual: val });
+                    } catch (e) {
+                      results.push({ action: act, ok: false, error: e?.message || String(e) });
+                    }
+                  } else {
+                    results.push({ action: act, ok: false, error: 'Unknown action type' });
+                  }
+                  // Small delay between actions to let UI update
+                  await new Promise((r) => setTimeout(r, 120));
+                }
+              } catch (err) {
+                console.error('[Popup] Error executing test actions:', err);
+              }
+              // Reply with results
+              try {
+                (event.source || window.opener)?.postMessage({ type: 'TEST_ACTIONS_RESULT', payload: { results } }, '*');
+              } catch (e) { /* ignore */ }
+            })();
             break;
             
           case 'REQUEST_COMPOSITION':
@@ -1108,6 +1164,7 @@
       
       const loadFormBtn = document.getElementById('load-form-btn');
       const formPackageInput = document.getElementById('form-package-input');
+      const openTesterBtn = document.getElementById('open-tester-btn');
       
       loadFormBtn?.addEventListener('click', () => {
         formPackageInput?.click();
@@ -1136,7 +1193,20 @@
         
         // Reset file input so same file can be loaded again
         formPackageInput.value = '';
+        if (openTesterBtn) openTesterBtn.disabled = !formLoaded;
       });
+
+      // Open the Cypress form tester window and send current form data
+      if (openTesterBtn) {
+        openTesterBtn.addEventListener('click', () => {
+          if (!formLoaded || !currentFormData) return;
+          const win = window.open(new URL('cypress-form-tester.html', window.location.href), '_blank');
+          if (!win) return;
+          const payload = { type: 'loadForm', formData: currentFormData, hideSelector: true };
+          // Send after small delay to ensure the new window is ready to receive messages
+          setTimeout(() => win.postMessage(payload, '*'), 250);
+        });
+      }
       
       async function loadFormPackageZip(file) {
         console.log('[Popup] Loading ZIP file:', file.name);
@@ -1288,6 +1358,16 @@
           });
           console.log('[Popup] TemplateId:', manifest.templateId);
           console.log('[Popup] Templates:', templates);
+
+          // Store a normalized currentFormData object so other windows (tester) can receive it
+          currentFormData = {
+            formDescription: formDescription,
+            formEnvironment: formEnvironment,
+            templates: templates,
+            formLayout: formLayout,
+            manifest: { name: manifest.name, version: manifest.version, templateId: manifest.templateId },
+            bundle: formBundle
+          };
           
           // IMPORTANT: The renderer's webTemplate setter actually expects form-description format!
           // From analyzing form-renderer.js:
