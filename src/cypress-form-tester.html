@@ -13,7 +13,7 @@
     body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; overflow-x:hidden; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas:"discovery editor" "builder suite"; gap:1rem; padding:1rem; align-items:start; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas:"discovery suite" "builder editor"; gap:1rem; padding:1rem; align-items:start; }
     .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; overflow:hidden; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
@@ -66,11 +66,10 @@
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .test-grid-wrap { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
-    .suite-footer { display:grid; gap:0; margin-top:0.7rem; }
+    .suite-panel-body { display:flex; flex-direction:column; gap:0.8rem; }
+    .suite-tools { display:flex; flex-direction:column; gap:0.8rem; padding-top:0.8rem; border-top:1px solid #e6ebf0; }
     .table-actions { margin-top:0.7rem; margin-bottom:0; }
-    .suite-footer .table-actions { margin-top:0; }
     .table-sync-status { margin-top:0.45rem; }
-    .suite-footer .table-sync-status { display:none; }
     #test-suite-grid { min-height:320px; width:100%; max-width:100%; min-width:0; border:1px solid var(--line); border-radius:6px; overflow:auto; }
     #test-suite-grid .tabulator { border:none; background:#fff; font-size:0.82rem; }
     #test-suite-grid .tabulator,
@@ -106,6 +105,8 @@
     .target-config input { width:100%; min-width:0; }
     .target-actions { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
     .target-buttons { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+    .runner-buttons { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+    .editor-result-panel { margin-top:auto; }
     .storage-note { margin:0; }
     #form-discovery-panel { grid-area:discovery; }
     #custom-test-builder-panel { grid-area:builder; }
@@ -113,7 +114,7 @@
     #test-suite-panel { grid-area:suite; }
 
     @media (max-width: 980px) {
-      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "editor" "suite" "builder"; }
+      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "suite" "builder" "editor"; }
       .target-config { grid-template-columns:1fr; }
     }
     .CodeMirror .cm-line-target { background:#fff4e8; }
@@ -251,15 +252,26 @@
       <h2>Test suite / list</h2>
       <button class="btn" id="add-group-btn">Add Group</button>
     </div>
-    <div class="panel-body test-grid-wrap">
+    <div class="panel-body test-grid-wrap suite-panel-body">
       <div id="test-suite-grid"></div>
-      <div class="suite-footer">
-        <div class="row table-actions">
-          <button class="btn" id="run-btn">Run active tests</button>
-          <button class="btn" id="export-btn">Export .cy.js</button>
+      <div id="table-sync-status" class="small table-sync-status" hidden>Table will mirror grouped tests from the code editor.</div>
+      <div class="suite-tools">
+        <div id="code-editor-wrap">
+          <textarea id="code-preview"></textarea>
         </div>
-        <div id="table-sync-status" class="small table-sync-status" hidden>Table will mirror grouped tests from the code editor.</div>
-        <div class="results" id="last-run">Last run: not executed.</div>
+        <div class="target-config">
+          <input type="text" id="gh-owner" placeholder="owner" size="11">
+          <input type="text" id="gh-repo" placeholder="repo" size="11">
+          <input type="text" id="gh-branch" placeholder="branch" value="main" size="7">
+          <input type="text" id="gh-folder" placeholder="folder" value="cypress/e2e/generated" size="22">
+        </div>
+        <div class="target-actions">
+          <div class="target-buttons">
+            <button class="btn" id="save-target">Save target</button>
+            <button class="btn" id="load-target">Load latest</button>
+          </div>
+        </div>
+        <p class="small storage-note">Saved targets are stored in browser localStorage (last 10).</p>
       </div>
     </div>
   </section>
@@ -293,26 +305,17 @@
 
   <section class="panel" id="code-editor-panel">
     <div class="panel-header">
-      <h2>GitHub target + Code editor</h2>
+      <h2>Test runner</h2>
     </div>
     <div class="panel-body editor-panel-body">
-      <div id="code-editor-wrap">
-        <textarea id="code-preview"></textarea>
-      </div>
-      <div class="target-config">
-        <input type="text" id="gh-owner" placeholder="owner" size="11">
-        <input type="text" id="gh-repo" placeholder="repo" size="11">
-        <input type="text" id="gh-branch" placeholder="branch" value="main" size="7">
-        <input type="text" id="gh-folder" placeholder="folder" value="cypress/e2e/generated" size="22">
-      </div>
-      <div class="target-actions">
-        <div class="target-buttons">
-          <button class="btn" id="save-target">Save target</button>
-          <button class="btn" id="load-target">Load latest</button>
+      <div class="row table-actions">
+        <div class="runner-buttons">
+          <button class="btn" id="run-btn">Run active tests</button>
+          <button class="btn" id="export-btn">Export .cy.js</button>
           <button class="btn" id="open-editor">Open in separate window</button>
         </div>
       </div>
-      <p class="small storage-note">Saved targets are stored in browser localStorage (last 10).</p>
+      <div class="results editor-result-panel" id="last-run">Last run: not executed.</div>
     </div>
   </section>
 </div>
