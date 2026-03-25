@@ -81,7 +81,28 @@
     .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
-    .row-select-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
+    .test-state-btn { border:none; border-right:1px solid var(--line); background:#fff; color:#6b7280; font-size:0.65rem; line-height:1; padding:5px 7px; min-width:32px; cursor:pointer; }
+    .test-state-btn:last-child { border-right:none; }
+    .test-state-btn.is-selected[data-state="skip"] { background:#f3f4f6; color:#6b7280; }
+    .test-state-btn.is-selected[data-state="run"] { background:#eef7ee; color:#2e7d32; }
+    .test-state-btn.is-selected[data-state="only"] { background:#fff4e8; color:#ed6c02; }
+    .test-state-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:-2px; }
+    .jump-to-code { cursor:pointer; }
+    .CodeMirror .cm-line-target { background:#fff4e8; }
+    .run-summary { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.45rem; }
+    .run-summary-title { font-weight:700; }
+    .run-groups { display:flex; flex-direction:column; gap:0.5rem; }
+    .run-group { border-top:1px solid #e6eef6; padding-top:0.45rem; }
+    .run-group:first-child { border-top:none; padding-top:0; }
+    .run-group-title { font-weight:600; margin-bottom:0.25rem; }
+    .results-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.35rem; }
+    .result-item { display:grid; grid-template-columns:auto 1fr; gap:0.5rem; align-items:start; }
+    .result-badge { min-width:48px; text-align:center; border-radius:999px; padding:2px 8px; font-size:0.68rem; font-weight:700; }
+    .result-ok { background:#eef7ee; color:#2e7d32; }
+    .result-fail { background:#fff4e8; color:#ed6c02; }
+    .result-action { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .result-msg { color:#6b7280; margin-top:0.15rem; }
     .cell-chip { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px; font-size:0.68rem; line-height:1.2; white-space:nowrap; }
     .cell-chip.logic, .cell-chip.recorded { background:#e8f1fd; color:#1976d2; }
     .cell-chip.calc { background:#eef7ee; color:#2e7d32; }
@@ -207,7 +228,7 @@
       <div id="test-suite-grid"></div>
       <div class="row table-actions">
         <button class="btn" id="export-btn" disabled>Export .cy.js</button>
-        <button class="btn" id="run-btn" disabled>Run selected tests</button>
+        <button class="btn" id="run-btn" disabled>Run active tests</button>
       </div>
       <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
       <div class="results" id="last-run">Last run: not executed.</div>
@@ -305,6 +326,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 <script src="vendor/tabulator/tabulator.min.js"></script>
+<script src="test-generation-core.js"></script>
 <script>
 (() => {
   const storageKey = 'kintegrate.cypressTester.targets';
@@ -315,11 +337,14 @@
   let currentFieldInput = null;
   let formRawData = null;
   let testSuiteTable = null;
+  let discoveredRuleTable = null;
+  let discoveredRuleRows = [];
   let editorSyncTimer = null;
   let suppressEditorSync = false;
   let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
-  let discoveredRuleTable = null;
+  let editorHighlightedLine = null;
+  let editorHighlightTimer = null;
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
@@ -327,6 +352,8 @@
   const ruleTableStatusEl = $('rule-table-status');
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
+  const ruleGroupModeEl = $('rule-group-mode');
+  const generationCore = window.TestGenerationCore || null;
   const categoryAliases = {
     logic: 'logic',
     dependencies: 'logic',
@@ -363,13 +390,338 @@
     return `<span class="cell-chip ${kind}">${safeValue}</span>`;
   }
 
-  function setRuleTableStatus(message, kind = 'small') {
+  function escapeRegExp(value) {
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function uniqueValues(values) {
+    return [...new Set((values || []).filter(Boolean))];
+  }
+
+  function formatBoundSummary(rule) {
+    const pieces = [];
+    if (Number.isFinite(rule?.min)) {
+      pieces.push(`min:${rule.min}`);
+    }
+    if (Number.isFinite(rule?.max)) {
+      pieces.push(`max:${rule.max}`);
+    }
+    if (rule?.unit) {
+      pieces.push(`unit:${rule.unit}`);
+    }
+    if (Number.isFinite(rule?.min) || Number.isFinite(rule?.max)) {
+      return pieces.join(' ');
+    }
+    return 'metadata';
+  }
+
+  function formatIdentifierList(values) {
+    const items = uniqueValues(values);
+    if (!items.length) {
+      return '';
+    }
+    return items.join(', ');
+  }
+
+  function buildFieldIndex(source) {
+    const tagToPaths = new Map();
+
+    function walk(node, context = { structuralPath: [] }) {
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+
+      const identifier = node.formId || node.tag || node.alias || node.id || null;
+      const explicitPath = node.aqlPath || node.path || null;
+      const nextStructuralPath = identifier
+        ? [...context.structuralPath, identifier]
+        : context.structuralPath;
+      const structuralPath = nextStructuralPath.length ? nextStructuralPath.join('/') : null;
+      const preferredPath = explicitPath || structuralPath || identifier;
+
+      if (identifier) {
+        if (!tagToPaths.has(identifier)) {
+          tagToPaths.set(identifier, []);
+        }
+        const knownPaths = tagToPaths.get(identifier);
+        if (preferredPath && !knownPaths.includes(preferredPath)) {
+          knownPaths.push(preferredPath);
+        }
+      }
+
+      Object.values(node).forEach((value) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => walk(item, { structuralPath: nextStructuralPath }));
+        } else if (value && typeof value === 'object') {
+          walk(value, { structuralPath: nextStructuralPath });
+        }
+      });
+    }
+
+    walk(source);
+
+    return {
+      allPathsFor(identifier) {
+        if (!identifier) {
+          return [];
+        }
+        return [...(tagToPaths.get(identifier) || [])];
+      },
+      preferredPathFor(identifier) {
+        return this.allPathsFor(identifier)[0] || null;
+      }
+    };
+  }
+
+  function resolveRulePath(fieldIndex, identifier, explicitPath) {
+    const candidates = uniqueValues([
+      explicitPath,
+      ...(fieldIndex?.allPathsFor(identifier) || [])
+    ]);
+
+    return {
+      candidates,
+      primary: candidates[0] || identifier || 'unknown'
+    };
+  }
+
+  function updateRuleTableStatus() {
     if (!ruleTableStatusEl) {
       return;
     }
 
-    ruleTableStatusEl.className = `small rule-table-status ${kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : ''}`.trim();
-    ruleTableStatusEl.textContent = message;
+    if (!discoveredRuleRows.length) {
+      ruleTableStatusEl.className = 'small rule-table-status';
+      ruleTableStatusEl.textContent = 'No rules discovered in form data.';
+      return;
+    }
+
+    const enabledCount = discoveredRuleRows.filter((row) => row.enabled).length;
+    const modeLabel = ruleGroupModeEl?.value === 'path' ? 'form/template path' : 'kind of test';
+    ruleTableStatusEl.className = 'small rule-table-status ok';
+    ruleTableStatusEl.textContent = `${enabledCount} of ${discoveredRuleRows.length} rules enabled. Grouped by ${modeLabel}.`;
+  }
+
+  function buildDiscoveredRuleRows(parsed) {
+    if (generationCore?.buildDiscoveredRuleRows) {
+      return generationCore.buildDiscoveredRuleRows(parsed);
+    }
+
+    const fieldIndex = parsed?.fieldIndex;
+    const rows = [];
+
+    (parsed?.dependencies || []).forEach((rule, index) => {
+      const triggerPath = resolveRulePath(fieldIndex, rule.trigger || rule.triggerTag, rule.triggerPath);
+      const targetPath = resolveRulePath(fieldIndex, rule.target || rule.targetTag, rule.targetPath);
+      rows.push({
+        rowId: `logic::${index}`,
+        enabled: true,
+        recommendedLevel: 1,
+        kind: 'logic',
+        kindLabel: 'logic',
+        scopeSection: 'logic',
+        scopeInput: 'logic',
+        summary: rule.description || `${rule.target || rule.targetTag || 'target'} when ${rule.trigger || rule.triggerTag || 'trigger'}=${rule.triggerValue ?? rule.showValue}`,
+        trigger: formatIdentifierList([rule.trigger || rule.triggerTag, ...triggerPath.candidates]),
+        subject: formatIdentifierList([rule.target || rule.targetTag, ...targetPath.candidates]),
+        formPath: targetPath.primary || triggerPath.primary,
+        formPathSort: (targetPath.primary || triggerPath.primary || '').toLowerCase(),
+        sortSummary: (rule.description || '').toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.calculations || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `calc::${index}`,
+        enabled: true,
+        recommendedLevel: 1,
+        kind: 'calc',
+        kindLabel: 'calc',
+        scopeSection: 'calc',
+        scopeInput: 'calc',
+        summary: `${rule.field || 'field'} = derived expression`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${(rule.expression || '')}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.validations || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `validation::${index}`,
+        enabled: true,
+        recommendedLevel: 1,
+        kind: 'validation',
+        kindLabel: 'validation',
+        scopeSection: 'validation',
+        scopeInput: 'val',
+        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.valueRanges || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `ranges::${index}`,
+        enabled: true,
+        recommendedLevel: 2,
+        kind: 'ranges',
+        kindLabel: 'ranges',
+        scopeSection: 'ranges',
+        scopeInput: 'range',
+        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    (parsed?.requiredFields || []).forEach((rule, index) => {
+      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
+      rows.push({
+        rowId: `required::${index}`,
+        enabled: true,
+        recommendedLevel: 1,
+        kind: 'required',
+        kindLabel: 'required',
+        scopeSection: 'required',
+        scopeInput: 'req',
+        summary: `${rule.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`,
+        trigger: '',
+        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
+        formPath: fieldPath.primary,
+        formPathSort: (fieldPath.primary || '').toLowerCase(),
+        sortSummary: `${rule.field || ''} ${rule.min || 1}`.toLowerCase(),
+        sourceIndex: index
+      });
+    });
+
+    return rows;
+  }
+
+  function discoveredRuleGroupConfig() {
+    if (ruleGroupModeEl?.value === 'path') {
+      return {
+        groupBy: 'formPath',
+        sorters: [
+          { column: 'formPathSort', dir: 'asc' },
+          { column: 'kindLabel', dir: 'asc' },
+          { column: 'sortSummary', dir: 'asc' }
+        ]
+      };
+    }
+
+    return {
+      groupBy: 'kindLabel',
+      sorters: [
+        { column: 'kindLabel', dir: 'asc' },
+        { column: 'formPathSort', dir: 'asc' },
+        { column: 'sortSummary', dir: 'asc' }
+      ]
+    };
+  }
+
+  function renderDiscoveredRuleTable(rows = discoveredRuleRows) {
+    if (!ruleTableEl || typeof Tabulator === 'undefined') {
+      updateRuleTableStatus();
+      return;
+    }
+
+    const grouping = discoveredRuleGroupConfig();
+
+    if (discoveredRuleTable) {
+      discoveredRuleTable.destroy();
+      discoveredRuleTable = null;
+      ruleTableEl.innerHTML = '';
+    }
+
+    discoveredRuleTable = new Tabulator(ruleTableEl, {
+      data: rows,
+      layout: 'fitColumns',
+      height: '320px',
+      index: 'rowId',
+      placeholder: 'No rules discovered in form data.',
+      groupBy: grouping.groupBy,
+      groupStartOpen: true,
+      initialSort: grouping.sorters,
+      columns: [
+        {
+          title: '',
+          field: 'enabled',
+          width: 42,
+          hozAlign: 'center',
+          headerSort: false,
+          formatter(cell) {
+            return `<input class="rule-toggle" type="checkbox" ${cell.getValue() ? 'checked' : ''} aria-label="Include rule in generated tests">`;
+          },
+          cellClick(event, cell) {
+            const row = cell.getRow().getData();
+            row.enabled = !row.enabled;
+            cell.setValue(row.enabled, true);
+            updateRuleTableStatus();
+            event.stopPropagation();
+          }
+        },
+        {
+          title: 'Kind',
+          field: 'kindLabel',
+          width: 110,
+          formatter(cell) {
+            const kind = cell.getValue() || 'custom';
+            return renderChip(kind, kind);
+          }
+        },
+        {
+          title: 'Rule summary',
+          field: 'summary',
+          minWidth: 280,
+          formatter(cell) {
+            return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Trigger',
+          field: 'trigger',
+          minWidth: 170,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Target / field',
+          field: 'subject',
+          minWidth: 200,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Form/template path',
+          field: 'formPath',
+          minWidth: 230,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        }
+      ]
+    });
+
+    updateRuleTableStatus();
   }
 
   function sanitizeTestTitle(text) {
@@ -384,6 +736,20 @@
       .replace(/\s+/g, ' ')
       .replace(/["'`]/g, '')
       .trim();
+  }
+
+  function callTypeToExecutionState(callType) {
+    if (callType === 'it.skip') return 'skip';
+    if (callType === 'it.only') return 'only';
+    if (callType === 'describe.skip') return 'skip';
+    if (callType === 'describe.only') return 'only';
+    return 'run';
+  }
+
+  function executionStateToCallType(state, baseType = 'it') {
+    if (state === 'skip') return `${baseType}.skip`;
+    if (state === 'only') return `${baseType}.only`;
+    return baseType;
   }
 
   function quoteSingle(value) {
@@ -449,6 +815,7 @@
 
   function serializeSuiteModel(model) {
     const groupBlocks = (model?.groups || []).map((group) => {
+      const groupCallType = group?.callType || 'describe';
       const innerBlocks = [];
       if (group.tests?.length) {
         innerBlocks.push(group.tests.map((test) => serializeTestCase(test)).join('\n\n'));
@@ -457,15 +824,15 @@
         innerBlocks.push(group.extrasText.trimEnd());
       }
       if (!innerBlocks.length) {
-        return `  describe(${quoteSingle(group.name)}, () => {\n  });`;
+        return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n  });`;
       }
-      return `  describe(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
+      return `  ${groupCallType}(${quoteSingle(group.name)}, () => {\n${innerBlocks.join('\n\n')}\n  });`;
     }).join('\n\n');
     const trailingText = model?.trailingText && model.trailingText.trim() ? `\n\n${model.trailingText.trimEnd()}` : '';
     return `describe(${quoteSingle(model?.suiteName || 'generated-form - autogenerated form tests')}, () => {\n${groupBlocks}${trailingText}\n});\n`;
   }
 
-  function parseGroupBlock(groupName, lines) {
+  function parseGroupBlock(groupName, lines, groupCallType = 'describe') {
     const tests = [];
     const extras = [];
     let index = 0;
@@ -478,7 +845,7 @@
         continue;
       }
 
-      const testMatch = line.match(/^    (it(?:\.skip)?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      const testMatch = line.match(/^    (it(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
       if (!testMatch) {
         extras.push(line);
         index += 1;
@@ -509,6 +876,7 @@
 
     return {
       name: groupName,
+      callType: groupCallType,
       tests,
       extrasText: extras.join('\n').trimEnd()
     };
@@ -543,14 +911,15 @@
         continue;
       }
 
-      const groupMatch = line.match(/^  describe\((['"])(.*?)\1,\s*\(\)\s*=>\s*\{$/);
+      const groupMatch = line.match(/^  (describe(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
       if (!groupMatch) {
         trailing.push(line);
         index += 1;
         continue;
       }
 
-      const groupName = unescapeQuoted(groupMatch[2]);
+      const groupCallType = groupMatch[1] || 'describe';
+      const groupName = unescapeQuoted(groupMatch[3]);
       const groupLines = [];
       index += 1;
 
@@ -563,7 +932,7 @@
         return null;
       }
 
-      const parsedGroup = parseGroupBlock(groupName, groupLines);
+      const parsedGroup = parseGroupBlock(groupName, groupLines, groupCallType);
       if (!parsedGroup) {
         return null;
       }
@@ -588,16 +957,19 @@
       const groupBaseKey = `group::${group.name}`;
       const groupCount = (syncKeyCounts.get(groupBaseKey) || 0) + 1;
       syncKeyCounts.set(groupBaseKey, groupCount);
+      const groupSyncKey = `${groupBaseKey}::${groupCount}`;
+      const previousGroup = previousByKey.get(groupSyncKey);
       rows.push({
-        syncKey: `${groupBaseKey}::${groupCount}`,
+        syncKey: groupSyncKey,
         rowKind: 'group',
         groupName: group.name,
         displayName: group.name,
         type: 'section',
         modified: '',
         result: '',
-        selected: false,
-        testsCount: group.tests.length
+        testsCount: group.tests.length,
+        executionState: previousGroup?.executionState || callTypeToExecutionState(group.callType || 'describe'),
+        callType: group.callType || 'describe'
       });
 
       const testKeyCounts = new Map();
@@ -616,7 +988,7 @@
           type: inferTestType(test.title, group.name),
           modified: previous?.modified || currentDateStamp(),
           result: previous?.result || 'Not run',
-          selected: previous?.selected || false,
+          executionState: previous?.executionState || callTypeToExecutionState(test.callType || 'it'),
           callType: test.callType || 'it',
           body: test.body || ''
         });
@@ -636,6 +1008,275 @@
     }
 
     return testSuiteTable.getData();
+  }
+
+  function getRunnableTestsFromRows(rows) {
+    const runnableTests = [];
+    const onlyTests = [];
+    let currentGroupState = 'run';
+
+    rows.forEach((row) => {
+      if (row.rowKind === 'group') {
+        currentGroupState = row.executionState || callTypeToExecutionState(row.callType || 'describe');
+        return;
+      }
+
+      if (row.rowKind !== 'test') {
+        return;
+      }
+
+      const testState = row.executionState || callTypeToExecutionState(row.callType || 'it');
+      if (currentGroupState === 'skip' || testState === 'skip') {
+        return;
+      }
+
+      const runnable = { ...row, groupExecutionState: currentGroupState };
+      runnableTests.push(runnable);
+
+      if (currentGroupState === 'only' || testState === 'only') {
+        onlyTests.push(runnable);
+      }
+    });
+
+    return onlyTests.length ? onlyTests : runnableTests;
+  }
+
+  function findRowIndex(rows, targetRow) {
+    const exactIndex = rows.findIndex((row) => row === targetRow);
+    if (exactIndex !== -1) {
+      return exactIndex;
+    }
+    return rows.findIndex((row) => row.syncKey === targetRow.syncKey && row.rowKind === targetRow.rowKind);
+  }
+
+  function getGroupOccurrenceBeforeIndex(rows, groupName, endIndex) {
+    let occurrence = 0;
+    for (let index = 0; index < endIndex; index += 1) {
+      if (rows[index].rowKind === 'group' && rows[index].groupName === groupName) {
+        occurrence += 1;
+      }
+    }
+    return occurrence;
+  }
+
+  function getTestOccurrenceWithinSection(rows, sectionStartIndex, targetIndex, targetRow) {
+    let occurrence = 0;
+    for (let index = sectionStartIndex + 1; index < targetIndex; index += 1) {
+      const row = rows[index];
+      if (row.rowKind !== 'test') {
+        continue;
+      }
+      if (row.groupName === targetRow.groupName && (row.title || row.displayName) === (targetRow.title || targetRow.displayName)) {
+        occurrence += 1;
+      }
+    }
+    return occurrence;
+  }
+
+  function findEditorLineForTableRow(targetRow) {
+    const codeLines = getEditorValue().replace(/\r\n/g, '\n').split('\n');
+    const tableRows = getTableRows();
+    const targetIndex = findRowIndex(tableRows, targetRow);
+
+    if (targetIndex === -1) {
+      return -1;
+    }
+
+    if (targetRow.rowKind === 'group') {
+      const targetOccurrence = getGroupOccurrenceBeforeIndex(tableRows, targetRow.groupName, targetIndex);
+      const groupMatcher = new RegExp(`^\\s{2}${escapeRegExp(targetRow.callType || 'describe')}\\((['"])${escapeRegExp(targetRow.groupName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+      let matches = 0;
+      for (let lineIndex = 0; lineIndex < codeLines.length; lineIndex += 1) {
+        if (!groupMatcher.test(codeLines[lineIndex])) {
+          continue;
+        }
+        if (matches === targetOccurrence) {
+          return lineIndex;
+        }
+        matches += 1;
+      }
+      return -1;
+    }
+
+    let sectionStartIndex = targetIndex - 1;
+    while (sectionStartIndex >= 0 && tableRows[sectionStartIndex].rowKind !== 'group') {
+      sectionStartIndex -= 1;
+    }
+    if (sectionStartIndex < 0) {
+      return -1;
+    }
+
+    const targetGroupOccurrence = getGroupOccurrenceBeforeIndex(tableRows, targetRow.groupName, sectionStartIndex);
+    const targetTestOccurrence = getTestOccurrenceWithinSection(tableRows, sectionStartIndex, targetIndex, targetRow);
+    const groupMatcher = new RegExp(`^\\s{2}describe(?:\\.(?:skip|only))?\\((['"])${escapeRegExp(targetRow.groupName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+    const testMatcher = new RegExp(`^\\s{4}${escapeRegExp(targetRow.callType || 'it')}\\((['"])${escapeRegExp(targetRow.title || targetRow.displayName)}\\1,\\s*\\(\\)\\s*=>\\s*\\{$`);
+    let groupOccurrence = -1;
+    let withinTargetGroup = false;
+    let testOccurrence = 0;
+
+    for (let lineIndex = 0; lineIndex < codeLines.length; lineIndex += 1) {
+      const line = codeLines[lineIndex];
+      if (groupMatcher.test(line)) {
+        groupOccurrence += 1;
+        withinTargetGroup = groupOccurrence === targetGroupOccurrence;
+        testOccurrence = 0;
+        continue;
+      }
+
+      if (withinTargetGroup && /^  \}\);$/.test(line)) {
+        withinTargetGroup = false;
+      }
+
+      if (withinTargetGroup && testMatcher.test(line)) {
+        if (testOccurrence === targetTestOccurrence) {
+          return lineIndex;
+        }
+        testOccurrence += 1;
+      }
+    }
+
+    return -1;
+  }
+
+  function focusEditorLine(lineIndex) {
+    if (lineIndex < 0) {
+      return false;
+    }
+
+    if (editor && typeof editor.scrollIntoView === 'function') {
+      if (editorHighlightedLine !== null) {
+        editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+      }
+      if (editorHighlightTimer) {
+        window.clearTimeout(editorHighlightTimer);
+      }
+
+      editor.scrollIntoView({ line: lineIndex, ch: 0 }, 80);
+      editor.setCursor({ line: lineIndex, ch: 0 });
+      editor.focus();
+      editor.addLineClass(lineIndex, 'background', 'cm-line-target');
+      editorHighlightedLine = lineIndex;
+      editorHighlightTimer = window.setTimeout(() => {
+        if (editorHighlightedLine !== null) {
+          editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+          editorHighlightedLine = null;
+        }
+      }, 1800);
+      return true;
+    }
+
+    const fallback = $('code-preview');
+    const value = String(fallback?.value || '');
+    if (!fallback || !value) {
+      return false;
+    }
+    const lines = value.replace(/\r\n/g, '\n').split('\n');
+    const start = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
+    const end = start + (lines[lineIndex] || '').length;
+    fallback.focus();
+    fallback.setSelectionRange(start, end);
+    return true;
+  }
+
+  function jumpToEditorRow(row) {
+    const lineIndex = findEditorLineForTableRow(row);
+    if (!focusEditorLine(lineIndex)) {
+      setTableSyncStatus('Could not locate that test or section in the code editor.', 'warn');
+      return;
+    }
+    setTableSyncStatus(`Jumped to ${row.rowKind === 'group' ? 'section' : 'test'} '${row.title || row.groupName || row.displayName}'.`, 'ok');
+  }
+
+  function formatActionTarget(target) {
+    if (typeof target === 'string') {
+      return target;
+    }
+    try {
+      return JSON.stringify(target);
+    } catch (_error) {
+      return String(target);
+    }
+  }
+
+  function renderRunResultsHTML(results, runId) {
+    const okCount = results.filter((result) => result.ok).length;
+    const failCount = results.length - okCount;
+    const groups = new Map();
+
+    results.forEach((result) => {
+      const groupName = result.action?.meta?.groupName || '';
+      const testTitle = result.action?.meta?.testTitle || 'ungrouped';
+      const groupKey = `${groupName}::${testTitle}`;
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { groupName, testTitle, items: [] });
+      }
+      groups.get(groupKey).items.push(result);
+    });
+
+    const groupHtml = Array.from(groups.values()).map((group) => {
+      const title = `${group.groupName ? `${escapeHtml(group.groupName)} / ` : ''}${escapeHtml(group.testTitle)}`;
+      const items = group.items.map((result) => {
+        const badgeClass = result.ok ? 'result-ok' : 'result-fail';
+        const actionText = escapeHtml(`${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`);
+        const details = result.message ? `<div class="result-msg">${escapeHtml(String(result.message))}</div>` : '';
+        return `<li class="result-item"><div class="result-badge ${badgeClass}">${result.ok ? 'OK' : 'FAIL'}</div><div><div class="result-action">${actionText}</div>${details}</div></li>`;
+      }).join('');
+      return `<div class="run-group"><div class="run-group-title">${title}</div><ul class="results-list">${items}</ul></div>`;
+    }).join('');
+
+    return `<div class="run-summary"><div class="run-summary-title">Run ${escapeHtml(String(runId))} complete: <span class="ok">${okCount} OK</span> / <span class="warn">${failCount} FAIL</span> (${results.length} actions)</div><button class="btn small" id="open-report-${runId}" type="button">Open full report</button></div><div class="run-groups">${groupHtml}</div>`;
+  }
+
+  function openFullReportWindow(results, runId) {
+    try {
+      const reportWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!reportWindow) {
+        return;
+      }
+
+      const doc = reportWindow.document;
+      const okCount = results.filter((result) => result.ok).length;
+      const failCount = results.length - okCount;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Test Report</title><style>body{font-family:Arial,Helvetica,sans-serif;margin:16px;background:#f7fafc;color:#111827}pre{background:#fff;border:1px solid #e6eef6;padding:12px;border-radius:6px;overflow:auto}h1{font-size:1.1rem;margin:0 0 8px}.summary{margin-bottom:12px}.entry{padding:8px 0;border-bottom:1px solid #e6eef6}.entry-title{font-weight:600}.entry-action{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:6px}.entry-message{color:#6b7280;margin-top:6px}</style></head><body><h1>Test Report ${escapeHtml(String(runId))}</h1><div class="summary">Actions: ${results.length} | OK: ${okCount} | FAIL: ${failCount}</div><h2>Formatted results</h2><div id="formatted"></div><h2>Raw JSON</h2><pre id="raw"></pre></body></html>`;
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      const formatted = doc.getElementById('formatted');
+      const raw = doc.getElementById('raw');
+      if (raw) {
+        raw.textContent = JSON.stringify(results, null, 2);
+      }
+      if (formatted) {
+        results.forEach((result) => {
+          const entry = doc.createElement('div');
+          entry.className = 'entry';
+
+          const title = doc.createElement('div');
+          title.className = 'entry-title';
+          title.textContent = `${result.action?.meta?.groupName ? `${result.action.meta.groupName} / ` : ''}${result.action?.meta?.testTitle || 'ungrouped'}`;
+
+          const action = doc.createElement('div');
+          action.className = 'entry-action';
+          action.textContent = `${result.ok ? 'OK' : 'FAIL'}: ${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`;
+
+          entry.appendChild(title);
+          entry.appendChild(action);
+
+          if (result.message) {
+            const message = doc.createElement('div');
+            message.className = 'entry-message';
+            message.textContent = String(result.message);
+            entry.appendChild(message);
+          }
+
+          formatted.appendChild(entry);
+        });
+      }
+    } catch (error) {
+      console.error('openFullReportWindow error', error);
+      alert('Failed to open report window');
+    }
   }
 
   function findSectionRange(rows, groupName, occurrenceIndex) {
@@ -727,8 +1368,7 @@
 
   function updateActionButtons() {
     const rows = getTableRows();
-    const selectedRows = rows.filter((row) => row.rowKind === 'test' && row.selected);
-    $('run-btn').disabled = selectedRows.length === 0;
+    $('run-btn').disabled = getRunnableTestsFromRows(rows).length === 0;
     $('export-btn').disabled = !getEditorValue().trim();
   }
 
@@ -762,26 +1402,37 @@
       },
       columns: [
         {
-          title: '',
-          field: 'selected',
-          width: 42,
+          title: 'State',
+          field: 'executionState',
+          width: 118,
           hozAlign: 'center',
           headerSort: false,
           formatter(cell) {
             const row = cell.getData();
-            if (row.rowKind !== 'test') {
-              return '';
-            }
-            return `<input class="row-select-toggle" type="checkbox" ${row.selected ? 'checked' : ''} aria-label="Select test row">`;
+            const baseType = row.rowKind === 'group' ? 'describe' : 'it';
+            const current = row.executionState || callTypeToExecutionState(row.callType || baseType);
+            const label = row.rowKind === 'group' ? 'Suite execution state' : 'Test execution state';
+            return `<div class="test-state-control" aria-label="${label}">`
+              + `<button class="test-state-btn ${current === 'skip' ? 'is-selected' : ''}" data-state="skip" type="button">skip</button>`
+              + `<button class="test-state-btn ${current === 'run' ? 'is-selected' : ''}" data-state="run" type="button">run</button>`
+              + `<button class="test-state-btn ${current === 'only' ? 'is-selected' : ''}" data-state="only" type="button">only</button>`
+              + `</div>`;
           },
           cellClick(event, cell) {
             const row = cell.getRow().getData();
-            if (row.rowKind !== 'test') {
+            if (row.rowKind !== 'test' && row.rowKind !== 'group') {
               return;
             }
-            row.selected = !row.selected;
-            cell.setValue(row.selected, true);
+            const button = event.target.closest('[data-state]');
+            if (!button) {
+              return;
+            }
+            const nextState = button.dataset.state;
+            row.executionState = nextState;
+            row.callType = executionStateToCallType(nextState, row.rowKind === 'group' ? 'describe' : 'it');
+            cell.getRow().update({ executionState: nextState, callType: row.callType });
             updateActionButtons();
+            syncEditorFromTable(`Updated ${row.rowKind === 'group' ? 'suite' : 'test'} state to '${nextState}' for '${row.title || row.displayName}'.`);
             event.stopPropagation();
           }
         },
@@ -792,9 +1443,16 @@
           formatter(cell) {
             const row = cell.getData();
             if (row.rowKind === 'group') {
-              return `<span class="group-name-cell">describe(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
+              return `<span class="group-name-cell jump-to-code">${escapeHtml(row.callType || 'describe')}(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
             }
-            return escapeHtml(row.displayName || '');
+            return `<span class="jump-to-code">${escapeHtml(row.displayName || '')}</span>`;
+          },
+          cellClick(event, cell) {
+            if (!event.target.closest('.jump-to-code')) {
+              return;
+            }
+            jumpToEditorRow(cell.getData());
+            event.stopPropagation();
           }
         },
         {
@@ -893,6 +1551,7 @@
         const extrasQueue = extrasByName.get(row.groupName) || [];
         currentGroup = {
           name: row.groupName,
+          callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'describe'), 'describe'),
           tests: [],
           extrasText: extrasQueue.shift() || ''
         };
@@ -911,7 +1570,7 @@
 
       currentGroup.tests.push({
         title: row.title || row.displayName,
-        callType: row.callType || 'it',
+        callType: executionStateToCallType(row.executionState || callTypeToExecutionState(row.callType || 'it'), 'it'),
         body: row.body || ''
       });
     });
@@ -1053,6 +1712,10 @@
   }
 
   function parseFormDefinition(raw) {
+    if (generationCore?.parseFormDefinition) {
+      return generationCore.parseFormDefinition(raw);
+    }
+
     const source = raw.formDescription || raw.webTemplate || raw;
     const parsed = {
       name: raw.name || source.name || source.templateId || 'generated-form',
@@ -1061,7 +1724,8 @@
       calculations: [],
       validations: [],
       valueRanges: [],
-      requiredFields: []
+      requiredFields: [],
+      fieldIndex: buildFieldIndex(source)
     };
     collectParsed(source, parsed);
     return parsed;
@@ -1078,71 +1742,23 @@
   }
 
   function renderRules(parsed) {
-    const entries = [
-      ...parsed.dependencies.slice(0, 25).map((r) => ({ kind: 'logic', text: r.description })),
-      ...parsed.calculations.slice(0, 10).map((r) => ({ kind: 'calc', text: `${r.field} = derived expression` })),
-      ...parsed.validations.slice(0, 15).map((r) => ({ kind: 'validation', text: `${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}` }))
-    ];
+    discoveredRuleRows = buildDiscoveredRuleRows(parsed);
+    renderDiscoveredRuleTable(discoveredRuleRows);
+  }
 
-    if (ruleTableEl && typeof Tabulator !== 'undefined') {
-      if (discoveredRuleTable) {
-        discoveredRuleTable.destroy();
-        discoveredRuleTable = null;
-        ruleTableEl.innerHTML = '';
-      }
-
-      discoveredRuleTable = new Tabulator(ruleTableEl, {
-        data: entries,
-        layout: 'fitColumns',
-        height: '320px',
-        placeholder: 'No rules discovered in form data.',
-        columns: [
-          {
-            title: 'Kind',
-            field: 'kind',
-            width: 120,
-            headerSort: false,
-            formatter(cell) {
-              const value = cell.getValue() || 'custom';
-              return renderChip(value, value);
-            }
-          },
-          {
-            title: 'Summary',
-            field: 'text',
-            minWidth: 360,
-            headerSort: false,
-            formatter(cell) {
-              return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
-            }
-          }
-        ]
-      });
-
-      setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
-      return;
+  function buildEnabledParsed(parsed) {
+    const enabledIds = new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId));
+    if (generationCore?.filterParsedFormByRuleIds) {
+      return generationCore.filterParsedFormByRuleIds(parsed, enabledIds);
     }
-
-    if (!ruleList) {
-      setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
-      return;
-    }
-
-    ruleList.innerHTML = '';
-    entries.forEach((entry) => {
-      const item = document.createElement('div');
-      item.className = 'rule-item';
-      item.innerHTML = `${renderChip(entry.kind, entry.kind)}<span class="rule-item-text">${escapeHtml(entry.text)}</span>`;
-      ruleList.appendChild(item);
-    });
-    if (!entries.length) {
-      const empty = document.createElement('div');
-      empty.className = 'rule-empty';
-      empty.textContent = 'No rules discovered in form data.';
-      ruleList.appendChild(empty);
-    }
-
-    setRuleTableStatus(entries.length ? `Discovered ${entries.length} rule${entries.length === 1 ? '' : 's'}.` : 'No rules discovered in form data.', entries.length ? 'ok' : 'small');
+    return {
+      ...parsed,
+      dependencies: (parsed.dependencies || []).filter((_rule, index) => enabledIds.has(`logic::${index}`)),
+      calculations: (parsed.calculations || []).filter((_rule, index) => enabledIds.has(`calc::${index}`)),
+      validations: (parsed.validations || []).filter((_rule, index) => enabledIds.has(`validation::${index}`)),
+      valueRanges: (parsed.valueRanges || []).filter((_rule, index) => enabledIds.has(`ranges::${index}`)),
+      requiredFields: (parsed.requiredFields || []).filter((_rule, index) => enabledIds.has(`required::${index}`))
+    };
   }
 
   function buildLogicTests(parsed) {
@@ -1200,6 +1816,67 @@
     };
   }
 
+  function collectManualRangeCases() {
+    const parseSampleTokens = (text) => {
+      const raw = String(text || '').trim();
+      if (!raw) return [];
+      if (raw.startsWith('[')) {
+        const parsedArray = JSON.parse(raw);
+        return Array.isArray(parsedArray) ? parsedArray : [];
+      }
+      return raw
+        .split(',')
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .map((token) => {
+          try {
+            return JSON.parse(token);
+          } catch (_error) {
+            const asNumber = Number(token);
+            return Number.isFinite(asNumber) ? asNumber : token;
+          }
+        });
+    };
+
+    const toQuantitySamples = (samples, unit) =>
+      (samples || []).map((sample) => {
+        if (sample && typeof sample === 'object') {
+          return {
+            magnitude: Number.isFinite(sample.magnitude) ? sample.magnitude : Number(sample.value),
+            unit: sample.unit || unit
+          };
+        }
+        return { magnitude: Number(sample), unit };
+      });
+
+    return [...document.querySelectorAll('#manual-range-list .range-case')]
+      .map((row, index) => {
+        const field = row.querySelector('.range-field').value.trim();
+        if (!field) return null;
+        const unit = row.querySelector('.range-unit').value.trim();
+        const valid = parseSampleTokens(row.querySelector('.range-valid').value);
+        const invalid = parseSampleTokens(row.querySelector('.range-invalid').value);
+        const validSamples = unit ? toQuantitySamples(valid, unit) : valid;
+        const invalidSamples = unit ? toQuantitySamples(invalid, unit) : invalid;
+
+        return {
+          title: prefixCategoryTitle('ranges', `manual ${field} #${index + 1}`),
+          callType: 'it',
+          body: `cy.assertRangeSamples(${JSON.stringify({
+            label: `manual range ${field} #${index + 1}`,
+            min: null,
+            max: null,
+            minOp: '>=',
+            maxOp: '<=',
+            validSamples,
+            invalidSamples,
+            expectedUnit: unit || null
+          })});`
+        };
+      })
+      .filter(Boolean);
+  }
+
   function buildValidationTests(parsed) {
     return parsed.validations.map((rule, index) => {
       const samples = deriveRangeSamples(rule);
@@ -1241,66 +1918,7 @@
       };
     });
 
-    const parseSampleTokens = (text) => {
-      const raw = String(text || '').trim();
-      if (!raw) return [];
-      if (raw.startsWith('[')) {
-        const parsedArray = JSON.parse(raw);
-        return Array.isArray(parsedArray) ? parsedArray : [];
-      }
-      return raw
-        .split(',')
-        .map((token) => token.trim())
-        .filter(Boolean)
-        .map((token) => {
-          try {
-            return JSON.parse(token);
-          } catch (_error) {
-            const asNumber = Number(token);
-            return Number.isFinite(asNumber) ? asNumber : token;
-          }
-        });
-    };
-
-    const toQuantitySamples = (samples, unit) =>
-      (samples || []).map((sample) => {
-        if (sample && typeof sample === 'object') {
-          return {
-            magnitude: Number.isFinite(sample.magnitude) ? sample.magnitude : Number(sample.value),
-            unit: sample.unit || unit
-          };
-        }
-        return { magnitude: Number(sample), unit };
-      });
-
-    const manual = [...document.querySelectorAll('#manual-range-list .range-case')]
-      .map((row, index) => {
-        const field = row.querySelector('.range-field').value.trim();
-        if (!field) return null;
-        const unit = row.querySelector('.range-unit').value.trim();
-        const valid = parseSampleTokens(row.querySelector('.range-valid').value);
-        const invalid = parseSampleTokens(row.querySelector('.range-invalid').value);
-        const validSamples = unit ? toQuantitySamples(valid, unit) : valid;
-        const invalidSamples = unit ? toQuantitySamples(invalid, unit) : invalid;
-
-        return {
-          title: prefixCategoryTitle('ranges', `manual ${field} #${index + 1}`),
-          callType: 'it',
-          body: `cy.assertRangeSamples(${JSON.stringify({
-            label: `manual range ${field} #${index + 1}`,
-            min: null,
-            max: null,
-            minOp: '>=',
-            maxOp: '<=',
-            validSamples,
-            invalidSamples,
-            expectedUnit: unit || null
-          })});`
-        };
-      })
-      .filter(Boolean);
-
-    return [...generated, ...manual];
+    return [...generated, ...collectManualRangeCases()];
   }
 
   function buildRequiredTests(parsed) {
@@ -1330,6 +1948,7 @@
   }
 
   function buildCode(parsed) {
+    const filteredParsed = buildEnabledParsed(parsed);
     const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
       const action = step.querySelector('.step-action').value;
       const field = step.querySelector('.step-field').value;
@@ -1339,24 +1958,36 @@
 
     const existingModel = parseSuiteModelFromCode(getEditorValue());
     const preservedCustomGroups = (existingModel?.groups || []).filter((group) => !generatedSectionNames.includes(normalizeCategoryKey(group.name)));
-    const groups = [];
-    const categories = selectedCategories();
-
-    if (categories.includes('logic')) {
-      groups.push({ name: 'logic', tests: buildLogicTests(parsed), extrasText: '' });
-    }
-    if (categories.includes('calc')) {
-      groups.push({ name: 'calc', tests: buildCalcTests(parsed), extrasText: '' });
-    }
-    if (categories.includes('validation')) {
-      groups.push({ name: 'validation', tests: buildValidationTests(parsed), extrasText: '' });
-    }
-    if (categories.includes('ranges')) {
-      groups.push({ name: 'ranges', tests: buildRangeTests(parsed), extrasText: '' });
-    }
-    if (categories.includes('required')) {
-      groups.push({ name: 'required', tests: buildRequiredTests(parsed), extrasText: '' });
-    }
+    const groups = generationCore?.buildGeneratedGroups
+      ? generationCore.buildGeneratedGroups(parsed, {
+        logicLevel: getScopeValue('logic'),
+        calcLevel: getScopeValue('calc'),
+        validationLevel: getScopeValue('val'),
+        rangesLevel: getScopeValue('range'),
+        requiredLevel: getScopeValue('req'),
+        enabledRuleIds: new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId)),
+        manualRangeCases: collectManualRangeCases()
+      })
+      : (() => {
+        const localGroups = [];
+        const categories = selectedCategories();
+        if (categories.includes('logic')) {
+          localGroups.push({ name: 'logic', tests: buildLogicTests(filteredParsed), extrasText: '' });
+        }
+        if (categories.includes('calc')) {
+          localGroups.push({ name: 'calc', tests: buildCalcTests(filteredParsed), extrasText: '' });
+        }
+        if (categories.includes('validation')) {
+          localGroups.push({ name: 'validation', tests: buildValidationTests(filteredParsed), extrasText: '' });
+        }
+        if (categories.includes('ranges')) {
+          localGroups.push({ name: 'ranges', tests: buildRangeTests(filteredParsed), extrasText: '' });
+        }
+        if (categories.includes('required')) {
+          localGroups.push({ name: 'required', tests: buildRequiredTests(filteredParsed), extrasText: '' });
+        }
+        return localGroups;
+      })();
 
     preservedCustomGroups.forEach((group) => groups.push(group));
 
@@ -1664,14 +2295,18 @@
   });
 
   $('generate-btn').addEventListener('click', regenerateCode);
+  ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
   $('run-btn').addEventListener('click', () => {
-    const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
-    if (!selectedTests.length) return;
+    const runnableTests = getRunnableTestsFromRows(getTableRows());
+    if (!runnableTests.length) {
+      $('last-run').textContent = 'No runnable actions found in active tests.';
+      return;
+    }
 
     // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
     const allActions = [];
-    selectedTests.forEach((t) => {
+    runnableTests.forEach((t) => {
       const body = t.body || '';
       const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
       lines.forEach((ln) => {
@@ -1680,20 +2315,20 @@
           try {
             const target = JSON.parse(m[1]);
             const value = JSON.parse(m[2]);
-            allActions.push({ type: 'fill', target, value });
+            allActions.push({ type: 'fill', target, value, meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } });
           } catch (e) { /* ignore parse errors */ }
         } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
         }
       });
     });
 
     if (!allActions.length) {
-      $('last-run').textContent = `No runnable actions found in selected tests.`;
+      $('last-run').textContent = 'No runnable actions found in active tests.';
       return;
     }
 
@@ -1712,8 +2347,17 @@
         if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
         window.removeEventListener('message', resultHandler);
         const results = event.data.payload?.results || [];
-        const summary = results.map((r, i) => `${r.ok ? 'OK' : 'FAIL'}: ${r.action.type} ${r.action.target}`).join('; ');
-        $('last-run').textContent = `Run complete: ${summary}`;
+        const completedRunId = event.data.payload?.runId || runId;
+        try {
+          $('last-run').innerHTML = renderRunResultsHTML(results, completedRunId);
+          const reportButton = document.getElementById(`open-report-${completedRunId}`);
+          if (reportButton) {
+            reportButton.addEventListener('click', () => openFullReportWindow(results, completedRunId));
+          }
+        } catch (error) {
+          $('last-run').textContent = `Run complete: ${results.length} actions (see console for details).`;
+          console.error('[Tester] Error rendering run results', error, results);
+        }
       };
 
       window.addEventListener('message', resultHandler);
