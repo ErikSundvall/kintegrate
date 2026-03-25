@@ -13,7 +13,7 @@
     body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; overflow-x:hidden; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap:1rem; padding:1rem; align-items:start; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas:"discovery editor" "builder suite"; gap:1rem; padding:1rem; align-items:start; }
     .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; overflow:hidden; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
@@ -48,7 +48,9 @@
     #rule-table .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.4rem 0.45rem; vertical-align:middle; }
     #rule-table .tabulator-row.tabulator-group-level-0,
     #rule-table .tabulator-row.tabulator-group-level-1 { background:#f8fafc; }
-    .rule-path-cell, .rule-summary-cell { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .truncated-cell { display:block; width:100%; max-width:100%; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .truncated-cell.tail-visible { direction:rtl; text-align:left; }
+    .rule-path-cell, .rule-summary-cell { min-width:0; }
     .rule-path-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.72rem; color:#475569; }
     .rule-toggle { width:14px; height:14px; accent-color:var(--primary); }
     .rule-table-status { margin-top:0.45rem; }
@@ -64,8 +66,11 @@
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .test-grid-wrap { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
+    .suite-footer { display:grid; gap:0; margin-top:0.7rem; }
     .table-actions { margin-top:0.7rem; margin-bottom:0; }
+    .suite-footer .table-actions { margin-top:0; }
     .table-sync-status { margin-top:0.45rem; }
+    .suite-footer .table-sync-status { display:none; }
     #test-suite-grid { min-height:320px; width:100%; max-width:100%; min-width:0; border:1px solid var(--line); border-radius:6px; overflow:auto; }
     #test-suite-grid .tabulator { border:none; background:#fff; font-size:0.82rem; }
     #test-suite-grid .tabulator,
@@ -81,7 +86,7 @@
     #test-suite-grid .tabulator-row.group-row:hover { background:#f8fafc; }
     #test-suite-grid .tabulator-row.group-row .tabulator-cell:first-child { border-left:none; }
     #test-suite-grid .tabulator-row.group-row .drag-handle-cell { color:#9aa4b2; }
-    .group-name-cell { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; vertical-align:middle; }
+    .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
     .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
@@ -91,7 +96,26 @@
     .test-state-btn.is-selected[data-state="run"] { background:#eef7ee; color:#2e7d32; }
     .test-state-btn.is-selected[data-state="only"] { background:#fff4e8; color:#ed6c02; }
     .test-state-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:-2px; }
-    .jump-to-code { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; vertical-align:middle; }
+    .jump-to-code { cursor:pointer; }
+    .tabulator-group-title { max-width:min(100%, 48rem); }
+    .overflow-tooltip { position:fixed; z-index:2000; max-width:min(34rem, calc(100vw - 24px)); padding:0.45rem 0.6rem; border-radius:6px; background:#111827; color:#fff; box-shadow:0 12px 30px rgba(15, 23, 42, 0.24); font-size:0.78rem; line-height:1.35; white-space:normal; word-break:break-word; pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity 0.12s ease, transform 0.12s ease; }
+    .overflow-tooltip.is-visible { opacity:1; transform:translateY(0); }
+    .overflow-tooltip.is-mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .editor-panel-body { display:flex; flex-direction:column; gap:0.8rem; }
+    .target-config { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0.65rem 0.75rem; }
+    .target-config input { width:100%; min-width:0; }
+    .target-actions { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+    .target-buttons { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+    .storage-note { margin:0; }
+    #form-discovery-panel { grid-area:discovery; }
+    #custom-test-builder-panel { grid-area:builder; }
+    #code-editor-panel { grid-area:editor; }
+    #test-suite-panel { grid-area:suite; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "editor" "suite" "builder"; }
+      .target-config { grid-template-columns:1fr; }
+    }
     .CodeMirror .cm-line-target { background:#fff4e8; }
     .run-summary { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.45rem; }
     .run-summary-title { font-weight:700; }
@@ -229,12 +253,14 @@
     </div>
     <div class="panel-body test-grid-wrap">
       <div id="test-suite-grid"></div>
-      <div class="row table-actions">
-        <button class="btn" id="export-btn" disabled>Export .cy.js</button>
-        <button class="btn" id="run-btn" disabled>Run active tests</button>
+      <div class="suite-footer">
+        <div class="row table-actions">
+          <button class="btn" id="run-btn">Run active tests</button>
+          <button class="btn" id="export-btn">Export .cy.js</button>
+        </div>
+        <div id="table-sync-status" class="small table-sync-status" hidden>Table will mirror grouped tests from the code editor.</div>
+        <div class="results" id="last-run">Last run: not executed.</div>
       </div>
-      <div id="table-sync-status" class="small table-sync-status">Table will mirror grouped tests from the code editor.</div>
-      <div class="results" id="last-run">Last run: not executed.</div>
     </div>
   </section>
 
@@ -269,22 +295,24 @@
     <div class="panel-header">
       <h2>GitHub target + Code editor</h2>
     </div>
-    <div class="panel-body">
-      <div class="row">
+    <div class="panel-body editor-panel-body">
+      <div id="code-editor-wrap">
+        <textarea id="code-preview"></textarea>
+      </div>
+      <div class="target-config">
         <input type="text" id="gh-owner" placeholder="owner" size="11">
         <input type="text" id="gh-repo" placeholder="repo" size="11">
         <input type="text" id="gh-branch" placeholder="branch" value="main" size="7">
         <input type="text" id="gh-folder" placeholder="folder" value="cypress/e2e/generated" size="22">
       </div>
-      <div class="row">
-        <button class="btn" id="save-target">Save target</button>
-        <button class="btn" id="load-target">Load latest</button>
-        <button class="btn" id="open-editor">Open in separate window</button>
+      <div class="target-actions">
+        <div class="target-buttons">
+          <button class="btn" id="save-target">Save target</button>
+          <button class="btn" id="load-target">Load latest</button>
+          <button class="btn" id="open-editor">Open in separate window</button>
+        </div>
       </div>
-      <p class="small">Saved targets are stored in browser localStorage (last 10).</p>
-      <div id="code-editor-wrap" class="full">
-        <textarea id="code-preview"></textarea>
-      </div>
+      <p class="small storage-note">Saved targets are stored in browser localStorage (last 10).</p>
     </div>
   </section>
 </div>
@@ -348,6 +376,9 @@
   let lastParsedSuiteModel = null;
   let editorHighlightedLine = null;
   let editorHighlightTimer = null;
+  let overflowTooltipEl = null;
+  let tooltipLongPressTimer = null;
+  let activeTooltipTarget = null;
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
@@ -356,7 +387,10 @@
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
   const ruleGroupModeEl = $('rule-group-mode');
-  const generationCore = window.TestGenerationCore || null;
+  const generationCore = window.TestGenerationCore;
+  if (!generationCore) {
+    throw new Error('test-generation-core.js failed to load.');
+  }
   const categoryAliases = {
     logic: 'logic',
     dependencies: 'logic',
@@ -388,6 +422,160 @@
       .replace(/'/g, '&#39;');
   }
 
+  function renderOverflowText(value, options = {}) {
+    const text = String(value || '');
+    if (!text) {
+      return '';
+    }
+
+    const classes = ['truncated-cell'];
+    if (options.showTail) {
+      classes.push('tail-visible');
+    }
+    if (options.className) {
+      classes.push(options.className);
+    }
+    if (options.mono) {
+      classes.push('mono');
+    }
+
+    const escapedText = escapeHtml(text);
+    const tooltipMode = options.mono ? 'true' : 'false';
+    return `<span class="${classes.join(' ')}" data-full-tooltip="${escapedText}" data-tooltip-mono="${tooltipMode}">${escapedText}</span>`;
+  }
+
+  function ensureOverflowTooltip() {
+    if (overflowTooltipEl) {
+      return overflowTooltipEl;
+    }
+
+    overflowTooltipEl = document.createElement('div');
+    overflowTooltipEl.className = 'overflow-tooltip';
+    document.body.appendChild(overflowTooltipEl);
+    return overflowTooltipEl;
+  }
+
+  function getTooltipTarget(element) {
+    return element?.closest?.('[data-full-tooltip]') || null;
+  }
+
+  function isOverflowingTooltipTarget(target) {
+    if (!target) {
+      return false;
+    }
+    return target.scrollWidth > target.clientWidth + 1;
+  }
+
+  function positionOverflowTooltip(target, tooltip) {
+    const margin = 12;
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    let left = rect.left;
+    let top = rect.top - tooltipRect.height - 8;
+
+    if (left + tooltipRect.width > window.innerWidth - margin) {
+      left = window.innerWidth - tooltipRect.width - margin;
+    }
+    if (left < margin) {
+      left = margin;
+    }
+    if (top < margin) {
+      top = rect.bottom + 8;
+    }
+    if (top + tooltipRect.height > window.innerHeight - margin) {
+      top = Math.max(margin, window.innerHeight - tooltipRect.height - margin);
+    }
+
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function showOverflowTooltip(target) {
+    const tooltipTarget = getTooltipTarget(target);
+    const text = tooltipTarget?.dataset.fullTooltip || '';
+    if (!tooltipTarget || !text || !isOverflowingTooltipTarget(tooltipTarget)) {
+      hideOverflowTooltip();
+      return;
+    }
+
+    const tooltip = ensureOverflowTooltip();
+    tooltip.textContent = text;
+    tooltip.classList.toggle('is-mono', tooltipTarget.dataset.tooltipMono === 'true');
+    tooltip.classList.add('is-visible');
+    positionOverflowTooltip(tooltipTarget, tooltip);
+    activeTooltipTarget = tooltipTarget;
+  }
+
+  function hideOverflowTooltip() {
+    clearTimeout(tooltipLongPressTimer);
+    tooltipLongPressTimer = null;
+    activeTooltipTarget = null;
+    if (!overflowTooltipEl) {
+      return;
+    }
+    overflowTooltipEl.classList.remove('is-visible');
+  }
+
+  function installOverflowTooltipHandlers() {
+    document.addEventListener('mouseover', (event) => {
+      const tooltipTarget = getTooltipTarget(event.target);
+      if (!tooltipTarget) {
+        return;
+      }
+      if (tooltipTarget === activeTooltipTarget) {
+        return;
+      }
+      showOverflowTooltip(tooltipTarget);
+    });
+
+    document.addEventListener('mouseout', (event) => {
+      if (!activeTooltipTarget) {
+        return;
+      }
+      const nextTarget = getTooltipTarget(event.relatedTarget);
+      if (nextTarget === activeTooltipTarget) {
+        return;
+      }
+      hideOverflowTooltip();
+    });
+
+    document.addEventListener('focusin', (event) => {
+      const tooltipTarget = getTooltipTarget(event.target);
+      if (tooltipTarget) {
+        showOverflowTooltip(tooltipTarget);
+      }
+    });
+
+    document.addEventListener('focusout', (event) => {
+      if (activeTooltipTarget && activeTooltipTarget.contains(event.relatedTarget)) {
+        return;
+      }
+      hideOverflowTooltip();
+    });
+
+    document.addEventListener('touchstart', (event) => {
+      const tooltipTarget = getTooltipTarget(event.target);
+      clearTimeout(tooltipLongPressTimer);
+      if (!tooltipTarget) {
+        hideOverflowTooltip();
+        return;
+      }
+      tooltipLongPressTimer = window.setTimeout(() => {
+        showOverflowTooltip(tooltipTarget);
+      }, 450);
+    }, { passive: true });
+
+    ['touchend', 'touchcancel', 'scroll'].forEach((eventName) => {
+      document.addEventListener(eventName, hideOverflowTooltip, { passive: true });
+    });
+
+    window.addEventListener('resize', () => {
+      if (activeTooltipTarget) {
+        showOverflowTooltip(activeTooltipTarget);
+      }
+    });
+  }
+
   function renderChip(value, kind) {
     const safeValue = escapeHtml(value);
     return `<span class="cell-chip ${kind}">${safeValue}</span>`;
@@ -395,97 +583,6 @@
 
   function escapeRegExp(value) {
     return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function uniqueValues(values) {
-    return [...new Set((values || []).filter(Boolean))];
-  }
-
-  function formatBoundSummary(rule) {
-    const pieces = [];
-    if (Number.isFinite(rule?.min)) {
-      pieces.push(`min:${rule.min}`);
-    }
-    if (Number.isFinite(rule?.max)) {
-      pieces.push(`max:${rule.max}`);
-    }
-    if (rule?.unit) {
-      pieces.push(`unit:${rule.unit}`);
-    }
-    if (Number.isFinite(rule?.min) || Number.isFinite(rule?.max)) {
-      return pieces.join(' ');
-    }
-    return 'metadata';
-  }
-
-  function formatIdentifierList(values) {
-    const items = uniqueValues(values);
-    if (!items.length) {
-      return '';
-    }
-    return items.join(', ');
-  }
-
-  function buildFieldIndex(source) {
-    const tagToPaths = new Map();
-
-    function walk(node, context = { structuralPath: [] }) {
-      if (!node || typeof node !== 'object') {
-        return;
-      }
-
-      const identifier = node.formId || node.tag || node.alias || node.id || null;
-      const explicitPath = node.aqlPath || node.path || null;
-      const nextStructuralPath = identifier
-        ? [...context.structuralPath, identifier]
-        : context.structuralPath;
-      const structuralPath = nextStructuralPath.length ? nextStructuralPath.join('/') : null;
-      const preferredPath = explicitPath || structuralPath || identifier;
-
-      if (identifier) {
-        if (!tagToPaths.has(identifier)) {
-          tagToPaths.set(identifier, []);
-        }
-        const knownPaths = tagToPaths.get(identifier);
-        if (preferredPath && !knownPaths.includes(preferredPath)) {
-          knownPaths.push(preferredPath);
-        }
-      }
-
-      Object.values(node).forEach((value) => {
-        if (Array.isArray(value)) {
-          value.forEach((item) => walk(item, { structuralPath: nextStructuralPath }));
-        } else if (value && typeof value === 'object') {
-          walk(value, { structuralPath: nextStructuralPath });
-        }
-      });
-    }
-
-    walk(source);
-
-    return {
-      allPathsFor(identifier) {
-        if (!identifier) {
-          return [];
-        }
-        return [...(tagToPaths.get(identifier) || [])];
-      },
-      preferredPathFor(identifier) {
-        return this.allPathsFor(identifier)[0] || null;
-      }
-    };
-  }
-
-  function resolveRulePath(fieldIndex, identifier, explicitPath) {
-    const candidates = uniqueValues([
-      explicitPath,
-      ...(fieldIndex?.allPathsFor(identifier) || [])
-    ]);
-
-    return {
-      candidates,
-      primary: candidates[0] || identifier || 'unknown'
-    };
   }
 
   function updateRuleTableStatus() {
@@ -506,115 +603,7 @@
   }
 
   function buildDiscoveredRuleRows(parsed) {
-    if (generationCore?.buildDiscoveredRuleRows) {
-      return generationCore.buildDiscoveredRuleRows(parsed);
-    }
-
-    const fieldIndex = parsed?.fieldIndex;
-    const rows = [];
-
-    (parsed?.dependencies || []).forEach((rule, index) => {
-      const triggerPath = resolveRulePath(fieldIndex, rule.trigger || rule.triggerTag, rule.triggerPath);
-      const targetPath = resolveRulePath(fieldIndex, rule.target || rule.targetTag, rule.targetPath);
-      rows.push({
-        rowId: `logic::${index}`,
-        enabled: true,
-        recommendedLevel: 1,
-        kind: 'logic',
-        kindLabel: 'logic',
-        scopeSection: 'logic',
-        scopeInput: 'logic',
-        summary: rule.description || `${rule.target || rule.targetTag || 'target'} when ${rule.trigger || rule.triggerTag || 'trigger'}=${rule.triggerValue ?? rule.showValue}`,
-        trigger: formatIdentifierList([rule.trigger || rule.triggerTag, ...triggerPath.candidates]),
-        subject: formatIdentifierList([rule.target || rule.targetTag, ...targetPath.candidates]),
-        formPath: targetPath.primary || triggerPath.primary,
-        formPathSort: (targetPath.primary || triggerPath.primary || '').toLowerCase(),
-        sortSummary: (rule.description || '').toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.calculations || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `calc::${index}`,
-        enabled: true,
-        recommendedLevel: 1,
-        kind: 'calc',
-        kindLabel: 'calc',
-        scopeSection: 'calc',
-        scopeInput: 'calc',
-        summary: `${rule.field || 'field'} = derived expression`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${(rule.expression || '')}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.validations || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `validation::${index}`,
-        enabled: true,
-        recommendedLevel: 1,
-        kind: 'validation',
-        kindLabel: 'validation',
-        scopeSection: 'validation',
-        scopeInput: 'val',
-        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.valueRanges || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `ranges::${index}`,
-        enabled: true,
-        recommendedLevel: 2,
-        kind: 'ranges',
-        kindLabel: 'ranges',
-        scopeSection: 'ranges',
-        scopeInput: 'range',
-        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.requiredFields || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `required::${index}`,
-        enabled: true,
-        recommendedLevel: 1,
-        kind: 'required',
-        kindLabel: 'required',
-        scopeSection: 'required',
-        scopeInput: 'req',
-        summary: `${rule.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${rule.min || 1}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    return rows;
+    return generationCore.buildDiscoveredRuleRows(parsed);
   }
 
   function discoveredRuleGroupConfig() {
@@ -661,6 +650,15 @@
       placeholder: 'No rules discovered in form data.',
       groupBy: grouping.groupBy,
       groupStartOpen: true,
+      groupHeader(value, count) {
+        const groupIsPath = grouping.groupBy === 'formPath';
+        const title = renderOverflowText(value || 'Unknown', {
+          className: 'tabulator-group-title',
+          mono: groupIsPath,
+          showTail: groupIsPath
+        });
+        return `${title}<span class="group-summary">${count} rule${count === 1 ? '' : 's'}</span>`;
+      },
       initialSort: grouping.sorters,
       columns: [
         {
@@ -694,7 +692,7 @@
           field: 'summary',
           minWidth: 280,
           formatter(cell) {
-            return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+            return renderOverflowText(cell.getValue(), { className: 'rule-summary-cell', showTail: true });
           }
         },
         {
@@ -702,7 +700,7 @@
           field: 'trigger',
           minWidth: 170,
           formatter(cell) {
-            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+            return renderOverflowText(cell.getValue(), { className: 'rule-path-cell', mono: true, showTail: true });
           }
         },
         {
@@ -710,7 +708,7 @@
           field: 'subject',
           minWidth: 200,
           formatter(cell) {
-            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+            return renderOverflowText(cell.getValue(), { className: 'rule-path-cell', mono: true, showTail: true });
           }
         },
         {
@@ -718,7 +716,7 @@
           field: 'formPath',
           minWidth: 230,
           formatter(cell) {
-            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+            return renderOverflowText(cell.getValue(), { className: 'rule-path-cell', mono: true, showTail: true });
           }
         }
       ]
@@ -1145,39 +1143,24 @@
     if (lineIndex < 0) {
       return false;
     }
+    if (editorHighlightedLine !== null) {
+      editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+    }
+    if (editorHighlightTimer) {
+      window.clearTimeout(editorHighlightTimer);
+    }
 
-    if (editor && typeof editor.scrollIntoView === 'function') {
+    editor.scrollIntoView({ line: lineIndex, ch: 0 }, 80);
+    editor.setCursor({ line: lineIndex, ch: 0 });
+    editor.focus();
+    editor.addLineClass(lineIndex, 'background', 'cm-line-target');
+    editorHighlightedLine = lineIndex;
+    editorHighlightTimer = window.setTimeout(() => {
       if (editorHighlightedLine !== null) {
         editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
+        editorHighlightedLine = null;
       }
-      if (editorHighlightTimer) {
-        window.clearTimeout(editorHighlightTimer);
-      }
-
-      editor.scrollIntoView({ line: lineIndex, ch: 0 }, 80);
-      editor.setCursor({ line: lineIndex, ch: 0 });
-      editor.focus();
-      editor.addLineClass(lineIndex, 'background', 'cm-line-target');
-      editorHighlightedLine = lineIndex;
-      editorHighlightTimer = window.setTimeout(() => {
-        if (editorHighlightedLine !== null) {
-          editor.removeLineClass(editorHighlightedLine, 'background', 'cm-line-target');
-          editorHighlightedLine = null;
-        }
-      }, 1800);
-      return true;
-    }
-
-    const fallback = $('code-preview');
-    const value = String(fallback?.value || '');
-    if (!fallback || !value) {
-      return false;
-    }
-    const lines = value.replace(/\r\n/g, '\n').split('\n');
-    const start = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
-    const end = start + (lines[lineIndex] || '').length;
-    fallback.focus();
-    fallback.setSelectionRange(start, end);
+    }, 1800);
     return true;
   }
 
@@ -1370,8 +1353,6 @@
   }
 
   function updateActionButtons() {
-    const rows = getTableRows();
-    $('run-btn').disabled = getRunnableTestsFromRows(rows).length === 0;
     $('export-btn').disabled = !getEditorValue().trim();
   }
 
@@ -1446,9 +1427,9 @@
           formatter(cell) {
             const row = cell.getData();
             if (row.rowKind === 'group') {
-              return `<span class="group-name-cell jump-to-code">${escapeHtml(row.callType || 'describe')}(${quoteSingle(row.groupName)})</span><span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
+              return `${renderOverflowText(`${row.callType || 'describe'}(${quoteSingle(row.groupName)})`, { className: 'group-name-cell jump-to-code', mono: true, showTail: true })}<span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
             }
-            return `<span class="jump-to-code">${escapeHtml(row.displayName || '')}</span>`;
+            return renderOverflowText(row.displayName, { className: 'jump-to-code', showTail: true });
           },
           cellClick(event, cell) {
             if (!event.target.closest('.jump-to-code')) {
@@ -1618,30 +1599,16 @@
   }
 
   function createEditor() {
-    if (typeof CodeMirror !== 'undefined') {
-      editor = CodeMirror.fromTextArea($('code-preview'), {
-        mode: 'javascript',
-        lineNumbers: true,
-        tabSize: 2
-      });
-      editor.setValue("describe('generated-form - autogenerated form tests', () => {\n});\n");
-      editor.on('change', () => {
-        if (suppressEditorSync) {
-          return;
-        }
-        clearTimeout(editorSyncTimer);
-        editorSyncTimer = window.setTimeout(() => {
-          syncTableFromEditor('Table refreshed from code editor changes.');
-        }, 250);
-      });
-      return;
+    if (typeof CodeMirror === 'undefined') {
+      throw new Error('CodeMirror failed to load.');
     }
-    const fallback = $('code-preview');
-    fallback.style.width = '100%';
-    fallback.style.height = '250px';
-    fallback.style.border = '1px solid #d7dbe0';
-    fallback.value = "describe('generated-form - autogenerated form tests', () => {\n});\n";
-    fallback.addEventListener('input', () => {
+    editor = CodeMirror.fromTextArea($('code-preview'), {
+      mode: 'javascript',
+      lineNumbers: true,
+      tabSize: 2
+    });
+    editor.setValue("describe('generated-form - autogenerated form tests', () => {\n});\n");
+    editor.on('change', () => {
       if (suppressEditorSync) {
         return;
       }
@@ -1650,173 +1617,15 @@
         syncTableFromEditor('Table refreshed from code editor changes.');
       }, 250);
     });
-    editor = {
-      setValue(value) { fallback.value = value; },
-      getValue() { return fallback.value; }
-    };
-  }
-
-  function normalizeConditionValue(value) {
-    if (typeof value === 'boolean') return value;
-    if (typeof value !== 'string') return value;
-    const t = value.trim().toLowerCase();
-    if (t === 'true') return true;
-    if (t === 'false') return false;
-    return value;
-  }
-
-  function collectParsed(node, parsed, context = {}) {
-    if (!node || typeof node !== 'object') return;
-    const currentTag = node.formId || node.tag || node.alias || node.id || context.currentTag || null;
-    parsed.fields.add(currentTag || 'unknown');
-
-    const conditionsPayload = node?.viewConfig?.annotations?.conditions;
-    if (conditionsPayload) {
-      try {
-        const conditions = typeof conditionsPayload === 'string' ? JSON.parse(conditionsPayload) : conditionsPayload;
-        (conditions.expressions || []).forEach((expr) => {
-          const statement = (expr.statements || [])[0] || {};
-          const action = (expr.actions || [])[0] || {};
-          const trigger = statement.fieldId;
-          const target = action.target;
-          const triggerValue = normalizeConditionValue(statement?.condition?.value?.value ?? statement?.condition?.value);
-          if (trigger && target) {
-            parsed.dependencies.push({ trigger, target, triggerValue, description: `${target} when ${trigger}=${triggerValue}` });
-          }
-        });
-      } catch (_e) {}
-    }
-
-    const range = node?.validation?.range;
-    if (range && (Number.isFinite(range.min) || Number.isFinite(range.max))) {
-      parsed.validations.push({ field: currentTag, min: range.min ?? null, max: range.max ?? null });
-      parsed.valueRanges.push({ field: currentTag, min: range.min ?? null, max: range.max ?? null });
-    }
-    (node.inputs || []).forEach((input) => {
-      const r = input?.validation?.range;
-      if (r && (Number.isFinite(r.min) || Number.isFinite(r.max))) {
-        parsed.validations.push({ field: currentTag, min: r.min ?? null, max: r.max ?? null });
-        parsed.valueRanges.push({ field: currentTag, min: r.min ?? null, max: r.max ?? null });
-      }
-    });
-
-    if (Number.isFinite(node.min) && node.min > 0) parsed.requiredFields.push({ field: currentTag, min: node.min });
-
-    Object.entries(node).forEach(([key, value]) => {
-      if (/calculation|formula|derived/i.test(key) && value) {
-        parsed.calculations.push({ field: currentTag, expression: typeof value === 'string' ? value : JSON.stringify(value) });
-      }
-    });
-
-    Object.values(node).forEach((value) => {
-      if (Array.isArray(value)) value.forEach((item) => collectParsed(item, parsed, { currentTag }));
-      else if (value && typeof value === 'object') collectParsed(value, parsed, { currentTag });
-    });
   }
 
   function parseFormDefinition(raw) {
-    if (generationCore?.parseFormDefinition) {
-      return generationCore.parseFormDefinition(raw);
-    }
-
-    const source = raw.formDescription || raw.webTemplate || raw;
-    const parsed = {
-      name: raw.name || source.name || source.templateId || 'generated-form',
-      fields: new Set(),
-      dependencies: [],
-      calculations: [],
-      validations: [],
-      valueRanges: [],
-      requiredFields: [],
-      fieldIndex: buildFieldIndex(source)
-    };
-    collectParsed(source, parsed);
-    return parsed;
-  }
-
-  function selectedCategories() {
-    const categories = [];
-    if (getScopeValue('logic') > 0) categories.push('logic');
-    if (getScopeValue('calc') > 0) categories.push('calc');
-    if (getScopeValue('val') > 0) categories.push('validation');
-    if (getScopeValue('range') > 0) categories.push('ranges');
-    if (getScopeValue('req') > 0) categories.push('required');
-    return categories;
+    return generationCore.parseFormDefinition(raw);
   }
 
   function renderRules(parsed) {
     discoveredRuleRows = buildDiscoveredRuleRows(parsed);
     renderDiscoveredRuleTable(discoveredRuleRows);
-  }
-
-  function buildEnabledParsed(parsed) {
-    const enabledIds = new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId));
-    if (generationCore?.filterParsedFormByRuleIds) {
-      return generationCore.filterParsedFormByRuleIds(parsed, enabledIds);
-    }
-    return {
-      ...parsed,
-      dependencies: (parsed.dependencies || []).filter((_rule, index) => enabledIds.has(`logic::${index}`)),
-      calculations: (parsed.calculations || []).filter((_rule, index) => enabledIds.has(`calc::${index}`)),
-      validations: (parsed.validations || []).filter((_rule, index) => enabledIds.has(`validation::${index}`)),
-      valueRanges: (parsed.valueRanges || []).filter((_rule, index) => enabledIds.has(`ranges::${index}`)),
-      requiredFields: (parsed.requiredFields || []).filter((_rule, index) => enabledIds.has(`required::${index}`))
-    };
-  }
-
-  function buildLogicTests(parsed) {
-    return parsed.dependencies.map((rule) => {
-      const hide = rule.triggerValue === true ? false : true;
-      return {
-        title: prefixCategoryTitle('logic', sanitizeTestTitle(rule.description) || `${rule.target} visibility toggles from ${rule.trigger}`),
-        callType: 'it',
-        body: [
-          `cy.visit('/form-viewer.html?testMode=1&autoLoad=0');`,
-          'cy.formViewerReady();',
-          '',
-          `cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(hide)});`,
-          `cy.expectHidden(${JSON.stringify(rule.target)});`,
-          `cy.fillField(${JSON.stringify(rule.trigger)}, ${JSON.stringify(rule.triggerValue)});`,
-          `cy.expectVisible(${JSON.stringify(rule.target)});`
-        ].join('\n')
-      };
-    });
-  }
-
-  function buildCalcTests(parsed) {
-    return parsed.calculations.map((rule, index) => ({
-      title: prefixCategoryTitle('calc', rule?.field ? `${rule.field} metadata exists` : `rule ${index + 1} metadata exists`),
-      callType: 'it.skip',
-      body: [
-        `const field = ${JSON.stringify(rule?.field || null)};`,
-        `const expression = ${JSON.stringify(rule?.expression || '')};`,
-        '',
-        "expect(field).to.be.a('string').and.not.to.equal('');",
-        "expect(expression).to.be.a('string');",
-        'expect(expression.trim().length).to.be.greaterThan(0);'
-      ].join('\n')
-    }));
-  }
-
-  function deriveRangeSamples(rule) {
-    const min = Number.isFinite(rule.min) ? rule.min : null;
-    const max = Number.isFinite(rule.max) ? rule.max : null;
-    const valid = [];
-    const invalid = [];
-    if (min !== null && max !== null) {
-      valid.push(min, max, (min + max) / 2);
-      invalid.push(min - 1, max + 1);
-    } else if (min !== null) {
-      valid.push(min);
-      invalid.push(min - 0.1);
-    } else if (max !== null) {
-      valid.push(max);
-      invalid.push(max + 0.1);
-    }
-    return {
-      validSamples: [...new Set(valid.filter((value) => Number.isFinite(value)))],
-      invalidSamples: [...new Set(invalid.filter((value) => Number.isFinite(value)))]
-    };
   }
 
   function collectManualRangeCases() {
@@ -1880,78 +1689,7 @@
       .filter(Boolean);
   }
 
-  function buildValidationTests(parsed) {
-    return parsed.validations.map((rule, index) => {
-      const samples = deriveRangeSamples(rule);
-      const label = `validation ${rule.field || 'field'} #${index + 1}`;
-      return {
-        title: prefixCategoryTitle('validation', `${rule.field || 'field'} #${index + 1}`),
-        callType: 'it',
-        body: `cy.assertRangeSamples(${JSON.stringify({
-          label,
-          min: Number.isFinite(rule.min) ? rule.min : null,
-          max: Number.isFinite(rule.max) ? rule.max : null,
-          minOp: '>=',
-          maxOp: '<=',
-          validSamples: samples.validSamples,
-          invalidSamples: samples.invalidSamples,
-          expectedUnit: null
-        })});`
-      };
-    });
-  }
-
-  function buildRangeTests(parsed) {
-    const generated = parsed.valueRanges.map((rule, index) => {
-      const samples = deriveRangeSamples(rule);
-      const label = `value range ${rule.field || 'field'} #${index + 1}`;
-      return {
-        title: prefixCategoryTitle('ranges', `${rule.field || 'field'} #${index + 1}`),
-        callType: 'it',
-        body: `cy.assertRangeSamples(${JSON.stringify({
-          label,
-          min: Number.isFinite(rule.min) ? rule.min : null,
-          max: Number.isFinite(rule.max) ? rule.max : null,
-          minOp: '>=',
-          maxOp: '<=',
-          validSamples: samples.validSamples,
-          invalidSamples: samples.invalidSamples,
-          expectedUnit: null
-        })});`
-      };
-    });
-
-    return [...generated, ...collectManualRangeCases()];
-  }
-
-  function buildRequiredTests(parsed) {
-    return parsed.requiredFields.map((rule, index) => ({
-      title: prefixCategoryTitle('required', `${rule?.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`) || `required field rule ${index + 1}`,
-      callType: 'it.skip',
-      body: [
-        `const min = ${JSON.stringify(Number.isFinite(rule?.min) ? rule.min : 1)};`,
-        '',
-        'const hasRequiredCardinality = (value) => {',
-        '  if (value === null || value === undefined) {',
-        '    return false;',
-        '  }',
-        '  if (Array.isArray(value)) {',
-        '    return value.length >= min;',
-        '  }',
-        "  if (typeof value === 'string') {",
-        '    return value.length >= min;',
-        '  }',
-        '  return min <= 1;',
-        '};',
-        '',
-        'expect(hasRequiredCardinality(null)).to.equal(false);',
-        'expect(hasRequiredCardinality(undefined)).to.equal(false);'
-      ].join('\n')
-    }));
-  }
-
   function buildCode(parsed) {
-    const filteredParsed = buildEnabledParsed(parsed);
     const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
       const action = step.querySelector('.step-action').value;
       const field = step.querySelector('.step-field').value;
@@ -1961,36 +1699,15 @@
 
     const existingModel = parseSuiteModelFromCode(getEditorValue());
     const preservedCustomGroups = (existingModel?.groups || []).filter((group) => !generatedSectionNames.includes(normalizeCategoryKey(group.name)));
-    const groups = generationCore?.buildGeneratedGroups
-      ? generationCore.buildGeneratedGroups(parsed, {
-        logicLevel: getScopeValue('logic'),
-        calcLevel: getScopeValue('calc'),
-        validationLevel: getScopeValue('val'),
-        rangesLevel: getScopeValue('range'),
-        requiredLevel: getScopeValue('req'),
-        enabledRuleIds: new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId)),
-        manualRangeCases: collectManualRangeCases()
-      })
-      : (() => {
-        const localGroups = [];
-        const categories = selectedCategories();
-        if (categories.includes('logic')) {
-          localGroups.push({ name: 'logic', tests: buildLogicTests(filteredParsed), extrasText: '' });
-        }
-        if (categories.includes('calc')) {
-          localGroups.push({ name: 'calc', tests: buildCalcTests(filteredParsed), extrasText: '' });
-        }
-        if (categories.includes('validation')) {
-          localGroups.push({ name: 'validation', tests: buildValidationTests(filteredParsed), extrasText: '' });
-        }
-        if (categories.includes('ranges')) {
-          localGroups.push({ name: 'ranges', tests: buildRangeTests(filteredParsed), extrasText: '' });
-        }
-        if (categories.includes('required')) {
-          localGroups.push({ name: 'required', tests: buildRequiredTests(filteredParsed), extrasText: '' });
-        }
-        return localGroups;
-      })();
+    const groups = generationCore.buildGeneratedGroups(parsed, {
+      logicLevel: getScopeValue('logic'),
+      calcLevel: getScopeValue('calc'),
+      validationLevel: getScopeValue('val'),
+      rangesLevel: getScopeValue('range'),
+      requiredLevel: getScopeValue('req'),
+      enabledRuleIds: new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId)),
+      manualRangeCases: collectManualRangeCases()
+    });
 
     preservedCustomGroups.forEach((group) => groups.push(group));
 
@@ -2268,6 +1985,8 @@
     setEditorContent(serializeSuiteModel(parsedModel), `Added describe group '${groupName}'.`);
     closeGroupModal();
   }
+
+  installOverflowTooltipHandlers();
 
   $('form-file').addEventListener('change', async (e) => {
     const file = e.target.files?.[0];

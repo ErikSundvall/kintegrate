@@ -5975,45 +5975,6 @@
                                   "fontWeight": "normal"
                                 }
                               ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "VrmI2",
-                              "name": "open-editor",
-                              "context": "Open Editor Button",
-                              "height": 30,
-                              "fill": "#FFFFFF",
-                              "cornerRadius": 6,
-                              "stroke": {
-                                "thickness": 1,
-                                "fill": "#D7DBE0"
-                              },
-                              "gap": 6,
-                              "padding": [
-                                5,
-                                10
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "icon_font",
-                                  "id": "Y1g4u",
-                                  "width": 14,
-                                  "height": 14,
-                                  "iconFontName": "open_in_new",
-                                  "iconFontFamily": "Material Symbols Rounded",
-                                  "fill": "#1F2937"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "Sb74m",
-                                  "fill": "#1F2937",
-                                  "content": "Open in separate window",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
-                                }
-                              ]
                             }
                           ]
                         },
@@ -6850,6 +6811,45 @@
                               "id": "8TVaL",
                               "fill": "#1F2937",
                               "content": "Export .cy.js",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VrmI2",
+                          "name": "open-editor",
+                          "context": "Open Editor Button",
+                          "height": 30,
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 6,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#D7DBE0"
+                          },
+                          "gap": 6,
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "Y1g4u",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "open_in_new",
+                              "iconFontFamily": "Material Symbols Rounded",
+                              "fill": "#1F2937"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Sb74m",
+                              "fill": "#1F2937",
+                              "content": "Open in separate window",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "normal"
