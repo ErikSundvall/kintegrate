@@ -13,8 +13,8 @@
     body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: 1.1fr 1fr; gap:1rem; padding:1rem; }
-    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; }
+    .grid { display:grid; grid-template-columns: 1.1fr 1fr; grid-template-areas:"discovery editor" "steps suite"; gap:1rem; padding:1rem; align-items:start; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
     .panel-body { padding:1rem; }
@@ -36,10 +36,22 @@
     .discovery-scope-row { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
     .rules-card, .scope-card { display:flex; flex-direction:column; gap:0.55rem; min-height:0; border:1px solid var(--line); border-radius:6px; background:#fbfdff; padding:0.75rem; }
     .section-label { font-size:0.75rem; font-weight:600; color:#6b7280; }
-    .rule-list { display:flex; flex-direction:column; gap:0.45rem; min-height:0; overflow:auto; }
-    .rule-item { display:flex; align-items:center; gap:0.5rem; min-height:28px; padding:0.25rem 0.4rem; border:1px solid #e3e7eb; border-radius:6px; background:#fff; font-size:0.72rem; color:#1f2937; }
-    .rule-item-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .rule-empty { padding:0.6rem 0.7rem; border:1px dashed #d7dbe0; border-radius:6px; background:#fff; color:#6b7280; font-size:0.75rem; }
+    .rules-toolbar { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; }
+    .rules-grouping { display:flex; align-items:center; gap:0.45rem; }
+    .rules-grouping label { font-size:0.72rem; color:#6b7280; }
+    #rule-table { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; }
+    #rule-table .tabulator { border:none; background:#fff; font-size:0.78rem; }
+    #rule-table .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
+    #rule-table .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.74rem; font-weight:600; }
+    #rule-table .tabulator-row { background:#fff; }
+    #rule-table .tabulator-row:hover { background:#fbfdff; }
+    #rule-table .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.4rem 0.45rem; vertical-align:middle; }
+    #rule-table .tabulator-row.tabulator-group-level-0,
+    #rule-table .tabulator-row.tabulator-group-level-1 { background:#f8fafc; }
+    .rule-path-cell, .rule-summary-cell { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rule-path-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.72rem; color:#475569; }
+    .rule-toggle { width:14px; height:14px; accent-color:var(--primary); }
+    .rule-table-status { margin-top:0.45rem; }
     .scope-card { padding:0.6rem; gap:0.45rem; }
     .scope-controls { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.35rem; }
     .scope-row { display:flex; align-items:center; justify-content:center; gap:0.35rem; min-width:0; padding:0.3rem 0.4rem; border:1px solid var(--line); border-radius:8px; background:#fff; min-height:34px; }
@@ -88,6 +100,15 @@
     .modal-footer { padding:1rem; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:0.5rem; }
     .tree-container { max-height:400px; overflow:auto; border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
     .group-name-input { width:100%; }
+
+    #discovery-panel { grid-area:discovery; }
+    #code-editor-panel { grid-area:editor; }
+    #step-builder-panel { grid-area:steps; }
+    #test-suite-panel { grid-area:suite; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "editor" "suite" "steps"; }
+    }
   </style>
 </head>
 <body>
@@ -98,7 +119,7 @@
 </header>
 
 <div class="grid">
-  <section class="panel">
+  <section class="panel" id="discovery-panel">
     <div class="panel-header">
       <h2>Form + Discovery</h2>
     </div>
@@ -113,8 +134,18 @@
       </div>
       <div class="discovery-scope-row">
         <section class="rules-card">
-          <div class="section-label">Discovered rules</div>
-          <div id="rule-list" class="rule-list"></div>
+          <div class="rules-toolbar">
+            <div class="section-label">Discovered rules</div>
+            <div class="rules-grouping">
+              <label for="rule-group-mode">Group by</label>
+              <select id="rule-group-mode">
+                <option value="kind">Kind of test</option>
+                <option value="path">Form/template path</option>
+              </select>
+            </div>
+          </div>
+          <div id="rule-table"></div>
+          <div id="rule-table-status" class="small rule-table-status">No rules discovered yet.</div>
         </section>
         <section class="scope-card">
           <div class="section-label">Generation scope</div>
@@ -176,7 +207,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="test-suite-panel">
     <div class="panel-header">
       <h2>Test suite / list</h2>
       <button class="btn" id="add-group-btn">Add Group</button>
@@ -192,7 +223,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="step-builder-panel">
     <div class="panel-header">
       <h2>Custom step builder</h2>
     </div>
@@ -219,7 +250,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="code-editor-panel">
     <div class="panel-header">
       <h2>GitHub target + Code editor</h2>
     </div>
@@ -293,15 +324,17 @@
   let currentFieldInput = null;
   let formRawData = null;
   let testSuiteTable = null;
+  let discoveredRuleTable = null;
+  let discoveredRuleRows = [];
   let editorSyncTimer = null;
   let suppressEditorSync = false;
   let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
 
   const $ = (id) => document.getElementById(id);
-  const ruleList = $('rule-list');
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
+  const ruleGroupModeEl = $('rule-group-mode');
   const categoryAliases = {
     logic: 'logic',
     dependencies: 'logic',
@@ -336,6 +369,15 @@
   function renderChip(value, kind) {
     const safeValue = escapeHtml(value);
     return `<span class="cell-chip ${kind}">${safeValue}</span>`;
+  }
+
+  function setRuleTableStatus(message, kind = 'small') {
+    const status = $('rule-table-status');
+    if (!status) {
+      return;
+    }
+    status.className = `small rule-table-status ${kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : ''}`.trim();
+    status.textContent = message;
   }
 
   function sanitizeTestTitle(text) {
@@ -1043,25 +1085,129 @@
     return categories;
   }
 
-  function renderRules(parsed) {
-    ruleList.innerHTML = '';
-    const entries = [
-      ...parsed.dependencies.slice(0, 25).map((r) => ({ kind: 'logic', text: r.description })),
-      ...parsed.calculations.slice(0, 10).map((r) => ({ kind: 'calc', text: `${r.field} = derived expression` })),
-      ...parsed.validations.slice(0, 15).map((r) => ({ kind: 'validation', text: `${r.field} min:${r.min ?? '-'} max:${r.max ?? '-'}` }))
+  function buildDiscoveredRuleRows(parsed) {
+    return [
+      ...parsed.dependencies.map((rule, index) => ({
+        id: `logic-${index + 1}`,
+        kind: 'logic',
+        summary: rule.description || `${rule.target || 'target'} when ${rule.trigger || 'trigger'} changes`,
+        field: rule.target || rule.trigger || '',
+        formPath: rule.target || rule.trigger || '',
+        enabled: true
+      })),
+      ...parsed.calculations.map((rule, index) => ({
+        id: `calc-${index + 1}`,
+        kind: 'calc',
+        summary: `${rule.field || 'field'} = derived expression`,
+        field: rule.field || '',
+        formPath: rule.field || '',
+        enabled: true
+      })),
+      ...parsed.validations.map((rule, index) => ({
+        id: `validation-${index + 1}`,
+        kind: 'validation',
+        summary: `${rule.field || 'field'} min:${rule.min ?? '-'} max:${rule.max ?? '-'}`,
+        field: rule.field || '',
+        formPath: rule.field || '',
+        enabled: true
+      })),
+      ...parsed.valueRanges.map((rule, index) => ({
+        id: `ranges-${index + 1}`,
+        kind: 'ranges',
+        summary: `${rule.field || 'field'} range min:${rule.min ?? '-'} max:${rule.max ?? '-'}`,
+        field: rule.field || '',
+        formPath: rule.field || '',
+        enabled: true
+      })),
+      ...parsed.requiredFields.map((rule, index) => ({
+        id: `required-${index + 1}`,
+        kind: 'required',
+        summary: `${rule.field || 'field'} min cardinality ${rule.min ?? 1}`,
+        field: rule.field || '',
+        formPath: rule.field || '',
+        enabled: true
+      }))
     ];
-    entries.forEach((entry) => {
-      const item = document.createElement('div');
-      item.className = 'rule-item';
-      item.innerHTML = `${renderChip(entry.kind, entry.kind)}<span class="rule-item-text">${escapeHtml(entry.text)}</span>`;
-      ruleList.appendChild(item);
-    });
-    if (!entries.length) {
-      const empty = document.createElement('div');
-      empty.className = 'rule-empty';
-      empty.textContent = 'No rules discovered in form data.';
-      ruleList.appendChild(empty);
+  }
+
+  function renderDiscoveredRuleTable(rows = []) {
+    const container = $('rule-table');
+    if (!container || typeof Tabulator === 'undefined') {
+      setRuleTableStatus('Tabulator did not load.', 'warn');
+      return;
     }
+
+    if (discoveredRuleTable) {
+      discoveredRuleTable.destroy();
+      discoveredRuleTable = null;
+      container.innerHTML = '';
+    }
+
+    const mode = ruleGroupModeEl?.value === 'path' ? 'path' : 'kind';
+    discoveredRuleTable = new Tabulator(container, {
+      data: rows,
+      layout: 'fitColumns',
+      height: '320px',
+      placeholder: 'No rules discovered in form data.',
+      groupBy: mode === 'path' ? 'formPath' : 'kind',
+      initialSort: mode === 'path'
+        ? [{ column: 'formPath', dir: 'asc' }, { column: 'kind', dir: 'asc' }, { column: 'summary', dir: 'asc' }]
+        : [{ column: 'kind', dir: 'asc' }, { column: 'formPath', dir: 'asc' }, { column: 'summary', dir: 'asc' }],
+      columns: [
+        {
+          title: '',
+          field: 'enabled',
+          width: 42,
+          hozAlign: 'center',
+          headerSort: false,
+          formatter(cell) {
+            return `<input class="rule-toggle" type="checkbox" ${cell.getValue() ? 'checked' : ''}>`;
+          },
+          cellClick(event, cell) {
+            const next = !cell.getValue();
+            cell.setValue(next);
+            const enabledCount = (discoveredRuleTable?.getData() || []).filter((row) => row.enabled).length;
+            const modeLabel = mode === 'path' ? 'form/template path' : 'kind of test';
+            setRuleTableStatus(`${enabledCount} of ${(discoveredRuleTable?.getData() || []).length} rules enabled. Grouped by ${modeLabel}.`, 'ok');
+            event.stopPropagation();
+          }
+        },
+        {
+          title: 'Kind',
+          field: 'kind',
+          width: 110,
+          headerSort: false,
+          formatter(cell) {
+            return renderChip(cell.getValue(), cell.getValue());
+          }
+        },
+        {
+          title: 'Summary',
+          field: 'summary',
+          minWidth: 240,
+          formatter(cell) {
+            return `<span class="rule-summary-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        },
+        {
+          title: 'Form/template path',
+          field: 'formPath',
+          minWidth: 180,
+          formatter(cell) {
+            return `<span class="rule-path-cell">${escapeHtml(cell.getValue() || '')}</span>`;
+          }
+        }
+      ]
+    });
+
+    const enabledCount = rows.filter((row) => row.enabled).length;
+    const modeLabel = mode === 'path' ? 'form/template path' : 'kind of test';
+    setRuleTableStatus(rows.length ? `${enabledCount} of ${rows.length} rules enabled. Grouped by ${modeLabel}.` : 'No rules discovered yet.', rows.length ? 'ok' : 'small');
+  }
+
+  function renderRules(parsed) {
+    discoveredRuleRows = buildDiscoveredRuleRows(parsed);
+    renderDiscoveredRuleTable(discoveredRuleRows);
   }
 
   function buildLogicTests(parsed) {
@@ -1583,6 +1729,7 @@
   });
 
   $('generate-btn').addEventListener('click', regenerateCode);
+  ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
   $('run-btn').addEventListener('click', () => {
     const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
