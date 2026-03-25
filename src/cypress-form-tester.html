@@ -10,14 +10,14 @@
   <style>
     :root { --primary:#1976d2; --ok:#2e7d32; --warn:#ed6c02; --danger:#d32f2f; --line:#d7dbe0; --bg:#f6f8fa; }
     * { box-sizing: border-box; }
-    body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; }
+    body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; overflow-x:hidden; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: 1.1fr 1fr; gap:1rem; padding:1rem; }
-    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap:1rem; padding:1rem; align-items:start; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; overflow:hidden; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
-    .panel-body { padding:1rem; }
+    .panel-body { padding:1rem; min-width:0; }
     .row { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.65rem; flex-wrap:wrap; }
     .status { font-size:0.85rem; margin:0.4rem 0; }
     .ok { color:var(--ok); }
@@ -63,22 +63,25 @@
     #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px 70px auto; gap:0.4rem; margin-bottom:0.35rem; align-items:center; }
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .test-grid-wrap { min-height:0; }
+    .test-grid-wrap { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
     .table-actions { margin-top:0.7rem; margin-bottom:0; }
     .table-sync-status { margin-top:0.45rem; }
-    #test-suite-grid { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+    #test-suite-grid { min-height:320px; width:100%; max-width:100%; min-width:0; border:1px solid var(--line); border-radius:6px; overflow:auto; }
     #test-suite-grid .tabulator { border:none; background:#fff; font-size:0.82rem; }
+    #test-suite-grid .tabulator,
+    #test-suite-grid .tabulator-tableholder { width:100%; max-width:100%; }
+    #test-suite-grid .tabulator-tableholder { overflow-x:auto; }
     #test-suite-grid .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
     #test-suite-grid .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.78rem; font-weight:600; }
     #test-suite-grid .tabulator-row { background:#fff; }
     #test-suite-grid .tabulator-row:hover { background:#fbfdff; }
-    #test-suite-grid .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.45rem 0.55rem; vertical-align:middle; }
+    #test-suite-grid .tabulator-cell { border-right:1px solid #eef2f6; border-bottom:1px solid #eef2f6; padding:0.45rem 0.55rem; vertical-align:middle; overflow:hidden; }
     #test-suite-grid .tabulator-row.group-row { background:#f8fafc; font-weight:600; }
     #test-suite-grid .tabulator-row.group-row .tabulator-cell { background:#f8fafc; color:#1f2937; }
     #test-suite-grid .tabulator-row.group-row:hover { background:#f8fafc; }
     #test-suite-grid .tabulator-row.group-row .tabulator-cell:first-child { border-left:none; }
     #test-suite-grid .tabulator-row.group-row .drag-handle-cell { color:#9aa4b2; }
-    .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
+    .group-name-cell { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; vertical-align:middle; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
     .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
@@ -88,7 +91,7 @@
     .test-state-btn.is-selected[data-state="run"] { background:#eef7ee; color:#2e7d32; }
     .test-state-btn.is-selected[data-state="only"] { background:#fff4e8; color:#ed6c02; }
     .test-state-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:-2px; }
-    .jump-to-code { cursor:pointer; }
+    .jump-to-code { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; vertical-align:middle; }
     .CodeMirror .cm-line-target { background:#fff4e8; }
     .run-summary { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.45rem; }
     .run-summary-title { font-weight:700; }
@@ -131,7 +134,7 @@
 </header>
 
 <div class="grid">
-  <section class="panel">
+  <section class="panel" id="form-discovery-panel">
     <div class="panel-header">
       <h2>Form + Discovery</h2>
     </div>
@@ -219,7 +222,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="test-suite-panel">
     <div class="panel-header">
       <h2>Test suite / list</h2>
       <button class="btn" id="add-group-btn">Add Group</button>
@@ -235,7 +238,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="custom-test-builder-panel">
     <div class="panel-header">
       <h2>Custom step builder</h2>
     </div>
@@ -262,7 +265,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="code-editor-panel">
     <div class="panel-header">
       <h2>GitHub target + Code editor</h2>
     </div>

@@ -2252,7 +2252,8 @@
                 {
                   "type": "frame",
                   "id": "ZR8Zm",
-                  "name": "Form Discovery Panel",
+                  "name": "form-discovery-panel",
+                  "context": "Form Discovery Panel",
                   "clip": true,
                   "width": "fill_container",
                   "height": "fill_container",
@@ -2268,6 +2269,7 @@
                       "type": "frame",
                       "id": "ANVzJ",
                       "name": "Panel Header",
+                      "reusable": true,
                       "width": "fill_container",
                       "height": 46,
                       "fill": "#FFFFFF",
@@ -2344,7 +2346,8 @@
                             {
                               "type": "frame",
                               "id": "78v5T",
-                              "name": "Rules List",
+                              "name": "rule-table",
+                              "context": "Discovered Rules Table",
                               "width": "fill_container",
                               "height": "fill_container",
                               "fill": "#FBFDFF",
@@ -2533,7 +2536,8 @@
                             {
                               "type": "frame",
                               "id": "3Cxqy",
-                              "name": "Compact Scope Panel",
+                              "name": "scope-controls",
+                              "context": "Generation Scope Controls",
                               "width": "fill_container",
                               "fill": "#FBFDFF",
                               "cornerRadius": 6,
@@ -3308,7 +3312,8 @@
                                     {
                                       "type": "frame",
                                       "id": "iMAvm",
-                                      "name": "Generate Tests Button",
+                                      "name": "generate-btn",
+                                      "context": "Generate Tests Button",
                                       "width": "fill_container",
                                       "fill": "#1976D2",
                                       "cornerRadius": 6,
@@ -3367,7 +3372,8 @@
                 {
                   "type": "frame",
                   "id": "Y8eB7",
-                  "name": "GitHub Target + Code Editor Panel",
+                  "name": "code-editor-panel",
+                  "context": "GitHub Target + Code Editor Panel",
                   "clip": true,
                   "width": "fill_container",
                   "height": "fill_container",
@@ -3410,7 +3416,8 @@
                         {
                           "type": "frame",
                           "id": "OkxVr",
-                          "name": "Save Target Button",
+                          "name": "add-group-btn",
+                          "context": "Add Group Button",
                           "height": 30,
                           "fill": "#FFFFFF",
                           "cornerRadius": 6,
@@ -3464,7 +3471,8 @@
                             {
                               "type": "frame",
                               "id": "bordI",
-                              "name": "Test Suite Grid (Implement with Grid.js fixedHeader)",
+                              "name": "test-suite-grid",
+                              "context": "Test Suite Grid",
                               "width": "fill_container",
                               "height": "fill_container",
                               "fill": "#FBFDFF",
@@ -5644,7 +5652,8 @@
                         {
                           "type": "frame",
                           "id": "JpQkA",
-                          "name": "Code Editor",
+                          "name": "code-preview",
+                          "context": "Code Preview Editor",
                           "width": "fill_container",
                           "height": 170,
                           "fill": "#FBFDFF",
@@ -5780,7 +5789,8 @@
                             {
                               "type": "frame",
                               "id": "Xq9vN",
-                              "name": "Save Target Button",
+                              "name": "save-target",
+                              "context": "Save Target Button",
                               "height": 30,
                               "fill": "#FFFFFF",
                               "cornerRadius": 6,
@@ -5930,7 +5940,8 @@
                             {
                               "type": "frame",
                               "id": "9gUGl",
-                              "name": "Load Target Button",
+                              "name": "load-target",
+                              "context": "Load Target Button",
                               "height": 30,
                               "fill": "#FFFFFF",
                               "cornerRadius": 6,
@@ -5968,7 +5979,8 @@
                             {
                               "type": "frame",
                               "id": "VrmI2",
-                              "name": "Open Editor Button",
+                              "name": "open-editor",
+                              "context": "Open Editor Button",
                               "height": 30,
                               "fill": "#FFFFFF",
                               "cornerRadius": 6,
@@ -6050,7 +6062,8 @@
                 {
                   "type": "frame",
                   "id": "Jd5Cl",
-                  "name": "Custom Test Builder Panel",
+                  "name": "custom-test-builder-panel",
+                  "context": "Custom Test Builder Panel",
                   "clip": true,
                   "width": "fill_container",
                   "height": "fill_container",
@@ -6173,7 +6186,8 @@
                         {
                           "type": "frame",
                           "id": "YRQHj",
-                          "name": "Step List",
+                          "name": "step-list",
+                          "context": "Custom Step List",
                           "width": "fill_container",
                           "height": 140,
                           "fill": "#FBFDFF",
@@ -6437,7 +6451,8 @@
                         {
                           "type": "frame",
                           "id": "feL2t",
-                          "name": "Add Step Button",
+                          "name": "add-step",
+                          "context": "Add Step Button",
                           "height": 30,
                           "fill": "#FFFFFF",
                           "cornerRadius": 6,
@@ -6733,7 +6748,8 @@
                 {
                   "type": "frame",
                   "id": "kC3Zd",
-                  "name": "Test Suite Panel",
+                  "name": "test-suite-panel",
+                  "context": "Test Suite Panel",
                   "clip": true,
                   "width": "fill_container",
                   "height": "fill_container",
@@ -6767,7 +6783,8 @@
                         {
                           "type": "frame",
                           "id": "rOimc",
-                          "name": "Run Tests Button",
+                          "name": "run-btn",
+                          "context": "Run Active Tests Button",
                           "fill": "#FFFFFF",
                           "cornerRadius": 6,
                           "stroke": {
@@ -6804,7 +6821,8 @@
                         {
                           "type": "frame",
                           "id": "iKmCY",
-                          "name": "Export Button",
+                          "name": "export-btn",
+                          "context": "Export Cypress File Button",
                           "fill": "#FFFFFF",
                           "cornerRadius": 6,
                           "stroke": {
@@ -6863,7 +6881,8 @@
                         {
                           "type": "frame",
                           "id": "DWfJo",
-                          "name": "Last Run",
+                          "name": "last-run",
+                          "context": "Last Run Status",
                           "width": "fill_container",
                           "height": "fill_container",
                           "fill": "#FBFDFF",
