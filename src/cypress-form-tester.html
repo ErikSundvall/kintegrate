@@ -1597,7 +1597,7 @@
     const selectedTests = getTableRows().filter((row) => row.rowKind === 'test' && row.selected);
     if (!selectedTests.length) return;
 
-    // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
+    // Build actions from test bodies (attach source test metadata so results can be mapped back)
     const allActions = [];
     selectedTests.forEach((t) => {
       const body = t.body || '';
@@ -1608,14 +1608,14 @@
           try {
             const target = JSON.parse(m[1]);
             const value = JSON.parse(m[2]);
-            allActions.push({ type: 'fill', target, value });
+            allActions.push({ type: 'fill', target, value, meta: { testTitle: t.title, groupName: t.groupName } });
           } catch (e) { /* ignore parse errors */ }
         } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]), meta: { testTitle: t.title, groupName: t.groupName } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]), meta: { testTitle: t.title, groupName: t.groupName } }); } catch (e) {}
         } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]) }); } catch (e) {}
+          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]), meta: { testTitle: t.title, groupName: t.groupName } }); } catch (e) {}
         }
       });
     });
@@ -1639,14 +1639,29 @@
       const renderRunResultsHTML = (results, runId) => {
         const okCount = results.filter((r) => r.ok).length;
         const failCount = results.length - okCount;
-        const header = `<div style="font-weight:700;margin-bottom:0.45rem">Run ${runId} complete — <span style=\"color:var(--ok)\">${okCount} OK</span> / <span style=\"color:var(--danger)\">${failCount} FAIL</span> (${results.length} actions)</div>`;
-        const items = results.map((r, i) => {
-          const kindClass = r.ok ? 'result-ok' : 'result-fail';
-          const actionText = escapeHtml(String((r.action && (r.action.type + ' ' + (typeof r.action.target === 'string' ? r.action.target : JSON.stringify(r.action.target)))) || 'action'));
-          const details = r.message ? `<div class=\"result-msg\">${escapeHtml(String(r.message))}</div>` : '';
-          return `<li class=\"result-item\"><div class=\"result-badge ${kindClass}\">${r.ok ? 'OK' : 'FAIL'}</div><div><div class=\"result-action\">${actionText}</div>${details}</div></li>`;
+        const header = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem"><div style=\"font-weight:700\">Run ${runId} — <span style=\"color:var(--ok)\">${okCount} OK</span> / <span style=\"color:var(--danger)\">${failCount} FAIL</span> (${results.length} actions)</div><button class=\"btn small\" id=\"open-report-${runId}\">Open full report</button></div>`;
+
+        // Group results by testTitle / groupName
+        const groups = new Map();
+        results.forEach((r) => {
+          const title = (r.action && r.action.meta && r.action.meta.testTitle) || 'ungrouped';
+          const groupKey = `${(r.action && r.action.meta && r.action.meta.groupName) || ''}::${title}`;
+          if (!groups.has(groupKey)) groups.set(groupKey, { groupName: r.action?.meta?.groupName || '', testTitle: title, items: [] });
+          groups.get(groupKey).items.push(r);
+        });
+
+        const groupHtml = Array.from(groups.values()).map((g) => {
+          const headerLine = `<div style=\"font-weight:600;margin-top:0.4rem;margin-bottom:0.25rem\">${escapeHtml(g.groupName || '')}${g.groupName ? ' / ' : ''}${escapeHtml(g.testTitle)}</div>`;
+          const items = g.items.map((r) => {
+            const kindClass = r.ok ? 'result-ok' : 'result-fail';
+            const actionText = escapeHtml(String((r.action && (r.action.type + ' ' + (typeof r.action.target === 'string' ? r.action.target : JSON.stringify(r.action.target)))) || 'action'));
+            const details = r.message ? `<div class=\"result-msg\">${escapeHtml(String(r.message))}</div>` : '';
+            return `<li class=\"result-item\"><div class=\"result-badge ${kindClass}\">${r.ok ? 'OK' : 'FAIL'}</div><div><div class=\"result-action\">${actionText}</div>${details}</div></li>`;
+          }).join('');
+          return `${headerLine}<ul class=\"results-list\">${items}</ul>`;
         }).join('');
-        return `${header}<ul class=\"results-list\">${items}</ul>`;
+
+        return `${header}${groupHtml}`;
       };
 
       const resultHandler = (event) => {
@@ -1656,6 +1671,11 @@
         const runId = event.data.payload?.runId || 'unknown';
         try {
           $('last-run').innerHTML = renderRunResultsHTML(results, runId);
+          // attach open report handler
+          const btn = document.getElementById(`open-report-${runId}`);
+          if (btn) {
+            btn.addEventListener('click', () => openFullReportWindow(results, runId));
+          }
         } catch (e) {
           $('last-run').textContent = `Run complete: ${results.length} actions (see console for details).`;
           console.error('[Tester] Error rendering results HTML', e, results);
@@ -1678,6 +1698,57 @@
     link.click();
     URL.revokeObjectURL(link.href);
   });
+
+  // Open a separate window showing full JSON report and simple formatted view
+  function openFullReportWindow(results, runId) {
+    try {
+      const w = window.open('', '_blank', 'width=900,height=700');
+      if (!w) return;
+      const doc = w.document;
+      const safeJson = escapeHtml(JSON.stringify(results, null, 2));
+      // Escape '<' to avoid closing the surrounding <script> when embedding JSON
+      const resultsJson = JSON.stringify(results).replace(/</g, '\\u003c');
+      const html = '<!doctype html><html><head><meta charset="utf-8"><title>Test Report</title><style>body{font-family:Arial,Helvetica,sans-serif;margin:16px;background:#f7fafc;color:#111827}pre{background:#fff;border:1px solid #e6eef6;padding:12px;border-radius:6px;overflow:auto}h1{font-size:1.1rem;margin:0 0 8px}.summary{margin-bottom:12px}</style></head><body><h1>Test Report ' + escapeHtml(String(runId)) + '</h1><div class="summary">Actions: ' + results.length + ' — OK: ' + results.filter(r=>r.ok).length + ' / FAIL: ' + results.filter(r=>!r.ok).length + '</div><h2>Formatted results</h2><div id="formatted"></div><h2>Raw JSON</h2><pre id="raw"></pre></body></html>';
+      doc.open(); doc.write(html); doc.close();
+
+      // Populate the formatted area and raw JSON using DOM APIs to avoid embedding script/json
+      try {
+        const container = w.document.getElementById('formatted');
+        const rawPre = w.document.getElementById('raw');
+        if (rawPre) rawPre.textContent = JSON.stringify(results, null, 2);
+        if (container) {
+          results.forEach(function(r){
+            const div = w.document.createElement('div');
+            div.style.padding = '8px';
+            div.style.borderBottom = '1px solid #e6eef6';
+            const title = (r.action && r.action.meta && ((r.action.meta.groupName || '') + ' / ' + r.action.meta.testTitle)) || 'ungrouped';
+            const action = (r.action && r.action.type) + ' ' + (typeof (r.action && r.action.target) === 'string' ? r.action.target : JSON.stringify(r.action && r.action.target));
+            const titleEl = w.document.createElement('div');
+            titleEl.style.fontWeight = '600';
+            titleEl.textContent = title;
+            const actionEl = w.document.createElement('div');
+            actionEl.style.fontFamily = 'monospace';
+            actionEl.style.marginTop = '6px';
+            actionEl.textContent = action;
+            const msgEl = w.document.createElement('div');
+            msgEl.style.color = '#6b7280';
+            msgEl.style.marginTop = '6px';
+            msgEl.textContent = r.message || '';
+            div.appendChild(titleEl);
+            div.appendChild(actionEl);
+            div.appendChild(msgEl);
+            container.appendChild(div);
+          });
+        }
+      } catch (err) {
+        // ignore cross-window DOM errors
+        console.error('populate report window failed', err);
+      }
+    } catch (err) {
+      console.error('openFullReportWindow error', err);
+      alert('Failed to open report window');
+    }
+  }
 
   $('add-step').addEventListener('click', () => addStep());
   $('add-range-case').addEventListener('click', () => {
