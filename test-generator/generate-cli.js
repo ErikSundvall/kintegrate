@@ -19,6 +19,21 @@ function parseArgs(argv) {
     } else if (token === '--out') {
       args.out = argv[i + 1];
       i += 1;
+    } else if (token === '--logic-level') {
+      args.logicLevel = Number.parseInt(argv[i + 1], 10);
+      i += 1;
+    } else if (token === '--calc-level') {
+      args.calcLevel = Number.parseInt(argv[i + 1], 10);
+      i += 1;
+    } else if (token === '--validation-level') {
+      args.validationLevel = Number.parseInt(argv[i + 1], 10);
+      i += 1;
+    } else if (token === '--ranges-level') {
+      args.rangesLevel = Number.parseInt(argv[i + 1], 10);
+      i += 1;
+    } else if (token === '--required-level') {
+      args.requiredLevel = Number.parseInt(argv[i + 1], 10);
+      i += 1;
     }
   }
   return args;
@@ -78,7 +93,14 @@ function main() {
   const categories = args.categories
     ? args.categories.split(',').map((item) => item.trim()).filter(Boolean)
     : undefined;
-  const specSource = buildDependencySpec(parsed, { categories });
+  const specSource = buildDependencySpec(parsed, {
+    categories,
+    logicLevel: args.logicLevel,
+    calcLevel: args.calcLevel,
+    validationLevel: args.validationLevel,
+    rangesLevel: args.rangesLevel,
+    requiredLevel: args.requiredLevel,
+  });
 
   const fileName = `${toSafeFileName(parsed.name)}.generated.cy.js`;
   const outputPath = path.resolve(
@@ -88,7 +110,7 @@ function main() {
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, specSource, 'utf8');
-  console.log(`Generated tests for ${categories ? categories.join(', ') : 'logic'}: ${outputPath}`);
+  console.log(`Generated tests for ${categories ? categories.join(', ') : 'default categories'}: ${outputPath}`);
 }
 
 if (require.main === module) {

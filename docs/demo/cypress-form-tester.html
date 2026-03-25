@@ -61,6 +61,14 @@
     .scope-level-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
     .scope-generate-btn { width:100%; min-height:34px; justify-content:center; grid-column:auto; }
     #step-list .step { display:grid; grid-template-columns: 120px 1fr 90px 70px auto; gap:0.4rem; margin-bottom:0.35rem; align-items:center; }
+    .tab-strip { display:flex; align-items:flex-end; gap:0.2rem; width:100%; margin-bottom:-1px; border-bottom:1px solid var(--line); }
+    .tab-btn { border:1px solid transparent; border-bottom:none; background:transparent; color:#6b7280; border-radius:10px 10px 0 0; padding:0.55rem 0.85rem 0.5rem; font-size:0.8rem; font-weight:600; cursor:pointer; }
+    .tab-btn:hover { color:#374151; background:#f8fafc; }
+    .tab-btn.is-active { background:#fff; color:#1f2937; border-color:var(--line); }
+    .tab-panel { display:none; }
+    .tab-panel.is-active { display:block; }
+    .tab-panel-stack { display:flex; flex-direction:column; gap:0.75rem; }
+    .recorder-panel { border:1px solid var(--line); border-radius:8px; background:#fbfdff; padding:0.85rem; }
     #code-editor-wrap .CodeMirror { height:250px; border:1px solid var(--line); border-radius:6px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .test-grid-wrap { display:flex; flex-direction:column; gap:0.55rem; min-height:0; overflow:hidden; }
@@ -126,6 +134,8 @@
     #step-builder-panel { grid-area:steps; }
     #code-editor-panel { grid-area:editor; }
     #test-suite-panel { grid-area:suite; }
+    #step-builder-panel .panel-header { padding-bottom:0; }
+    #step-builder-panel .panel-body { padding-top:0.85rem; }
 
     @media (max-width: 980px) {
       .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "editor" "suite" "steps"; }
@@ -231,28 +241,40 @@
 
   <section class="panel" id="step-builder-panel">
     <div class="panel-header">
-      <h2>Custom step builder</h2>
+      <div class="tab-strip" role="tablist" aria-label="Custom test tools">
+        <button class="tab-btn is-active" id="custom-builder-tab" data-tab-target="custom-builder-panel" role="tab" aria-selected="true" aria-controls="custom-builder-panel" type="button">Custom test builder</button>
+        <button class="tab-btn" id="custom-recorder-tab" data-tab-target="custom-recorder-panel" role="tab" aria-selected="false" aria-controls="custom-recorder-panel" type="button">Custom test recorder</button>
+      </div>
     </div>
     <div class="panel-body">
-      <div id="step-list"></div>
-      <button class="btn" id="add-step">+ Add step</button>
-      <hr style="border:none;border-top:1px solid var(--line);margin:0.8rem 0;">
-      <h3 class="small" style="margin:0 0 0.5rem;">Manual range case</h3>
-      <div class="row">
-        <input type="text" id="manual-range-field" placeholder="field/tag/aqlPath" size="28">
-        <input type="text" id="manual-range-unit" placeholder="unit (optional, DV_QUANTITY)" size="20">
-      </div>
-      <div class="row">
-        <input type="text" id="manual-range-valid" placeholder='valid samples, e.g. [0,50,100] or 0,50,100' size="56">
-      </div>
-      <div class="row">
-        <input type="text" id="manual-range-invalid" placeholder='invalid samples, e.g. [-1,101] or -1,101' size="56">
-      </div>
-      <div class="row">
-        <button class="btn" id="add-range-case">+ Add range case</button>
-      </div>
-      <div id="manual-range-list"></div>
-      <p class="small">Steps are appended as editable comments in the generated code preview.</p>
+      <section class="tab-panel tab-panel-stack is-active" id="custom-builder-panel" role="tabpanel" aria-labelledby="custom-builder-tab">
+        <div id="step-list"></div>
+        <button class="btn" id="add-step">+ Add step</button>
+        <hr style="border:none;border-top:1px solid var(--line);margin:0.05rem 0;">
+        <h3 class="small" style="margin:0 0 0.5rem;">Manual range case</h3>
+        <div class="row">
+          <input type="text" id="manual-range-field" placeholder="field/tag/aqlPath" size="28">
+          <input type="text" id="manual-range-unit" placeholder="unit (optional, DV_QUANTITY)" size="20">
+        </div>
+        <div class="row">
+          <input type="text" id="manual-range-valid" placeholder='valid samples, e.g. [0,50,100] or 0,50,100' size="56">
+        </div>
+        <div class="row">
+          <input type="text" id="manual-range-invalid" placeholder='invalid samples, e.g. [-1,101] or -1,101' size="56">
+        </div>
+        <div class="row">
+          <button class="btn" id="add-range-case">+ Add range case</button>
+        </div>
+        <div id="manual-range-list"></div>
+        <p class="small">Steps are appended as editable comments in the generated code preview.</p>
+      </section>
+      <section class="tab-panel" id="custom-recorder-panel" role="tabpanel" aria-labelledby="custom-recorder-tab">
+        <div class="recorder-panel">
+          <div class="section-label">Recorder</div>
+          <p class="small">This tab is reserved for interactive recording of custom test steps. The manual builder remains available in the first tab.</p>
+          <p class="small">Next step for this pane is to capture viewer interactions and append them as editable custom test steps.</p>
+        </div>
+      </section>
     </div>
   </section>
 
@@ -336,6 +358,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 <script src="vendor/tabulator/tabulator.min.js"></script>
+<script src="test-generation-core.js"></script>
 <script>
 (() => {
   const storageKey = 'kintegrate.cypressTester.targets';
@@ -359,6 +382,7 @@
   const statusEl = $('form-status');
   const scopeControlRows = [...document.querySelectorAll('.scope-row')];
   const ruleGroupModeEl = $('rule-group-mode');
+  const generationCore = window.TestGenerationCore;
   const categoryAliases = {
     logic: 'logic',
     dependencies: 'logic',
@@ -507,106 +531,7 @@
   }
 
   function buildDiscoveredRuleRows(parsed) {
-    const fieldIndex = parsed?.fieldIndex;
-    const rows = [];
-
-    (parsed?.dependencies || []).forEach((rule, index) => {
-      const triggerPath = resolveRulePath(fieldIndex, rule.trigger, rule.triggerPath);
-      const targetPath = resolveRulePath(fieldIndex, rule.target, rule.targetPath);
-      rows.push({
-        rowId: `logic::${index}`,
-        enabled: true,
-        kind: 'logic',
-        kindLabel: 'logic',
-        scopeSection: 'logic',
-        scopeInput: 'logic',
-        summary: rule.description || `${rule.target || 'target'} when ${rule.trigger || 'trigger'}=${rule.triggerValue}`,
-        trigger: formatIdentifierList([rule.trigger, ...triggerPath.candidates]),
-        subject: formatIdentifierList([rule.target, ...targetPath.candidates]),
-        formPath: targetPath.primary || triggerPath.primary,
-        formPathSort: (targetPath.primary || triggerPath.primary || '').toLowerCase(),
-        sortSummary: (rule.description || '').toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.calculations || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `calc::${index}`,
-        enabled: true,
-        kind: 'calc',
-        kindLabel: 'calc',
-        scopeSection: 'calc',
-        scopeInput: 'calc',
-        summary: `${rule.field || 'field'} = derived expression`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${(rule.expression || '')}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.validations || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `validation::${index}`,
-        enabled: true,
-        kind: 'validation',
-        kindLabel: 'validation',
-        scopeSection: 'validation',
-        scopeInput: 'val',
-        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.valueRanges || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `ranges::${index}`,
-        enabled: true,
-        kind: 'ranges',
-        kindLabel: 'ranges',
-        scopeSection: 'ranges',
-        scopeInput: 'range',
-        summary: `${rule.field || 'field'} ${formatBoundSummary(rule)}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${formatBoundSummary(rule)}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    (parsed?.requiredFields || []).forEach((rule, index) => {
-      const fieldPath = resolveRulePath(fieldIndex, rule.field, rule.fieldPath);
-      rows.push({
-        rowId: `required::${index}`,
-        enabled: true,
-        kind: 'required',
-        kindLabel: 'required',
-        scopeSection: 'required',
-        scopeInput: 'req',
-        summary: `${rule.field || 'field'} min ${Number.isFinite(rule?.min) ? rule.min : 1}`,
-        trigger: '',
-        subject: formatIdentifierList([rule.field, ...fieldPath.candidates]),
-        formPath: fieldPath.primary,
-        formPathSort: (fieldPath.primary || '').toLowerCase(),
-        sortSummary: `${rule.field || ''} ${rule.min || 1}`.toLowerCase(),
-        sourceIndex: index
-      });
-    });
-
-    return rows;
+    return generationCore.buildDiscoveredRuleRows(parsed);
   }
 
   function discoveredRuleGroupConfig() {
@@ -1609,6 +1534,33 @@
     });
   }
 
+  function initializeCustomTestTabs() {
+    const tabButtons = [...document.querySelectorAll('.tab-btn[data-tab-target]')];
+    const tabPanels = [...document.querySelectorAll('.tab-panel')];
+
+    if (!tabButtons.length || !tabPanels.length) {
+      return;
+    }
+
+    const setActiveTab = (targetId) => {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === targetId;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle('is-active', panel.id === targetId);
+      });
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => setActiveTab(button.dataset.tabTarget));
+    });
+
+    setActiveTab(tabButtons.find((button) => button.classList.contains('is-active'))?.dataset.tabTarget || tabButtons[0].dataset.tabTarget);
+  }
+
   function createEditor() {
     if (typeof CodeMirror !== 'undefined') {
       editor = CodeMirror.fromTextArea($('code-preview'), {
@@ -1713,19 +1665,7 @@
   }
 
   function parseFormDefinition(raw) {
-    const source = raw.formDescription || raw.webTemplate || raw;
-    const parsed = {
-      name: raw.name || source.name || source.templateId || 'generated-form',
-      fields: new Set(),
-      dependencies: [],
-      calculations: [],
-      validations: [],
-      valueRanges: [],
-      requiredFields: [],
-      fieldIndex: buildFieldIndex(source)
-    };
-    collectParsed(source, parsed);
-    return parsed;
+    return generationCore.parseFormDefinition(raw);
   }
 
   function selectedCategories() {
@@ -1745,14 +1685,7 @@
 
   function buildEnabledParsed(parsed) {
     const enabledIds = new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId));
-    return {
-      ...parsed,
-      dependencies: (parsed.dependencies || []).filter((_rule, index) => enabledIds.has(`logic::${index}`)),
-      calculations: (parsed.calculations || []).filter((_rule, index) => enabledIds.has(`calc::${index}`)),
-      validations: (parsed.validations || []).filter((_rule, index) => enabledIds.has(`validation::${index}`)),
-      valueRanges: (parsed.valueRanges || []).filter((_rule, index) => enabledIds.has(`ranges::${index}`)),
-      requiredFields: (parsed.requiredFields || []).filter((_rule, index) => enabledIds.has(`required::${index}`))
-    };
+    return generationCore.filterParsedFormByRuleIds(parsed, enabledIds);
   }
 
   function buildLogicTests(parsed) {
@@ -1939,8 +1872,68 @@
     }));
   }
 
+  function buildManualRangeCases() {
+    const parseSampleTokens = (text) => {
+      const raw = String(text || '').trim();
+      if (!raw) return [];
+      if (raw.startsWith('[')) {
+        const parsedArray = JSON.parse(raw);
+        return Array.isArray(parsedArray) ? parsedArray : [];
+      }
+      return raw
+        .split(',')
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .map((token) => {
+          try {
+            return JSON.parse(token);
+          } catch (_error) {
+            const asNumber = Number(token);
+            return Number.isFinite(asNumber) ? asNumber : token;
+          }
+        });
+    };
+
+    const toQuantitySamples = (samples, unit) =>
+      (samples || []).map((sample) => {
+        if (sample && typeof sample === 'object') {
+          return {
+            magnitude: Number.isFinite(sample.magnitude) ? sample.magnitude : Number(sample.value),
+            unit: sample.unit || unit
+          };
+        }
+        return { magnitude: Number(sample), unit };
+      });
+
+    return [...document.querySelectorAll('#manual-range-list .range-case')]
+      .map((row, index) => {
+        const field = row.querySelector('.range-field').value.trim();
+        if (!field) return null;
+        const unit = row.querySelector('.range-unit').value.trim();
+        const valid = parseSampleTokens(row.querySelector('.range-valid').value);
+        const invalid = parseSampleTokens(row.querySelector('.range-invalid').value);
+        const validSamples = unit ? toQuantitySamples(valid, unit) : valid;
+        const invalidSamples = unit ? toQuantitySamples(invalid, unit) : invalid;
+
+        return {
+          title: generationCore.prefixCategoryTitle('ranges', `manual ${field} #${index + 1}`),
+          callType: 'it',
+          body: `cy.assertRangeSamples(${JSON.stringify({
+            label: `manual range ${field} #${index + 1}`,
+            min: null,
+            max: null,
+            minOp: '>=',
+            maxOp: '<=',
+            validSamples,
+            invalidSamples,
+            expectedUnit: unit || null
+          })});`
+        };
+      })
+      .filter(Boolean);
+  }
+
   function buildCode(parsed) {
-    const filteredParsed = buildEnabledParsed(parsed);
     const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
       const action = step.querySelector('.step-action').value;
       const field = step.querySelector('.step-field').value;
@@ -1950,24 +1943,15 @@
 
     const existingModel = parseSuiteModelFromCode(getEditorValue());
     const preservedCustomGroups = (existingModel?.groups || []).filter((group) => !generatedSectionNames.includes(normalizeCategoryKey(group.name)));
-    const groups = [];
-    const categories = selectedCategories();
-
-    if (categories.includes('logic')) {
-      groups.push({ name: 'logic', tests: buildLogicTests(filteredParsed), extrasText: '' });
-    }
-    if (categories.includes('calc')) {
-      groups.push({ name: 'calc', tests: buildCalcTests(filteredParsed), extrasText: '' });
-    }
-    if (categories.includes('validation')) {
-      groups.push({ name: 'validation', tests: buildValidationTests(filteredParsed), extrasText: '' });
-    }
-    if (categories.includes('ranges')) {
-      groups.push({ name: 'ranges', tests: buildRangeTests(filteredParsed), extrasText: '' });
-    }
-    if (categories.includes('required')) {
-      groups.push({ name: 'required', tests: buildRequiredTests(filteredParsed), extrasText: '' });
-    }
+    const groups = generationCore.buildGeneratedGroups(parsed, {
+      logicLevel: getScopeValue('logic'),
+      calcLevel: getScopeValue('calc'),
+      validationLevel: getScopeValue('val'),
+      rangesLevel: getScopeValue('range'),
+      requiredLevel: getScopeValue('req'),
+      enabledRuleIds: new Set(discoveredRuleRows.filter((row) => row.enabled).map((row) => row.rowId)),
+      manualRangeCases: buildManualRangeCases()
+    });
 
     preservedCustomGroups.forEach((group) => groups.push(group));
 
@@ -1999,6 +1983,15 @@
     const fieldInput = row.querySelector('.step-field');
     
     actionSelect.value = action;
+
+    const openStepFieldBrowser = () => {
+      if (!formRawData) {
+        alert('Please load a form first.');
+        return;
+      }
+      currentFieldInput = fieldInput;
+      openFieldBrowser();
+    };
     
     // Make value field reactive to action selection
     const updateValueField = () => {
@@ -2032,14 +2025,18 @@
     actionSelect.addEventListener('change', updateValueField);
     updateValueField();
     
-    // Browse button handler
-    browseBtn.addEventListener('click', () => {
-      if (!formRawData) {
-        alert('Please load a form first.');
-        return;
+    // Allow both the icon button and the field input itself to open the picker.
+    browseBtn.addEventListener('click', openStepFieldBrowser);
+    fieldInput.title = 'Click to browse form fields';
+    fieldInput.addEventListener('click', (event) => {
+      event.preventDefault();
+      openStepFieldBrowser();
+    });
+    fieldInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        openStepFieldBrowser();
       }
-      currentFieldInput = fieldInput;
-      openFieldBrowser();
     });
     
     row.querySelector('button:last-child').addEventListener('click', () => row.remove());
@@ -2449,6 +2446,7 @@
   });
 
   initializeScopeControls();
+  initializeCustomTestTabs();
   createEditor();
   syncTableFromEditor('Table synced from code editor.');
   updateSliderLabels();

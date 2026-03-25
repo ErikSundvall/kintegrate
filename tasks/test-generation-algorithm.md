@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This note documents the current automated test generation flow for Better forms and outlines refinements for scope levels before changing the generator semantics further.
+This note documents the current automated test generation flow for Better forms and the scope semantics implemented in the shared generator core.
 
 ## Current Inputs
 
@@ -15,8 +15,9 @@ This note documents the current automated test generation flow for Better forms 
 ### Browser tester
 
 - [src/cypress-form-tester.html](src/cypress-form-tester.html)
+- Uses the shared core in [src/test-generation-core.js](src/test-generation-core.js).
 - Loads JSON or Better ZIP in the browser with `fflate`.
-- Parses discovered rules in browser-local code.
+- Keeps manual range rows and editor/table state in browser-local code.
 - Generates Cypress code in the editor.
 - Can open from [src/form-viewer.html](src/form-viewer.html) and receive loaded form data via `postMessage`.
 
@@ -24,15 +25,16 @@ This note documents the current automated test generation flow for Better forms 
 
 - [test-generator/generate-cli.js](test-generator/generate-cli.js)
 - Uses [test-generator/parser.js](test-generator/parser.js) and [test-generator/generator.js](test-generator/generator.js).
+- Those files are now thin wrappers around [src/test-generation-core.js](src/test-generation-core.js).
 - Loads ZIP or JSON from disk.
 - Writes generated Cypress specs into `cypress/e2e/generated` by default.
 
 ## Important Separation
 
 - The form viewer runtime does not import [test-generator/parser.js](test-generator/parser.js).
-- The browser tester has duplicated parsing logic inside [src/cypress-form-tester.html](src/cypress-form-tester.html).
+- The browser tester no longer keeps a separate parsing/generation algorithm.
 - Parser changes in `test-generator/` affect the CLI and unit tests, not the form-viewer runtime directly.
-- The real maintenance risk is drift between the CLI parser and the browser tester parser.
+- The main shared maintenance surface is [src/test-generation-core.js](src/test-generation-core.js).
 
 ## Current Discovery Algorithm
 
@@ -55,11 +57,12 @@ This note documents the current automated test generation flow for Better forms 
 
 - Reads `viewConfig.annotations.conditions`.
 - Parses `conditions.expressions`.
-- Uses the first statement and first action from each expression in the browser implementation.
+- Iterates all statement/action pairs in each expression when they can be normalized into a simple visibility rule.
 - Extracts:
 	- triggering field id
 	- target field id
-	- condition value
+	- show/hide trigger values
+	- action name
 	- simple description text
 
 ### Validation and range extraction
@@ -81,25 +84,34 @@ This note documents the current automated test generation flow for Better forms 
 
 ### Deduplication
 
-- CLI parser deduplicates by signatures per rule type.
-- Browser tester currently keeps a simpler direct list.
+- Shared core deduplicates by signatures per rule type.
 
 ## Current Generation Algorithm
 
 ### Category selection
 
 - UI scope levels exist for `logic`, `calc`, `validation`, `ranges`, and `required`.
-- Today those levels behave as category toggles, not true level semantics.
 - `0` means off.
-- `1`, `2`, and `3` currently all mean the same thing: include that category.
+- `1` means baseline review-friendly coverage.
+- `2` means broader coverage.
+- `3` is still reserved and not implemented with distinct behavior yet.
 
 ### Test emission
 
-- Logic: generate toggle tests using `cy.fillField`, `cy.expectHidden`, `cy.expectVisible`.
-- Calculations: generate metadata existence checks.
-- Validation: generate range-sample assertions with valid and invalid samples.
-- Ranges: generate metadata-oriented range assertions.
-- Required: generate cardinality helper assertions.
+- Logic:
+	- level 1 includes non-obvious `show`-style visibility rules
+	- level 2 also includes the more obvious `hide`-style reversals
+- Calculations: generate metadata existence checks from the shared core.
+- Validation:
+	- level 1 emits one representative valid sample and one invalid sample
+	- level 2 emits richer lower/upper/midpoint coverage and respects inclusive/exclusive bounds
+- Ranges:
+	- level 1 stays out of the way when validation coverage is already enabled
+	- level 2 emits metadata-oriented range assertions, including DV_QUANTITY unit expectations
+	- manual browser-entered range cases are still appended when range generation is enabled
+- Required:
+	- level 1 emits concise baseline cardinality checks
+	- level 2 also distinguishes string and collection cardinality behavior more explicitly
 
 ### Browser output structure
 
@@ -109,13 +121,10 @@ This note documents the current automated test generation flow for Better forms 
 
 ## Current Limitations
 
-1. Scope levels are not real levels yet.
-2. The browser logic parser only uses the first statement/action pair from a condition expression.
-3. Default visibility state is not modeled explicitly.
-4. Logic generation tends to assume a hide-then-show flow.
-5. This produces too many obvious tests when a field is already visible by default.
-6. Calculation tests are shallow metadata checks rather than behavioral verification.
-7. CLI parser and browser parser are similar but separate.
+1. Default visibility state is still not modeled explicitly.
+2. Logic generation still uses a generic hide-then-show execution pattern once a rule is selected.
+3. Calculation tests are still metadata checks rather than behavioral verification.
+4. Level 3 remains intentionally unimplemented.
 
 ## Why Level 1 Needs To Change
 
@@ -213,16 +222,18 @@ Suggested per category:
 	 - default inclusion recommendation per scope level
 4. Add a future pass that estimates whether a logic rule is meaningful at level 1 by considering default visibility and realistic transitions.
 5. Align the browser and CLI parser outputs around a shared normalized rule shape even if implementation remains in two code paths.
+5. Keep manual browser-only range cases outside the shared core so CLI and browser stay aligned on normalized discovered rules without mixing in DOM state.
 
 ## In Scope For The Current Refactor
 
 - Make discovered rules easier to sort and group.
 - Add row-level enable/disable.
-- Clarify the intended meaning of scope levels.
+- Unify browser and CLI parsing/generation in one shared core.
+- Implement distinct level 0, 1, and 2 semantics.
 
 ## Out Of Scope For This Pass
 
-- Full rewrite of the generator semantics.
 - Cross-form or cross-template reasoning.
 - Deep behavioral calculation verification.
-- Full elimination of browser/CLI parser duplication.
+- Default-visibility inference from rendered form state.
+- Level 3 coverage expansion.
