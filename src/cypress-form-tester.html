@@ -77,6 +77,13 @@
     .cell-chip.required, .cell-chip.ranges, .cell-chip.handcrafted, .cell-chip.not-run { background:#f3f4f6; color:#6b7280; }
     .cell-chip.ok { background:#eef7ee; color:#2e7d32; }
     .cell-chip.custom, .cell-chip.section { background:#ede9fe; color:#6d28d9; }
+    .results-list { list-style:none; padding:0; margin:0; }
+    .result-item { display:flex; gap:0.6rem; align-items:flex-start; padding:0.5rem; border-bottom:1px solid var(--line); }
+    .result-badge { min-width:56px; padding:0.25rem 0.5rem; border-radius:6px; font-weight:700; text-align:center; font-size:0.82rem; }
+    .result-ok { background:#e8f6ec; color:var(--ok); border:1px solid rgba(46,125,50,0.12); }
+    .result-fail { background:#fff0f0; color:var(--danger); border:1px solid rgba(211,47,47,0.12); }
+    .result-action { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color:#111827; font-size:0.9rem; }
+    .result-msg { color:#6b7280; font-size:0.84rem; margin-top:0.25rem; }
     
     /* Modal styles */
     .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
@@ -1629,12 +1636,30 @@
       const runId = Date.now();
       $('last-run').textContent = `Running ${allActions.length} actions...`;
 
+      const renderRunResultsHTML = (results, runId) => {
+        const okCount = results.filter((r) => r.ok).length;
+        const failCount = results.length - okCount;
+        const header = `<div style="font-weight:700;margin-bottom:0.45rem">Run ${runId} complete — <span style=\"color:var(--ok)\">${okCount} OK</span> / <span style=\"color:var(--danger)\">${failCount} FAIL</span> (${results.length} actions)</div>`;
+        const items = results.map((r, i) => {
+          const kindClass = r.ok ? 'result-ok' : 'result-fail';
+          const actionText = escapeHtml(String((r.action && (r.action.type + ' ' + (typeof r.action.target === 'string' ? r.action.target : JSON.stringify(r.action.target)))) || 'action'));
+          const details = r.message ? `<div class=\"result-msg\">${escapeHtml(String(r.message))}</div>` : '';
+          return `<li class=\"result-item\"><div class=\"result-badge ${kindClass}\">${r.ok ? 'OK' : 'FAIL'}</div><div><div class=\"result-action\">${actionText}</div>${details}</div></li>`;
+        }).join('');
+        return `${header}<ul class=\"results-list\">${items}</ul>`;
+      };
+
       const resultHandler = (event) => {
         if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
         window.removeEventListener('message', resultHandler);
         const results = event.data.payload?.results || [];
-        const summary = results.map((r, i) => `${r.ok ? 'OK' : 'FAIL'}: ${r.action.type} ${r.action.target}`).join('; ');
-        $('last-run').textContent = `Run complete: ${summary}`;
+        const runId = event.data.payload?.runId || 'unknown';
+        try {
+          $('last-run').innerHTML = renderRunResultsHTML(results, runId);
+        } catch (e) {
+          $('last-run').textContent = `Run complete: ${results.length} actions (see console for details).`;
+          console.error('[Tester] Error rendering results HTML', e, results);
+        }
       };
 
       window.addEventListener('message', resultHandler);
