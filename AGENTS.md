@@ -48,6 +48,8 @@ The project uses Node.js for building:
 - `/src/vendor/` - Proprietary libraries (not in Git)
 - `/scripts/` - Build and utility scripts
 
+Important: The demo copy in docs/demo should NEVER be edited by you (the AI agent) it is updated by build script when needed
+
 ## openEHR Web Template Format
 
 The Better Form Renderer's `webTemplate` property expects the **openEHR Web Template format**, not the Better Studio form-description. Key resources:

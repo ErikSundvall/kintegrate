@@ -106,6 +106,9 @@
     .target-actions { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
     .target-buttons { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
     .runner-buttons { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+    .runner-settings { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0; }
+    .runner-settings label { font-size:0.78rem; color:#4b5563; }
+    .runner-settings input[type="number"] { width:92px; }
     .editor-result-panel { margin-top:auto; }
     .storage-note { margin:0; }
     #form-discovery-panel { grid-area:discovery; }
@@ -249,7 +252,10 @@
 
   <section class="panel" id="test-suite-panel">
     <div class="panel-header">
-      <h2>Test suite / list</h2>
+      <div>
+        <h2>Test suite / list</h2>
+        <div class="small" id="test-suite-summary">0 sections, together containing 0 tests</div>
+      </div>
       <button class="btn" id="add-group-btn">Add Group</button>
     </div>
     <div class="panel-body test-grid-wrap suite-panel-body">
@@ -313,6 +319,9 @@
           <button class="btn" id="run-btn">Run active tests</button>
           <button class="btn" id="export-btn">Export .cy.js</button>
           <button class="btn" id="open-editor">Open in separate window</button>
+          <label for="runner-delay-ms">Delay (ms)</label>
+          <input type="number" id="runner-delay-ms" min="0" max="5000" step="100" value="400">
+          <span class="small">pause after each action so easier to see.</span>
         </div>
       </div>
       <div class="results editor-result-panel" id="last-run">Last run: not executed.</div>
@@ -1007,11 +1016,15 @@
       return [];
     }
 
+    if (typeof testSuiteTable.getData === 'function') {
+      return testSuiteTable.getData();
+    }
+
     if (typeof testSuiteTable.getRows === 'function') {
       return testSuiteTable.getRows().map((row) => row.getData());
     }
 
-    return testSuiteTable.getData();
+    return [];
   }
 
   function getRunnableTestsFromRows(rows) {
@@ -1042,6 +1055,118 @@
       }
     });
 
+    return onlyTests.length ? onlyTests : runnableTests;
+  }
+
+  function getRunnableTestsFromSuiteModel(model) {
+    const runnableTests = [];
+    const onlyTests = [];
+
+    (model?.groups || []).forEach((group) => {
+      const groupState = callTypeToExecutionState(group?.callType || 'describe');
+      (group?.tests || []).forEach((test) => {
+        const testState = callTypeToExecutionState(test?.callType || 'it');
+        if (groupState === 'skip' || testState === 'skip') {
+          return;
+        }
+
+        const runnable = {
+          rowKind: 'test',
+          groupName: group?.name || '',
+          title: test?.title || '',
+          displayName: test?.title || '',
+          body: test?.body || '',
+          callType: test?.callType || 'it',
+          executionState: testState,
+          groupExecutionState: groupState
+        };
+
+        runnableTests.push(runnable);
+        if (groupState === 'only' || testState === 'only') {
+          onlyTests.push(runnable);
+        }
+      });
+    });
+
+    return onlyTests.length ? onlyTests : runnableTests;
+  }
+
+  function collectRunnableTestsFromCode(code) {
+    const lines = String(code || '').replace(/\r\n/g, '\n').split('\n');
+    const runnableTests = [];
+    const onlyTests = [];
+    let currentGroup = null;
+    let currentTest = null;
+
+    const pushCurrentTest = () => {
+      if (!currentGroup || !currentTest) {
+        currentTest = null;
+        return;
+      }
+
+      const groupState = currentGroup.executionState;
+      const testState = currentTest.executionState;
+      if (groupState !== 'skip' && testState !== 'skip') {
+        const runnable = {
+          rowKind: 'test',
+          groupName: currentGroup.name,
+          title: currentTest.title,
+          displayName: currentTest.title,
+          body: currentTest.bodyLines.join('\n').trimEnd(),
+          callType: currentTest.callType,
+          executionState: testState,
+          groupExecutionState: groupState
+        };
+        runnableTests.push(runnable);
+        if (groupState === 'only' || testState === 'only') {
+          onlyTests.push(runnable);
+        }
+      }
+
+      currentTest = null;
+    };
+
+    lines.forEach((line) => {
+      const groupMatch = line.match(/^\s{2,}(describe(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      if (groupMatch) {
+        pushCurrentTest();
+        currentGroup = {
+          name: unescapeQuoted(groupMatch[3]),
+          callType: groupMatch[1] || 'describe',
+          executionState: callTypeToExecutionState(groupMatch[1] || 'describe')
+        };
+        return;
+      }
+
+      const testMatch = line.match(/^\s{4,}(it(?:\.(?:skip|only))?)\((['"])(.*?)\2,\s*\(\)\s*=>\s*\{$/);
+      if (testMatch) {
+        pushCurrentTest();
+        currentTest = {
+          title: unescapeQuoted(testMatch[3]),
+          callType: testMatch[1] || 'it',
+          executionState: callTypeToExecutionState(testMatch[1] || 'it'),
+          bodyLines: []
+        };
+        return;
+      }
+
+      if (/^\s{4}\}\);\s*$/.test(line)) {
+        pushCurrentTest();
+        return;
+      }
+
+      if (/^\s{2}\}\);\s*$/.test(line)) {
+        pushCurrentTest();
+        currentGroup = null;
+        return;
+      }
+
+      if (currentTest) {
+        currentTest.bodyLines.push(stripIndent(line, 6));
+      }
+    });
+
+    pushCurrentTest();
     return onlyTests.length ? onlyTests : runnableTests;
   }
 
@@ -1359,6 +1484,19 @@
     $('export-btn').disabled = !getEditorValue().trim();
   }
 
+  function updateTestSuiteSummary(rows = []) {
+    const summaryEl = $('test-suite-summary');
+    if (!summaryEl) {
+      return;
+    }
+
+    const sectionCount = rows.filter((row) => row.rowKind === 'group').length;
+    const testCount = rows.filter((row) => row.rowKind === 'test').length;
+    const sectionLabel = `${sectionCount} section${sectionCount === 1 ? '' : 's'}`;
+    const testLabel = `${testCount} test${testCount === 1 ? '' : 's'}`;
+    summaryEl.textContent = `${sectionLabel}, together containing ${testLabel}`;
+  }
+
   function renderTestSuiteTable(rows = []) {
     const container = $('test-suite-grid');
     if (!container || typeof Tabulator === 'undefined') {
@@ -1492,6 +1630,7 @@
       testSuiteTable.on('rowMoved', handleRowMoved);
     }
 
+    updateTestSuiteSummary(rows);
     updateActionButtons();
   }
 
@@ -2023,15 +2162,20 @@
   ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
   $('run-btn').addEventListener('click', () => {
-    const runnableTests = getRunnableTestsFromRows(getTableRows());
-    if (!runnableTests.length) {
+    const runnableTests = collectRunnableTestsFromCode(getEditorValue());
+    const fallbackRunnableTests = runnableTests.length ? runnableTests : getRunnableTestsFromRows(getTableRows());
+    const activeRunnableTests = fallbackRunnableTests;
+    if (!activeRunnableTests.length) {
       $('last-run').textContent = 'No runnable actions found in active tests.';
       return;
     }
 
+    const delayInput = $('runner-delay-ms');
+    const delayMs = Math.max(0, Number(delayInput?.value || 0) || 0);
+
     // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
     const allActions = [];
-    runnableTests.forEach((t) => {
+    activeRunnableTests.forEach((t) => {
       const body = t.body || '';
       const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
       lines.forEach((ln) => {
@@ -2066,11 +2210,50 @@
       }
 
       const runId = Date.now();
-      $('last-run').textContent = `Running ${allActions.length} actions...`;
+      $('last-run').textContent = `Sending ${allActions.length} actions to form viewer...`;
+
+      let timeoutId = null;
+      const clearRunListeners = () => {
+        window.removeEventListener('message', resultHandler);
+        window.removeEventListener('message', progressHandler);
+        window.removeEventListener('message', ackHandler);
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      };
+
+      const armRunTimeout = () => {
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+        }
+        timeoutId = window.setTimeout(() => {
+          clearRunListeners();
+          $('last-run').textContent = 'Run timed out waiting for the form viewer response.';
+        }, Math.max(15000, 5000 + (allActions.length * Math.max(delayMs, 150))));
+      };
+
+      const ackHandler = (event) => {
+        if (!event.data || event.data.type !== 'TEST_ACTIONS_ACK') return;
+        if (event.data.payload?.runId !== runId) return;
+        armRunTimeout();
+        $('last-run').textContent = `Viewer acknowledged run ${runId}. Preparing ${allActions.length} actions...`;
+      };
+
+      const progressHandler = (event) => {
+        if (!event.data || event.data.type !== 'TEST_ACTIONS_PROGRESS') return;
+        if (event.data.payload?.runId !== runId) return;
+        armRunTimeout();
+        const index = Number(event.data.payload?.index || 0);
+        const total = Number(event.data.payload?.total || allActions.length);
+        const actionType = event.data.payload?.action?.type || 'action';
+        $('last-run').textContent = `Running ${index}/${total}: ${actionType}`;
+      };
 
       const resultHandler = (event) => {
         if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
-        window.removeEventListener('message', resultHandler);
+        if (event.data.payload?.runId !== runId) return;
+        clearRunListeners();
         const results = event.data.payload?.results || [];
         const completedRunId = event.data.payload?.runId || runId;
         try {
@@ -2085,8 +2268,11 @@
         }
       };
 
+      window.addEventListener('message', ackHandler);
+      window.addEventListener('message', progressHandler);
       window.addEventListener('message', resultHandler);
-      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId } }, '*');
+      armRunTimeout();
+      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId, delayMs } }, '*');
     } catch (err) {
       console.error('[Tester] Failed to send TEST_ACTIONS:', err);
       $('last-run').textContent = 'Run failed: see console.';
