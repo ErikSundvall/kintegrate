@@ -991,6 +991,7 @@
               const actions = event.data.payload?.actions || [];
               const runId = event.data.payload?.runId || Date.now();
               const delayMs = Math.max(0, Number(event.data.payload?.delayMs || 0) || 0);
+              const meta = event.data.payload?.meta || {};
               const results = [];
               try {
                 const api = formRenderer.getScriptApi?.();
@@ -999,8 +1000,10 @@
                 }
 
                 try {
-                  (event.source || window.opener)?.postMessage({ type: 'TEST_ACTIONS_ACK', payload: { runId, total: actions.length, delayMs } }, '*');
+                  (event.source || window.opener)?.postMessage({ type: 'TEST_ACTIONS_ACK', payload: { runId, total: actions.length, delayMs, meta: { ...meta, actionCount: actions.length } } }, '*');
                 } catch (_ackError) { /* ignore */ }
+
+                setStatus(`Received ${actions.length} actions from ${meta.liveTestCount ?? '?'} live tests (${meta.testCount ?? '?'} tests across ${meta.sectionCount ?? '?'} sections)`, '');
 
                 for (const [index, act] of actions.entries()) {
                   setStatus(`Running test actions ${index + 1}/${actions.length}`, '');

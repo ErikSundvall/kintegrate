@@ -1091,6 +1091,14 @@
     return onlyTests.length ? onlyTests : runnableTests;
   }
 
+  function summarizeSuiteModel(model) {
+    const groups = model?.groups || [];
+    return {
+      sectionCount: groups.length,
+      testCount: groups.reduce((total, group) => total + ((group?.tests || []).length), 0)
+    };
+  }
+
   function collectRunnableTestsFromCode(code) {
     const lines = String(code || '').replace(/\r\n/g, '\n').split('\n');
     const runnableTests = [];
@@ -1168,6 +1176,49 @@
 
     pushCurrentTest();
     return onlyTests.length ? onlyTests : runnableTests;
+  }
+
+  function extractLiveActionsFromTests(tests) {
+    const allActions = [];
+    const testsWithActions = new Set();
+
+    (tests || []).forEach((test, testIndex) => {
+      const testKey = `${test.groupName || ''}::${test.title || test.displayName || testIndex}`;
+      const body = test.body || '';
+      const lines = body.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+
+      lines.forEach((line) => {
+        let match;
+        if ((match = line.match(/cy\.fillField\(([^,]+),\s*([^\)]+)\)/))) {
+          try {
+            const target = JSON.parse(match[1]);
+            const value = JSON.parse(match[2]);
+            allActions.push({ type: 'fill', target, value, meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
+            testsWithActions.add(testKey);
+          } catch (_error) { /* ignore parse errors */ }
+        } else if ((match = line.match(/cy\.expectVisible\(([^\)]+)\)/))) {
+          try {
+            allActions.push({ type: 'expectVisible', target: JSON.parse(match[1]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
+            testsWithActions.add(testKey);
+          } catch (_error) { /* ignore parse errors */ }
+        } else if ((match = line.match(/cy\.expectHidden\(([^\)]+)\)/))) {
+          try {
+            allActions.push({ type: 'expectHidden', target: JSON.parse(match[1]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
+            testsWithActions.add(testKey);
+          } catch (_error) { /* ignore parse errors */ }
+        } else if ((match = line.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
+          try {
+            allActions.push({ type: 'expectValue', target: JSON.parse(match[1]), value: JSON.parse(match[2]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
+            testsWithActions.add(testKey);
+          } catch (_error) { /* ignore parse errors */ }
+        }
+      });
+    });
+
+    return {
+      allActions,
+      liveTestCount: testsWithActions.size
+    };
   }
 
   function findRowIndex(rows, targetRow) {
@@ -2162,42 +2213,31 @@
   ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
   $('run-btn').addEventListener('click', () => {
+    const parsedSuiteModel = parseSuiteModelFromCode(getEditorValue());
+    const suiteSummary = summarizeSuiteModel(parsedSuiteModel);
     const runnableTests = collectRunnableTestsFromCode(getEditorValue());
     const fallbackRunnableTests = runnableTests.length ? runnableTests : getRunnableTestsFromRows(getTableRows());
     const activeRunnableTests = fallbackRunnableTests;
     if (!activeRunnableTests.length) {
-      $('last-run').textContent = 'No runnable actions found in active tests.';
+      $('last-run').textContent = `No active tests found. Parsed ${suiteSummary.sectionCount} sections containing ${suiteSummary.testCount} tests.`;
       return;
     }
 
     const delayInput = $('runner-delay-ms');
     const delayMs = Math.max(0, Number(delayInput?.value || 0) || 0);
 
-    // Build actions from test bodies (simple parser for cy.fillField, cy.expectVisible, cy.expectHidden, cy.expectValue)
-    const allActions = [];
-    activeRunnableTests.forEach((t) => {
-      const body = t.body || '';
-      const lines = body.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-      lines.forEach((ln) => {
-        let m;
-        if ((m = ln.match(/cy\.fillField\(([^,]+),\s*([^\)]+)\)/))) {
-          try {
-            const target = JSON.parse(m[1]);
-            const value = JSON.parse(m[2]);
-            allActions.push({ type: 'fill', target, value, meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } });
-          } catch (e) { /* ignore parse errors */ }
-        } else if ((m = ln.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectVisible', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
-        } else if ((m = ln.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectHidden', target: JSON.parse(m[1]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
-        } else if ((m = ln.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try { allActions.push({ type: 'expectValue', target: JSON.parse(m[1]), value: JSON.parse(m[2]), meta: { testTitle: t.title || t.displayName, groupName: t.groupName || '' } }); } catch (e) {}
-        }
-      });
-    });
+    const { allActions, liveTestCount } = extractLiveActionsFromTests(activeRunnableTests);
+    const runMeta = {
+      sectionCount: suiteSummary.sectionCount,
+      testCount: suiteSummary.testCount,
+      activeTestCount: activeRunnableTests.length,
+      liveTestCount,
+      ignoredActiveTestCount: Math.max(activeRunnableTests.length - liveTestCount, 0),
+      actionCount: allActions.length
+    };
 
     if (!allActions.length) {
-      $('last-run').textContent = 'No runnable actions found in active tests.';
+      $('last-run').textContent = `Parsed ${suiteSummary.sectionCount} sections containing ${suiteSummary.testCount} tests, but none of the active tests contain live viewer actions. This runner only executes cy.fillField, cy.expectVisible, cy.expectHidden, and cy.expectValue.`;
       return;
     }
 
@@ -2210,7 +2250,7 @@
       }
 
       const runId = Date.now();
-      $('last-run').textContent = `Sending ${allActions.length} actions to form viewer...`;
+  $('last-run').textContent = `Sending ${allActions.length} actions from ${liveTestCount} live tests (${suiteSummary.testCount} tests across ${suiteSummary.sectionCount} sections) to form viewer...`;
 
       let timeoutId = null;
       const clearRunListeners = () => {
@@ -2237,7 +2277,8 @@
         if (!event.data || event.data.type !== 'TEST_ACTIONS_ACK') return;
         if (event.data.payload?.runId !== runId) return;
         armRunTimeout();
-        $('last-run').textContent = `Viewer acknowledged run ${runId}. Preparing ${allActions.length} actions...`;
+        const meta = event.data.payload?.meta || runMeta;
+        $('last-run').textContent = `Viewer acknowledged run ${runId}: ${meta.actionCount || allActions.length} actions from ${meta.liveTestCount || liveTestCount} live tests (${meta.testCount || suiteSummary.testCount} tests across ${meta.sectionCount || suiteSummary.sectionCount} sections).`;
       };
 
       const progressHandler = (event) => {
@@ -2272,7 +2313,7 @@
       window.addEventListener('message', progressHandler);
       window.addEventListener('message', resultHandler);
       armRunTimeout();
-      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId, delayMs } }, '*');
+      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId, delayMs, meta: runMeta } }, '*');
     } catch (err) {
       console.error('[Tester] Failed to send TEST_ACTIONS:', err);
       $('last-run').textContent = 'Run failed: see console.';
