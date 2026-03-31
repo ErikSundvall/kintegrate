@@ -5782,33 +5782,25 @@
                           "id": "Nr5O4",
                           "name": "Target Actions",
                           "width": "fill_container",
-                          "height": 34,
+                          "height": 68,
+                          "layout": "vertical",
                           "gap": 8,
                           "alignItems": "center",
                           "children": [
                             {
                               "type": "frame",
-                              "id": "Xq9vN",
-                              "name": "save-target",
-                              "context": "Save Target Button",
+                              "id": "Flq5o",
+                              "name": "Target Config",
+                              "width": "fill_container",
                               "height": 30,
-                              "fill": "#FFFFFF",
-                              "cornerRadius": 6,
-                              "stroke": {
-                                "thickness": 1,
-                                "fill": "#D7DBE0"
-                              },
-                              "gap": 6,
-                              "padding": [
-                                5,
-                                10
-                              ],
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
                                   "id": "W3gXm",
                                   "name": "Owner Field",
+                                  "width": 74,
                                   "height": 30,
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 6,
@@ -5837,6 +5829,7 @@
                                   "type": "frame",
                                   "id": "mvmwF",
                                   "name": "Repo Field",
+                                  "width": 70,
                                   "height": 30,
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 6,
@@ -5865,6 +5858,7 @@
                                   "type": "frame",
                                   "id": "jZwMi",
                                   "name": "Branch Field",
+                                  "width": 62,
                                   "height": 30,
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 6,
@@ -5893,6 +5887,7 @@
                                   "type": "frame",
                                   "id": "yi4sP",
                                   "name": "Folder Field",
+                                  "width": 168,
                                   "height": 30,
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 6,
@@ -5916,63 +5911,133 @@
                                       "fontWeight": "normal"
                                     }
                                   ]
-                                },
-                                {
-                                  "type": "icon_font",
-                                  "id": "nUhRJ",
-                                  "width": 14,
-                                  "height": 14,
-                                  "iconFontName": "save",
-                                  "iconFontFamily": "Material Symbols Rounded",
-                                  "fill": "#1F2937"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "0Y9aa",
-                                  "fill": "#1F2937",
-                                  "content": "Save target",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "9gUGl",
-                              "name": "load-target",
-                              "context": "Load Target Button",
+                              "id": "YDNzG",
+                              "name": "Target Buttons",
+                              "width": "fill_container",
                               "height": 30,
-                              "fill": "#FFFFFF",
-                              "cornerRadius": 6,
-                              "stroke": {
-                                "thickness": 1,
-                                "fill": "#D7DBE0"
-                              },
-                              "gap": 6,
-                              "padding": [
-                                5,
-                                10
-                              ],
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "icon_font",
-                                  "id": "Bqsrz",
-                                  "width": 14,
-                                  "height": 14,
-                                  "iconFontName": "history",
-                                  "iconFontFamily": "Material Symbols Rounded",
-                                  "fill": "#1F2937"
+                                  "type": "frame",
+                                  "id": "Xq9vN",
+                                  "name": "save-target",
+                                  "context": "Save Target Button",
+                                  "height": 30,
+                                  "fill": "#FFFFFF",
+                                  "cornerRadius": 6,
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#D7DBE0"
+                                  },
+                                  "gap": 6,
+                                  "padding": [
+                                    5,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "nUhRJ",
+                                      "width": 14,
+                                      "height": 14,
+                                      "iconFontName": "save",
+                                      "iconFontFamily": "Material Symbols Rounded",
+                                      "fill": "#1F2937"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "0Y9aa",
+                                      "fill": "#1F2937",
+                                      "content": "Save target",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
                                 },
                                 {
-                                  "type": "text",
-                                  "id": "Ez1Rs",
-                                  "fill": "#1F2937",
-                                  "content": "Load latest",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
+                                  "type": "frame",
+                                  "id": "9gUGl",
+                                  "name": "load-target",
+                                  "context": "Load Target Button",
+                                  "height": 30,
+                                  "fill": "#FFFFFF",
+                                  "cornerRadius": 6,
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#D7DBE0"
+                                  },
+                                  "gap": 6,
+                                  "padding": [
+                                    5,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "Bqsrz",
+                                      "width": 14,
+                                      "height": 14,
+                                      "iconFontName": "history",
+                                      "iconFontFamily": "Material Symbols Rounded",
+                                      "fill": "#1F2937"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Ez1Rs",
+                                      "fill": "#1F2937",
+                                      "content": "Load latest",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "iKmCY",
+                                  "name": "export-btn",
+                                  "context": "Export Cypress File Button",
+                                  "fill": "#FFFFFF",
+                                  "cornerRadius": 6,
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#D7DBE0"
+                                  },
+                                  "gap": 6,
+                                  "padding": [
+                                    5,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "bZcFg",
+                                      "width": 14,
+                                      "height": 14,
+                                      "iconFontName": "download",
+                                      "iconFontFamily": "Material Symbols Rounded",
+                                      "fill": "#1F2937"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "8TVaL",
+                                      "fill": "#1F2937",
+                                      "content": "Export .cy.js",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
                                 }
                               ]
                             }
@@ -6735,6 +6800,7 @@
                         },
                         "fill": "#D7DBE0"
                       },
+                      "gap": 8,
                       "padding": [
                         12,
                         16
@@ -6780,40 +6846,164 @@
                           ]
                         },
                         {
+                          "type": "text",
+                          "id": "aBQOk",
+                          "fill": "#000000",
+                          "content": "Report:",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
                           "type": "frame",
-                          "id": "iKmCY",
-                          "name": "export-btn",
-                          "context": "Export Cypress File Button",
+                          "id": "7G2Bg",
+                          "name": "Reporter Format Group",
+                          "context": "Reporter Format Buttons",
+                          "height": 30,
                           "fill": "#FFFFFF",
-                          "cornerRadius": 6,
+                          "cornerRadius": 8,
                           "stroke": {
                             "thickness": 1,
                             "fill": "#D7DBE0"
                           },
-                          "gap": 6,
-                          "padding": [
-                            5,
-                            10
-                          ],
+                          "gap": 2,
+                          "padding": 2,
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "icon_font",
-                              "id": "bZcFg",
-                              "width": 14,
-                              "height": 14,
-                              "iconFontName": "download",
-                              "iconFontFamily": "Material Symbols Rounded",
-                              "fill": "#1F2937"
+                              "type": "frame",
+                              "id": "UFGoi",
+                              "name": "Reporter Spec",
+                              "width": 42,
+                              "height": 26,
+                              "fill": "#1976D2",
+                              "cornerRadius": 6,
+                              "padding": [
+                                5,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "7CZc7",
+                                  "name": "specText",
+                                  "fill": "#FFFFFF",
+                                  "content": "spec",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             },
                             {
-                              "type": "text",
-                              "id": "8TVaL",
-                              "fill": "#1F2937",
-                              "content": "Export .cy.js",
-                              "fontFamily": "Inter",
-                              "fontSize": 12,
-                              "fontWeight": "normal"
+                              "type": "frame",
+                              "id": "WPxQW",
+                              "name": "Reporter Dot",
+                              "width": 36,
+                              "height": 26,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "padding": [
+                                5,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "u4dPH",
+                                  "name": "dotText",
+                                  "fill": "#475569",
+                                  "content": "dot",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "qVOZW",
+                              "name": "Reporter Min",
+                              "width": 36,
+                              "height": 26,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "padding": [
+                                5,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "8C3ne",
+                                  "name": "minText",
+                                  "fill": "#475569",
+                                  "content": "min",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "exO76",
+                              "name": "Reporter Json",
+                              "width": 44,
+                              "height": 26,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "padding": [
+                                5,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "W8O3b",
+                                  "name": "jsonText",
+                                  "fill": "#475569",
+                                  "content": "json",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QL4Ek",
+                              "name": "Reporter Html",
+                              "width": 42,
+                              "height": 26,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 6,
+                              "padding": [
+                                5,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "kBTTw",
+                                  "name": "htmlText",
+                                  "fill": "#475569",
+                                  "content": "html",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             }
                           ]
                         },
