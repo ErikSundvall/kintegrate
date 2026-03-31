@@ -102,12 +102,15 @@ Agents must not execute `git push` automatically. Local modifications are allowe
   one or more .pen files, then assume they are pencil.dev user interface mockups and for each
  "parent task" in the `task list` that modifies user interface include a subtask to first 
   update appropriate parts of the .pen file and get user feedback on suggested design before
-  implementing UI changes - using the confirmed/updated design
-  changes. Then u
+  implementing UI changes - using the usderr-confirmed/updated design changes. 
+  The tasks are going to be implemented by junior developer or/and cheap AI (GPT 5 mini) so
+  make sure tasks are detailed and small enough to avoid mistakes and inconsistencies. 
+  If source files are too big suggest breaking int smaller ones so that changes get more
+  isolated and the needed context window for each main task gets smaller. 
 - Put PRDs and task lists in a /tasks subdirectory
 
-# MCP
+# MCP use
 
-Do use suitable MCPs, help user cofigure them for you if not already available. Examples:
-- Deepwiki MCP (e.g. for openEHR questions)
-- Pencil.dev MCP (e.g. to query and modify. pen files)
+Do use suitable MCPs, help the user cofigure them for you if not already available. Examples:
+- Deepwiki MCP (e.g. for openEHR questions or any opren source github project/library used)
+- Pencil.dev MCP (e.g. to query and modify .pen files)
