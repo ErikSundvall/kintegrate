@@ -156,10 +156,10 @@
     - `pushValidationRangeRule` does not push when both `min` and `max` are `null`.
     Run `npm run test:unit`.
 
-- [ ] 3.0 Create `FormTestApi` TypeScript interface and `cy-emulator` module
+- [x] 3.0 Create `FormTestApi` TypeScript interface and `cy-emulator` module
   > **Context:** These are **new** files. `form-test-api-types.ts` declares the shape of `window.formTestApi` so the emulator is fully typed. `cy-emulator.ts` is the main deliverable of FR-5 through FR-12. Writing it in TypeScript first (before touching any HTML) keeps the context window small and the logic testable in Node.js with a mocked API.
 
-  - [ ] 3.1 Create `src/ts/form-test-api-types.ts`. Export these TypeScript interfaces (derive the signatures by reading `cypress/support/commands.js`, which already calls each method):
+  - [x] 3.1 Create `src/ts/form-test-api-types.ts`. Export these TypeScript interfaces (derive the signatures by reading `cypress/support/commands.js`, which already calls each method):
     ```typescript
     export interface FillFieldOptions {
       multiIndex?: number;
@@ -183,7 +183,7 @@
     }
     ```
 
-  - [ ] 3.2 Create `src/ts/cy-emulator.ts`. This module must:
+  - [x] 3.2 Create `src/ts/cy-emulator.ts`. This module must:
     1. Import `FormTestApi`, `FillFieldOptions`, `VisibilityOptions`, `GetFieldValueOptions` from `./form-test-api-types`.
     2. Export a `getFormTestApi(): FormTestApi` function. It reads `(window as any).opener?.formTestApi`. If the value is falsy, throw `new Error('Form viewer not open or formTestApi not available')` (FR-11).
     3. Export a `FORM_READY_TIMEOUT_MS` constant set to `10_000`.
@@ -191,20 +191,20 @@
     5. Define and export a `CyEmulator` interface listing all command methods with their exact signatures (see sub-tasks 3.3–3.10 for method signatures).
     6. Export a `createCyEmulator(): CyEmulator` factory function. Inside it, maintain a `let queue: Promise<void> = Promise.resolve()` and a `let skipReason: string | null = null` variable. Implement a private `enqueue(fn: CyEmulatorCommand): CyEmulator` helper that appends `fn` to `queue` and returns `emulator` for chaining.
 
-  - [ ] 3.3 Inside `createCyEmulator`, implement `fillField(path: string, value: unknown, opts: FillFieldOptions = {}): CyEmulator`:
+  - [x] 3.3 Inside `createCyEmulator`, implement `fillField(path: string, value: unknown, opts: FillFieldOptions = {}): CyEmulator`:
     Enqueue: call `getFormTestApi().setFieldValue(path, value, opts.multiIndex, opts.searchWithinContainerTag, opts.containerMultiIndex)`. (FR-8)
 
-  - [ ] 3.4 Implement `expectVisible(path: string, opts: VisibilityOptions = {}): CyEmulator`:
+  - [x] 3.4 Implement `expectVisible(path: string, opts: VisibilityOptions = {}): CyEmulator`:
     Enqueue: `const hidden = getFormTestApi().isHidden(path, opts.searchWithinContainerTag, opts.containerMultiIndex); expect(hidden, \`${path} should be visible\`).to.equal(false);`
     Use Chai's `expect` — import it from the global `chai` object: `declare const chai: { expect: (val: unknown, msg?: string) => Chai.Assertion }` at the top of the file and call `chai.expect(…)`. (FR-8)
 
-  - [ ] 3.5 Implement `expectHidden(path: string, opts: VisibilityOptions = {}): CyEmulator`:
+  - [x] 3.5 Implement `expectHidden(path: string, opts: VisibilityOptions = {}): CyEmulator`:
     Enqueue: same as 3.4 but assert `to.equal(true)` and use `"should be hidden"` as the message. (FR-8)
 
-  - [ ] 3.6 Implement `expectValue(path: string, expected: unknown, opts: GetFieldValueOptions = {}): CyEmulator`:
+  - [x] 3.6 Implement `expectValue(path: string, expected: unknown, opts: GetFieldValueOptions = {}): CyEmulator`:
     Enqueue: `const actual = getFormTestApi().getFieldValue(path, opts.multiIndex, opts.searchWithinContainerTag, opts.containerMultiIndex, opts.simpleValue); chai.expect(actual, \`${path} value\`).to.deep.equal(expected);` (FR-8)
 
-  - [ ] 3.7 Implement `assertRangeSamples(opts: AssertRangeSamplesOptions): CyEmulator` where `AssertRangeSamplesOptions` is a new exported interface:
+  - [x] 3.7 Implement `assertRangeSamples(opts: AssertRangeSamplesOptions): CyEmulator` where `AssertRangeSamplesOptions` is a new exported interface:
     ```typescript
     export interface AssertRangeSamplesOptions {
       label?: string;
@@ -224,20 +224,20 @@
     4. For each invalid sample: call `setFieldValue`, then assert `isValid(sample)` is false.
     (FR-9)
 
-  - [ ] 3.8 Implement `resetForm(): CyEmulator`:
+  - [x] 3.8 Implement `resetForm(): CyEmulator`:
     Enqueue: `getFormTestApi().resetForm()`. (FR-8)
 
-  - [ ] 3.9 Implement `formViewerReady(timeoutMs = FORM_READY_TIMEOUT_MS): CyEmulator`:
+  - [x] 3.9 Implement `formViewerReady(timeoutMs = FORM_READY_TIMEOUT_MS): CyEmulator`:
     Enqueue an async function that polls `getFormTestApi().isReady()` at 100 ms intervals and resolves when it returns `true`, or rejects with `new Error('Form viewer not ready after ${timeoutMs}ms')` when the timeout expires. Use `setTimeout` wrapped in a `Promise`. (FR-8, FR-12)
 
-  - [ ] 3.10 Implement `waitForFormTestApi(timeoutMs = FORM_READY_TIMEOUT_MS): CyEmulator`:
+  - [x] 3.10 Implement `waitForFormTestApi(timeoutMs = FORM_READY_TIMEOUT_MS): CyEmulator`:
     Enqueue an async function that polls `(window as any).opener?.formTestApi` at 100 ms intervals until it is available or the timeout expires. (FR-8)
 
-  - [ ] 3.11 Add an unsupported-command proxy to the returned `CyEmulator` object using `new Proxy(emulator, { get(target, prop) { if (prop in target) return (target as any)[prop]; return () => { skipReason = \`unsupported in emulator: \${String(prop)}\`; return emulator; }; } })`. This causes any `cy.intercept(…)` or `cy.visit(…)` to set `skipReason` instead of throwing. Expose `getSkipReason(): string | null` on `CyEmulator` so the spec runner can read and clear it. (FR-10)
+  - [x] 3.11 Add an unsupported-command proxy to the returned `CyEmulator` object using `new Proxy(emulator, { get(target, prop) { if (prop in target) return (target as any)[prop]; return () => { skipReason = \`unsupported in emulator: \${String(prop)}\`; return emulator; }; } })`. This causes any `cy.intercept(…)` or `cy.visit(…)` to set `skipReason` instead of throwing. Expose `getSkipReason(): string | null` on `CyEmulator` so the spec runner can read and clear it. (FR-10)
 
-  - [ ] 3.12 Run `npm run build:ts`. Fix all TypeScript errors before writing tests.
+  - [x] 3.12 Run `npm run build:ts`. Fix all TypeScript errors before writing tests.
 
-  - [ ] 3.13 Write `src/ts/cy-emulator.test.js` using `node:test` and `node:assert/strict`. Use a mock `formTestApi`:
+  - [x] 3.13 Write `src/ts/cy-emulator.test.js` using `node:test` and `node:assert/strict`. Use a mock `formTestApi`:
     ```javascript
     const mockApi = {
       setFieldValue: (path, value) => { /* record call */ },

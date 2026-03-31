@@ -757,6 +757,14 @@
             formRenderer.getScriptApi?.()?.getFieldValue?.(tagOrPath, multiIndex, searchWithinContainerTag, containerMultiIndex, simpleValue),
           isHidden: (tagOrPath, searchWithinContainerTag, containerMultiIndex) =>
             formRenderer.getScriptApi?.()?.getFieldModel?.(tagOrPath, searchWithinContainerTag, containerMultiIndex)?.isHidden ?? null,
+          resetForm: () => {
+            const api = formRenderer.getScriptApi?.();
+            if (api?.clearValues) {
+              api.clearValues();
+              return;
+            }
+            formRenderer.composition = null;
+          },
           getFieldIndex: () => fieldIndex,
           resolveTagFromPath: (path) => fieldIndex.byPath?.[path]?.tag || fieldIndex.byPath?.[path]?.alias || null
         };
@@ -1168,16 +1176,8 @@
       clearBtn.addEventListener('click', () => {
         if (!formLoaded) return;
         try {
-          // Try to get ScriptApi for clearing
-          const api = formRenderer.getScriptApi?.();
-          if (api?.clearValues) {
-            api.clearValues();
-            setStatus('Form cleared', 'success');
-          } else {
-            // Fallback: reload the form
-            formRenderer.composition = null;
-            setStatus('Form reset', 'success');
-          }
+          window.formTestApi?.resetForm?.();
+          setStatus('Form cleared', 'success');
         } catch (error) {
           console.error('Error clearing form:', error);
         }
