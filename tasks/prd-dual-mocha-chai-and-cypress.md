@@ -70,10 +70,11 @@ The project currently has two test execution paths:
    | `cy.expectHidden(path, opts?)` | `formTestApi.isHidden(path, …)` → Chai `expect(hidden).to.equal(true)` |
    | `cy.expectValue(path, expected, opts?)` | `formTestApi.getFieldValue(path, …)` → Chai `expect(actual).to.deep.equal(expected)` |
    | `cy.assertRangeSamples(opts)` | In-browser range assertion helper (see FR-9) |
+   | `cy.resetForm()` | `formTestApi.resetForm()` — resets all field values via ScriptApi |
    | `cy.formViewerReady()` | Poll `formTestApi.isReady()` with timeout |
    | `cy.waitForFormTestApi()` | Wait for `window.opener.formTestApi` to be available |
 
-9. **FR-9:** `cy.assertRangeSamples(opts)` must be implemented as a browser-executable helper that iterates over `validSamples` and `invalidSamples`, sets the field via `setFieldValue`, re-reads the value, and asserts using Chai that the numeric magnitude (the numerical quantity) and unit (the measurement unit string, e.g. `"kg"` or `"mmHg"`, for `DV_QUANTITY` fields) match expectations—matching the semantics of the existing Cypress command in `cypress/support/commands.js`.
+9. **FR-9:** `cy.assertRangeSamples(opts)` must be implemented as a browser-executable helper that iterates over `validSamples` and `invalidSamples`, sets the field via `setFieldValue`, re-reads the value, and asserts using Chai that the numeric magnitude (the numerical quantity) and unit (the measurement unit string, e.g. `"kg"` or `"mmHg"`, for `DV_QUANTITY` fields) match expectations—matching the semantics of the existing Cypress command in `cypress/support/commands.js`. Value-overwrite between samples is sufficient; `resetForm()` is not called between individual samples.
 
 10. **FR-10:** Any command invoked that is not in the translation table (e.g. `cy.intercept`, `cy.visit`, `cy.screenshot`) must cause the enclosing `it` block to be **skipped** rather than failing. The skip reason must be `"unsupported in emulator: <commandName>"`.
 
@@ -86,19 +87,28 @@ The project currently has two test execution paths:
 ### 4.5 UI / Reporter
 
 13. **FR-13:** The existing "Run active tests" button in `cypress-form-tester.html` must trigger the Mocha emulator instead of the current flat-action extractor.
-14. **FR-14:** The run results panel (`#last-run`) must display, after the run completes:
-    - Sections parsed
-    - Tests found (total)
-    - Tests run
-    - Tests skipped (with reasons visible on expand or inline)
-    - Pass count / Fail count
-15. **FR-15:** Each failing test must show the assertion error message below the test title.
-16. **FR-16:** Mocha runner events (`runner.on('pass')`, `runner.on('fail')`, `runner.on('pending')`) must update the panel in real time, not only after the full suite completes.
+14. **FR-14:** Test results must be rendered using Mocha's own built-in reporters, not a homegrown panel. A group of buttons in the runner section must let the user switch between Mocha's standard reporter formats:
+    - **spec** (default — hierarchical pass/fail/pending tree)
+    - **dot** (compact progress dots)
+    - **min** (minimal summary)
+    - **json** (raw JSON dump, shown in a `<pre>` block)
+    - **html** (Mocha's full HTML reporter rendered inline)
+15. **FR-15:** The selected reporter format persists across runs within the same session (stored in a JS variable; no localStorage required).
+16. **FR-16:** The existing `#last-run` panel element can be reused as the mount point for the Mocha reporter output; the homegrown HTML result-building code (`buildRunHtml`, `run-groups`, `result-item`, etc.) must be removed.
 
 ### 4.6 Spec Compatibility and Cypress Export
 
 17. **FR-17:** The generated spec code produced by the test generator must remain valid Cypress `.cy.js` output. The emulator setup must not inject syntax changes that would break Cypress.
 18. **FR-18:** The "Export .cy.js" button must continue to export the raw spec text unchanged.
+
+### 4.7 Test Generator Improvements
+
+The existing test generator (`test-generation-core.js`) was a quick implementation that does not always follow Mocha/Cypress BDD conventions. As part of this work it must be improved:
+
+19. **FR-19:** Generated specs must use `beforeEach(() => { cy.resetForm(); })` at the top level of each `describe` block to reset form state between tests, replacing any inline `renderer.scriptApi.resetForm()` calls.
+20. **FR-20:** Generated `it` blocks must not call `renderer.scriptApi` directly; all ScriptApi access must go through `cy.*` commands so the same spec text works in both the emulator and Cypress.
+21. **FR-21:** Generated test titles must follow the Cypress convention of readable, sentence-style descriptions (e.g. `"shows gestational-age when pregnant is true"`) rather than abbreviated codes.
+22. **FR-22:** The generator must emit `cy.formViewerReady()` as the first call inside each top-level `describe` block (once per suite, not per test) so both environments wait for the renderer before running assertions.
 
 ---
 
@@ -110,20 +120,19 @@ The project currently has two test execution paths:
 4. **No cross-browser testing** — In-browser emulation runs in a single browser tab. Cross-browser coverage remains Cypress's role.
 5. **No modification to generated Cypress specs** — Spec output targeting Cypress must stay unchanged.
 6. **No replacement of Cypress** — The emulator is a convenience path for quick feedback; Cypress remains the authoritative test execution environment.
-7. **No Mocha HTML reporter overlay** — Results go into the existing `#last-run` panel; a separate Mocha reporter page is not required.
 
 ---
 
 ## 6. Design Considerations
 
-### 6.1 Existing Components to Reuse
+### 6.1 Existing Components to Reuse or Update
 
 | Component | Role in new design |
 |---|---|
-| `cypress-form-tester.html` | Host for Mocha/Chai runner; `#last-run` panel for results; "Run active tests" button trigger |
-| `form-viewer.html` (`testMode=1`) | Provides `window.formTestApi` to the emulator via `window.opener` |
-| `cypress/support/commands.js` | Semantic reference for command implementations; `assertRangeSamples` logic must be ported to the browser helper |
-| `test-generation-core.js` | Test generation is unchanged; the emulator consumes the same generated spec text |
+| `cypress-form-tester.html` | Host for Mocha/Chai runner; reporter mount point replacing homegrown panel; "Run active tests" trigger; reporter-format buttons |
+| `form-viewer.html` (`testMode=1`) | Provides `window.formTestApi` to the emulator via `window.opener`; no changes needed to its API surface |
+| `cypress/support/commands.js` | Semantic reference for command implementations; `assertRangeSamples` logic ported to browser helper |
+| `test-generation-core.js` | Updated to emit proper BDD conventions: `cy.resetForm()` in `beforeEach`, `cy.formViewerReady()` per suite, no direct `renderer.scriptApi` calls |
 | CodeMirror editor | Spec text source; no changes needed |
 
 ### 6.2 Loader Strategy
@@ -133,8 +142,8 @@ The project currently has two test execution paths:
 
 ### 6.3 Spec Evaluation
 
-- The spec text from the CodeMirror editor is evaluated using `new Function(specText)()` (or `eval`) after the BDD globals and `cy` object are established.
-- Mocha's `run()` is called after evaluation. Results are captured via runner events.
+- The spec text from the CodeMirror editor is evaluated using `new Function(specText)()` after the BDD globals and `cy` object are established. No sandboxed `iframe` is required; the tool is used in a trusted developer/informatician environment.
+- Mocha's `run()` is called after evaluation. Results are captured via the selected reporter.
 
 ### 6.4 Skip vs. Fail
 
@@ -194,9 +203,9 @@ function getFormTestApi() {
 }
 ```
 
-### 7.5 Existing Browser Run Path
+### 7.5 Removal of the postMessage Action-Playback Path
 
-The current `postMessage`-based action playback path (`TEST_ACTIONS` / `TEST_ACTIONS_RESULT`) in `form-viewer.html` can remain as a fallback or be deprecated once the Mocha emulator is stable. The two mechanisms do not conflict if the "Run active tests" button is retargeted.
+The current `postMessage`-based action playback path (`TEST_ACTIONS` / `TEST_ACTIONS_ACK` / `TEST_ACTIONS_RESULT`) in both `form-viewer.html` and `cypress-form-tester.html` must be **removed** as part of this work. There are no external consumers of this interface; removing it reduces code complexity and eliminates the misleading secondary execution path.
 
 ---
 
@@ -212,16 +221,17 @@ The current `postMessage`-based action playback path (`TEST_ACTIONS` / `TEST_ACT
 
 ---
 
-## 9. Open Questions
+## 9. Decisions (Resolved Design Questions)
 
-1. **Spec evaluation safety** — `eval`/`new Function` is the simplest approach but has security implications for user-edited code. Is a sandboxed `iframe` needed, or is same-origin risk acceptable given the tool is developer/informatician-facing?
+1. **Spec evaluation safety** — No sandbox or `iframe`. Use `new Function(specText)()` directly. The tool is developer/informatician-facing; same-origin trust is acceptable.
 
-2. **`beforeEach` form reset** — Generated specs typically call `renderer.scriptApi.resetForm()` in `beforeEach`. Should `cy.resetForm()` be added to the translation layer, or should the emulator expose `scriptApi` directly via `formTestApi`?
+2. **`beforeEach` form reset** — Add `cy.resetForm()` to the emulator's translation layer. Update the test generator to emit `beforeEach(() => { cy.resetForm(); })` instead of inline `renderer.scriptApi.resetForm()` calls. The generator is internal and can be improved to follow proper Mocha/Cypress BDD conventions throughout.
 
-3. **Async `it` wrapping** — Patching Mocha's `it` to return the command queue is the cleanest approach. Should this be transparent (auto-detected queue) or explicit (require spec authors to `return cy.chain()`)?
+3. **Async `it` wrapping** — Transparent. Mocha's `it` is patched in the evaluation wrapper to automatically await the command queue after the test body runs, so spec authors do not need to add `return` or `await`.
 
-4. **`assertRangeSamples` field reset** — The Cypress command sets and reads values for each sample. Does the emulator need to call `resetForm()` between samples, or is value-overwrite sufficient?
+4. **`assertRangeSamples` field reset** — Value-overwrite is sufficient. Each sample sets the field value directly; `resetForm()` is not called between individual samples within a single `assertRangeSamples` call.
 
-5. **Mocha reporter** — Should the in-panel results eventually link to a full Mocha HTML report in a new window (similar to the existing "Open full report" button for action-playback runs)?
+5. **Mocha reporter** — Replace the homegrown `#last-run` HTML builder entirely with Mocha's own reporters. Provide buttons in the runner section for: **spec**, **dot**, **min**, **json**, **html**. The selected format is applied to the current run's output rendered in the `#last-run` area.
 
-6. **Deprecation of action-playback path** — Once the Mocha emulator is stable, should the `TEST_ACTIONS` / `postMessage` path in `form-viewer.html` be removed, or kept as a lower-level fallback for programmatic use by other tools?
+6. **Deprecation of action-playback path** — Remove the `TEST_ACTIONS` / `postMessage` mechanism completely from both `cypress-form-tester.html` and `form-viewer.html`. No external projects depend on it; removing it simplifies both files significantly.
+
