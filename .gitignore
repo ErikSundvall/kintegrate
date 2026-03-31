@@ -32,3 +32,7 @@ Thumbs.db
 # VS Code
 .vscode/
 example - genväg.lnk
+
+# Compiled TypeScript outputs for src/ts
+/src/ts/*.js
+/src/ts/*.d.ts

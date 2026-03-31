@@ -49,12 +49,12 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout a new branch: `git checkout -b feature/dual-mocha-chai-and-cypress`
+ 
+ 
 
-- [ ] 1.0 Set up TypeScript tooling
-  - [ ] 1.1 Install TypeScript as a dev dependency: `npm install --save-dev typescript`. Confirm it appears in `devDependencies` in `package.json`.
-  - [ ] 1.2 Create `tsconfig.json` at the repo root with the following settings (do not change anything else in `package.json` yet):
+- [x] 1.0 Set up TypeScript tooling
+  - [x] 1.1 Install TypeScript as a dev dependency: `npm install --save-dev typescript`. Confirm it appears in `devDependencies` in `package.json`.
+  - [x] 1.2 Create `tsconfig.json` at the repo root with the following settings (do not change anything else in `package.json` yet):
     ```json
     {
       "compilerOptions": {
@@ -73,9 +73,9 @@
     }
     ```
     The `outDir` and `rootDir` both point to `src/ts/` so compiled `.js` files sit alongside `.ts` source files. This allows the existing UMD pattern in `test-generation-core.js` to `require('./ts/my-module.js')` the compiled output.
-  - [ ] 1.3 Add a `build:ts` script to `package.json`: `"build:ts": "tsc"`. Also update `test:unit` to `"node --test test-generator/**/*.test.js src/ts/**/*.test.js"` so the new unit test files are picked up automatically.
-  - [ ] 1.4 Create a minimal placeholder `src/ts/types.ts` containing only `export {};` and run `npm run build:ts` to confirm TypeScript compiles without errors. Fix any configuration errors before proceeding.
-  - [ ] 1.5 Add `src/ts/*.js` and `src/ts/*.d.ts` to `.gitignore` so compiled TypeScript output is not committed. (Source `.ts` files are committed; compiled `.js`/`.d.ts` are build artifacts.)
+  - [x] 1.3 Add a `build:ts` script to `package.json`: `"build:ts": "tsc"`. Also update `test:unit` to `"node --test test-generator/**/*.test.js src/ts/**/*.test.js"` so the new unit test files are picked up automatically.
+  - [x] 1.4 Create a minimal placeholder `src/ts/types.ts` containing only `export {};` and run `npm run build:ts` to confirm TypeScript compiles without errors. Fix any configuration errors before proceeding.
+  - [x] 1.5 Add `src/ts/*.js` and `src/ts/*.d.ts` to `.gitignore` so compiled TypeScript output is not committed. (Source `.ts` files are committed; compiled `.js`/`.d.ts` are build artifacts.)
 
 - [ ] 2.0 Extract `test-generation-core.js` pure logic into TypeScript modules
   > **Context:** `src/test-generation-core.js` is a 1081-line UMD module. Tasks 2.1–2.6 extract its pure functions into focused TypeScript files. Task 2.7 updates the original file to delegate to those modules. Run `npm run test:unit` after task 2.7 to confirm nothing broke.
