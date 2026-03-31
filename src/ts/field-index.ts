@@ -1,5 +1,15 @@
 import type { FieldEntry } from './types';
 
+export interface LegacyFieldIndex extends Map<string, string[]> {
+  allPathsFor(identifier: string | null): string[];
+  preferredPathFor(identifier: string | null): string | null;
+}
+
+export interface RulePathDetails {
+  candidates: string[];
+  primary: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
@@ -8,8 +18,8 @@ function uniqueValues(values: Array<string | null | undefined>): string[] {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
 
-export function buildFieldIndex(source: unknown): Map<string, string[]> {
-  const tagToPaths = new Map<string, string[]>();
+export function buildFieldIndex(source: unknown): LegacyFieldIndex {
+  const tagToPaths = new Map<string, string[]>() as LegacyFieldIndex;
 
   function walk(node: unknown, context: { structuralPath: string[] } = { structuralPath: [] }): void {
     if (!isRecord(node)) {
@@ -57,6 +67,17 @@ export function buildFieldIndex(source: unknown): Map<string, string[]> {
   }
 
   walk(source);
+  tagToPaths.allPathsFor = function allPathsFor(identifier: string | null): string[] {
+    if (!identifier) {
+      return [];
+    }
+    return [...(this.get(identifier) || [])];
+  };
+
+  tagToPaths.preferredPathFor = function preferredPathFor(identifier: string | null): string | null {
+    return this.allPathsFor(identifier)[0] || null;
+  };
+
   return tagToPaths;
 }
 
@@ -73,4 +94,20 @@ export function resolveRulePath(
   }
   const candidates = fieldIndex.get(identifier) || [];
   return candidates[0] || null;
+}
+
+export function resolveRulePathDetails(
+  fieldIndex: LegacyFieldIndex | null | undefined,
+  identifier: string | null,
+  explicitPath?: string | null
+): RulePathDetails {
+  const candidates = uniqueValues([
+    explicitPath,
+    ...(fieldIndex?.allPathsFor(identifier) || [])
+  ]);
+
+  return {
+    candidates,
+    primary: candidates[0] || identifier || 'unknown'
+  };
 }

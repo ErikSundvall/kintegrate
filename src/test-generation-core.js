@@ -5,6 +5,11 @@
   }
   root.TestGenerationCore = factory();
 }(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  const titleUtils = require('./ts/test-title-utils.js');
+  const fieldIndexMod = require('./ts/field-index.js');
+  const ruleExtractionMod = require('./ts/rule-extraction.js');
+  const codeGenMod = require('./ts/code-generation.js');
+
   const CATEGORY_ALIASES = {
     logic: 'logic',
     dependencies: 'logic',
@@ -24,44 +29,31 @@
   const ALL_CATEGORIES = ['logic', 'calc', 'validation', 'ranges', 'required'];
 
   function sanitizeTestTitle(text) {
-    return String(text || '')
-      .replace(/\s+/g, ' ')
-      .replace(/['`]/g, '')
-      .trim();
+    return titleUtils.sanitizeTestTitle(text);
   }
 
   function quoteSingle(value) {
-    return `'${String(value || '')
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, "\\'")}'`;
+    return titleUtils.quoteSingle(value);
   }
 
   function asLiteral(value) {
-    return JSON.stringify(value);
+    return titleUtils.asLiteral(value);
   }
 
   function prefixCategoryTitle(category, text) {
-    const cleaned = sanitizeTestTitle(String(text || '').replace(/^\[[^\]]+\]\s*/, ''));
-    return sanitizeTestTitle(`[${category}] ${cleaned}`);
+    return titleUtils.prefixCategoryTitle(category, text);
   }
 
   function wrapDescribeSection(name, body) {
-    if (!body) {
-      return `  describe(${quoteSingle(name)}, () => {\n  });`;
-    }
-    return `  describe(${quoteSingle(name)}, () => {\n${body}\n  });`;
+    return codeGenMod.wrapDescribeSection(name, body);
   }
 
   function normalizeCategoryKey(value) {
-    const key = String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
-    return CATEGORY_ALIASES[key] || null;
+    return titleUtils.normalizeCategoryKey(value);
   }
 
   function normalizeCategories(categories) {
-    if (!Array.isArray(categories) || categories.length === 0) {
-      return [];
-    }
-    return [...new Set(categories.map((item) => CATEGORY_ALIASES[item] || item).filter(Boolean))];
+    return titleUtils.normalizeCategories(categories);
   }
 
   function uniqueValues(values) {
@@ -99,264 +91,43 @@
   }
 
   function normalizeConditionValue(value) {
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    if (typeof value !== 'string') {
-      return value;
-    }
-    const trimmed = value.trim().toLowerCase();
-    if (trimmed === 'true') {
-      return true;
-    }
-    if (trimmed === 'false') {
-      return false;
-    }
-    return value;
+    return ruleExtractionMod.normalizeConditionValue(value);
   }
 
   function oppositeValue(value) {
-    if (value === true) {
-      return false;
-    }
-    if (value === false) {
-      return true;
-    }
-    return null;
+    return ruleExtractionMod.oppositeValue(value);
   }
 
   function extractConditionValue(statement) {
-    const condition = statement?.condition;
-    if (!condition) {
-      return undefined;
-    }
-    if (condition?.value && typeof condition.value === 'object' && 'value' in condition.value) {
-      return condition.value.value;
-    }
-    return condition.value;
+    return ruleExtractionMod.extractConditionValue(statement);
   }
 
   function deriveVisibilityValues(actionName, triggerValue) {
-    const opposite = oppositeValue(triggerValue);
-    if (opposite === null) {
-      return null;
-    }
-    if (actionName === 'show') {
-      return { showValue: triggerValue, hideValue: opposite };
-    }
-    return { showValue: opposite, hideValue: triggerValue };
+    return ruleExtractionMod.deriveVisibilityValues(actionName, triggerValue);
   }
 
   function buildFieldIndex(source) {
-    const tagToPaths = new Map();
-
-    function walk(node, context = { structuralPath: [] }) {
-      if (!node || typeof node !== 'object') {
-        return;
-      }
-
-      const identifier = node.formId || node.tag || node.alias || node.id || null;
-      const explicitPath = node.aqlPath || node.path || null;
-      const nextStructuralPath = identifier
-        ? [...context.structuralPath, identifier]
-        : context.structuralPath;
-      const structuralPath = nextStructuralPath.length ? nextStructuralPath.join('/') : null;
-      const preferredPath = explicitPath || structuralPath || identifier;
-
-      if (identifier) {
-        if (!tagToPaths.has(identifier)) {
-          tagToPaths.set(identifier, []);
-        }
-        const knownPaths = tagToPaths.get(identifier);
-        if (preferredPath && !knownPaths.includes(preferredPath)) {
-          knownPaths.push(preferredPath);
-        }
-      }
-
-      Object.values(node).forEach((value) => {
-        if (Array.isArray(value)) {
-          value.forEach((item) => walk(item, { structuralPath: nextStructuralPath }));
-        } else if (value && typeof value === 'object') {
-          walk(value, { structuralPath: nextStructuralPath });
-        }
-      });
-    }
-
-    walk(source);
-
-    return {
-      allPathsFor(identifier) {
-        if (!identifier) {
-          return [];
-        }
-        return [...(tagToPaths.get(identifier) || [])];
-      },
-      preferredPathFor(identifier) {
-        return this.allPathsFor(identifier)[0] || null;
-      }
-    };
+    return fieldIndexMod.buildFieldIndex(source);
   }
 
   function resolveRulePath(fieldIndex, identifier, explicitPath) {
-    const candidates = uniqueValues([
-      explicitPath,
-      ...(fieldIndex?.allPathsFor(identifier) || [])
-    ]);
-
-    return {
-      candidates,
-      primary: candidates[0] || identifier || 'unknown'
-    };
+    return fieldIndexMod.resolveRulePathDetails(fieldIndex, identifier, explicitPath);
   }
 
   function extractRulesFromConditions(conditionsPayload, rules, context = {}) {
-    const conditions = typeof conditionsPayload === 'string'
-      ? JSON.parse(conditionsPayload)
-      : conditionsPayload;
-    const expressions = Array.isArray(conditions?.expressions) ? conditions.expressions : [];
-
-    expressions.forEach((expression, expressionIndex) => {
-      const statements = Array.isArray(expression?.statements) ? expression.statements : [];
-      const actions = Array.isArray(expression?.actions) ? expression.actions : [];
-
-      statements.forEach((statement, statementIndex) => {
-        const rawConditionValue = extractConditionValue(statement);
-        const triggerValue = normalizeConditionValue(rawConditionValue);
-        const triggerId = statement?.fieldId || null;
-        if (!triggerId) {
-          return;
-        }
-
-        actions.forEach((action, actionIndex) => {
-          const actionName = action?.action;
-          if (!action?.target || (actionName !== 'hide' && actionName !== 'show')) {
-            return;
-          }
-          const values = deriveVisibilityValues(actionName, triggerValue);
-          if (!values) {
-            return;
-          }
-          const actionText = actionName === 'show' ? 'shown' : 'hidden';
-
-          rules.push({
-            key: 'conditions',
-            index: `${expressionIndex}-${statementIndex}-${actionIndex}`,
-            triggerTag: triggerId,
-            targetTag: action.target,
-            triggerPath: context.currentPath || null,
-            targetPath: context.currentPath || null,
-            showValue: values.showValue,
-            hideValue: values.hideValue,
-            actionName,
-            description: `${action.target} is ${actionText} when ${triggerId} is ${triggerValue}`
-          });
-        });
-      });
-    });
+    return ruleExtractionMod.extractRulesFromConditions(conditionsPayload, rules, context);
   }
 
   function collectDependencyRules(node, rules, context = {}) {
-    if (!node || typeof node !== 'object') {
-      return;
-    }
-
-    const nextContext = {
-      currentPath: node.aqlPath || node.path || context.currentPath || null,
-      currentTag: node.formId || node.tag || node.alias || node.id || context.currentTag || null
-    };
-
-    Object.entries(node).forEach(([key, value]) => {
-      if (!value) {
-        return;
-      }
-
-      if (/conditions/i.test(key)) {
-        try {
-          extractRulesFromConditions(value, rules, nextContext);
-        } catch (_error) {
-          // Keep parsing other nodes if one conditions payload is malformed.
-        }
-        return;
-      }
-
-      if (/dependenc|visibility/i.test(key)) {
-        const candidates = Array.isArray(value) ? value : [value];
-        candidates.forEach((candidate, index) => {
-          if (!candidate || typeof candidate !== 'object') {
-            return;
-          }
-
-          const showValue = candidate.triggerValue ?? candidate.value ?? true;
-          const hideValue = candidate.falsyValue ?? oppositeValue(showValue) ?? false;
-          rules.push({
-            key,
-            index,
-            triggerPath:
-              candidate.triggerPath ||
-              candidate.sourcePath ||
-              candidate.dependsOn ||
-              candidate.field ||
-              nextContext.currentPath,
-            triggerTag:
-              candidate.triggerTag ||
-              candidate.sourceTag ||
-              candidate.tag ||
-              nextContext.currentTag,
-            targetPath: candidate.targetPath || candidate.path || nextContext.currentPath,
-            targetTag: candidate.targetTag || candidate.target || nextContext.currentTag,
-            showValue,
-            hideValue,
-            actionName: candidate.action || 'show',
-            description: candidate.description || candidate.name || ''
-          });
-        });
-      }
-    });
-
-    Object.values(node).forEach((value) => {
-      if (Array.isArray(value)) {
-        value.forEach((item) => collectDependencyRules(item, rules, nextContext));
-      } else if (value && typeof value === 'object') {
-        collectDependencyRules(value, rules, nextContext);
-      }
-    });
+    return ruleExtractionMod.collectDependencyRules(node, rules, context);
   }
 
   function pushValidationRangeRule(rules, identifier, range, suffix = null, extras = {}) {
-    if (!identifier || !range || typeof range !== 'object') {
-      return;
-    }
-    const min = Number.isFinite(range.min) ? range.min : null;
-    const max = Number.isFinite(range.max) ? range.max : null;
-    if (min === null && max === null) {
-      return;
-    }
-
-    rules.push({
-      field: identifier,
-      fieldPath: extras.fieldPath || null,
-      suffix,
-      rmType: extras.rmType || null,
-      unit: extras.unit || null,
-      min,
-      max,
-      minOp: range.minOp || null,
-      maxOp: range.maxOp || null
-    });
+    return ruleExtractionMod.pushValidationRangeRule(rules, identifier, range, suffix, extras);
   }
 
   function extractQuantityUnitRules(inputs) {
-    const unitInput = (inputs || []).find((input) => input?.suffix === 'unit');
-    if (!unitInput || !Array.isArray(unitInput.list)) {
-      return [];
-    }
-
-    return unitInput.list
-      .map((entry) => ({
-        unit: entry?.value ?? entry?.label ?? null,
-        range: entry?.validation?.range || null
-      }))
-      .filter((entry) => entry.unit);
+    return ruleExtractionMod.extractQuantityUnitRules(inputs);
   }
 
   function collectValidationRules(node, validations, valueRanges, requiredFields, calculations, context = {}) {
@@ -1010,56 +781,15 @@
   }
 
   function buildGeneratedGroups(parsedForm, options = {}) {
-    const levels = normalizeScopeLevels(options);
-    const enabledRuleIds = options.enabledRuleIds instanceof Set ? options.enabledRuleIds : null;
-    const filteredParsed = enabledRuleIds ? filterParsedFormByRuleIds(parsedForm, enabledRuleIds) : parsedForm;
-    const groups = [];
-
-    const logicTests = buildDependencyTests(filteredParsed, levels.logic);
-    if (logicTests.length) {
-      groups.push({ name: 'logic', tests: logicTests, extrasText: '' });
-    }
-
-    const calcTests = buildCalculationTests(filteredParsed, levels.calc);
-    if (calcTests.length) {
-      groups.push({ name: 'calc', tests: calcTests, extrasText: '' });
-    }
-
-    const validationTests = buildRangeValidationTests(filteredParsed, levels.validation);
-    if (validationTests.length) {
-      groups.push({ name: 'validation', tests: validationTests, extrasText: '' });
-    }
-
-    const rangeTests = [
-      ...buildValueRangeMetadataTests(filteredParsed, levels),
-      ...((levels.ranges > 0 && Array.isArray(options.manualRangeCases)) ? options.manualRangeCases : [])
-    ];
-    if (rangeTests.length) {
-      groups.push({ name: 'ranges', tests: rangeTests, extrasText: '' });
-    }
-
-    const requiredTests = buildRequiredFieldTests(filteredParsed, levels.required);
-    if (requiredTests.length) {
-      groups.push({ name: 'required', tests: requiredTests, extrasText: '' });
-    }
-
-    return groups;
+    return codeGenMod.buildGeneratedGroups(parsedForm, options);
   }
 
   function serializeTestCase(test) {
-    const body = String(test?.body || '').trimEnd();
-    const bodyBlock = body ? `\n${String(body).split('\n').map((line) => (line ? `      ${line}` : '')).join('\n')}\n` : '\n';
-    return `    ${(test?.callType || 'it')}(${quoteSingle(test?.title || 'unnamed test')}, () => {${bodyBlock}    });`;
+    return codeGenMod.serializeTestCase(test);
   }
 
   function buildDependencySpec(parsedForm, options = {}) {
-    const groups = buildGeneratedGroups(parsedForm, options);
-    const suiteName = sanitizeTestTitle(parsedForm.name || 'Generated logic tests');
-    const testBlocks = groups
-      .map((group) => wrapDescribeSection(group.name, (group.tests || []).map((test) => serializeTestCase(test)).join('\n\n')))
-      .join('\n\n');
-
-    return `describe(${quoteSingle(`${suiteName} - autogenerated form tests`)}, () => {\n${testBlocks}\n});\n`;
+    return codeGenMod.buildDependencySpec(parsedForm, options);
   }
 
   return {

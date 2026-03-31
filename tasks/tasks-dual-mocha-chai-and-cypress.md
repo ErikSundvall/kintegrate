@@ -77,7 +77,7 @@
   - [x] 1.4 Create a minimal placeholder `src/ts/types.ts` containing only `export {};` and run `npm run build:ts` to confirm TypeScript compiles without errors. Fix any configuration errors before proceeding.
   - [x] 1.5 Add `src/ts/*.js` and `src/ts/*.d.ts` to `.gitignore` so compiled TypeScript output is not committed. (Source `.ts` files are committed; compiled `.js`/`.d.ts` are build artifacts.)
 
-- [ ] 2.0 Extract `test-generation-core.js` pure logic into TypeScript modules
+- [x] 2.0 Extract `test-generation-core.js` pure logic into TypeScript modules
   > **Context:** `src/test-generation-core.js` is a 1081-line UMD module. Tasks 2.1–2.6 extract its pure functions into focused TypeScript files. Task 2.7 updates the original file to delegate to those modules. Run `npm run test:unit` after task 2.7 to confirm nothing broke.
 
   - [x] 2.1 Create `src/ts/types.ts` — shared TypeScript interfaces. Define (and export) the following interfaces based on what the functions in `test-generation-core.js` pass around (read the file to confirm exact shapes):
@@ -123,7 +123,7 @@
 
   - [x] 2.6 Run `npm run build:ts`. Fix any TypeScript type errors before proceeding. The compiled `.js` files (`src/ts/*.js`) must be produced without errors.
 
-  - [ ] 2.7 Update `src/test-generation-core.js` to delegate to the compiled TypeScript modules instead of re-implementing the functions inline. At the top of the factory function (after the opening `function() {`), add:
+  - [x] 2.7 Update `src/test-generation-core.js` to delegate to the compiled TypeScript modules instead of re-implementing the functions inline. At the top of the factory function (after the opening `function() {`), add:
     ```javascript
     const titleUtils = require('./ts/test-title-utils.js');
     const fieldIndexMod = require('./ts/field-index.js');
@@ -137,20 +137,20 @@
     Keep the outer UMD wrapper and the `return { … }` exports block exactly as they are so `test-generator/parser.js` and `test-generator/generator.js` continue to `require('../src/test-generation-core.js')` without change.
     > **Do not** delete the function declarations—replace their bodies only. This keeps the call graph inside the file intact.
 
-  - [ ] 2.8 Run `npm run build:ts` again to confirm compiled output is up to date, then run `npm run test:unit` to confirm all existing tests in `test-generator/parser-generator.test.js` still pass without changes. Fix any regressions before continuing.
+  - [x] 2.8 Run `npm run build:ts` again to confirm compiled output is up to date, then run `npm run test:unit` to confirm all existing tests in `test-generator/parser-generator.test.js` still pass without changes. Fix any regressions before continuing.
 
-  - [ ] 2.9 Write unit tests for `src/ts/test-title-utils.ts` in `src/ts/test-title-utils.test.js` using `node:test` and `node:assert/strict` (match the style in `test-generator/parser-generator.test.js`). Cover:
+  - [x] 2.9 Write unit tests for `src/ts/test-title-utils.ts` in `src/ts/test-title-utils.test.js` using `node:test` and `node:assert/strict` (match the style in `test-generator/parser-generator.test.js`). Cover:
     - `sanitizeTestTitle` strips leading/trailing whitespace and collapses internal spaces.
     - `quoteSingle` wraps a string in single quotes and escapes internal single quotes.
     - `normalizeCategoryKey` maps `'Calculations'` → `'calc'`, `'Logic'` → `'logic'`, unknown → lower-kebab passthrough.
     Run `npm run test:unit` and confirm the new tests pass.
 
-  - [ ] 2.10 Write unit tests for `src/ts/field-index.ts` in `src/ts/field-index.test.js`. Cover:
+  - [x] 2.10 Write unit tests for `src/ts/field-index.ts` in `src/ts/field-index.test.js`. Cover:
     - `buildFieldIndex` on a minimal tree with two sibling nodes returns the correct tag-to-path mappings.
     - `resolveRulePath` returns an explicit path when one is provided, falls back to the index, and returns `null` when neither is available.
     Run `npm run test:unit`.
 
-  - [ ] 2.11 Write unit tests for `src/ts/rule-extraction.ts` in `src/ts/rule-extraction.test.js`. Cover:
+  - [x] 2.11 Write unit tests for `src/ts/rule-extraction.ts` in `src/ts/rule-extraction.test.js`. Cover:
     - `normalizeConditionValue` correctly normalises `'true'`, `'false'`, `'True'`, `1`, `0`.
     - `oppositeValue` returns the complement for `'true'`/`'false'` and a meaningful fallback for unknown values.
     - `pushValidationRangeRule` does not push when both `min` and `max` are `null`.
