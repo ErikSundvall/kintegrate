@@ -106,7 +106,7 @@ Agents must not execute `git push` automatically. Local modifications are allowe
   changes. Then u
 - Put PRDs and task lists in a /tasks subdirectory
 
-#MCP
+# MCP
 
 Do use suitable MCPs, help user cofigure them for you if not already available. Examples:
 - Deepwiki MCP (e.g. for openEHR questions)
