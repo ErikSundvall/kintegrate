@@ -98,5 +98,5 @@ Agents must not execute `git push` automatically. Local modifications are allowe
   associated task lists, then ask user for disambiguation. Then follow
   instructions in
   https://raw.githubusercontent.com/snarktank/ai-dev-tasks/refs/heads/main/generate-tasks.md
-  using the PRD file as input. Refer to PRD in task list document.
+  using the PRD file as input. Refer to PRD in task list document. If the project contains one or more .pen files, then assume they are pencil.dev user interface mockups and for eavh "parent task" in the tasklist include a subtask to update the .pen file and get user feedback on suggested design before implementing UI changes.
 - Put PRDs and task lists in a /tasks subdirectory
