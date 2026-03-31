@@ -80,7 +80,7 @@
 - [ ] 2.0 Extract `test-generation-core.js` pure logic into TypeScript modules
   > **Context:** `src/test-generation-core.js` is a 1081-line UMD module. Tasks 2.1–2.6 extract its pure functions into focused TypeScript files. Task 2.7 updates the original file to delegate to those modules. Run `npm run test:unit` after task 2.7 to confirm nothing broke.
 
-  - [ ] 2.1 Create `src/ts/types.ts` — shared TypeScript interfaces. Define (and export) the following interfaces based on what the functions in `test-generation-core.js` pass around (read the file to confirm exact shapes):
+  - [x] 2.1 Create `src/ts/types.ts` — shared TypeScript interfaces. Define (and export) the following interfaces based on what the functions in `test-generation-core.js` pass around (read the file to confirm exact shapes):
     - `CategoryKey` — `'logic' | 'calc' | 'validation' | 'ranges' | 'required'`
     - `FieldEntry` — `{ tag: string | null; path: string | null; structuralPath: string | null }`
     - `RuleEntry` — `{ id: string; type: CategoryKey; identifier: string; triggerValue: string; targetIdentifier: string; targetPath: string | null; showValue: string; hideValue: string }` (for logic/dependency rules) plus the additional fields used by validation and range rules (inspect `pushValidationRangeRule` return shape).
@@ -89,7 +89,7 @@
     - `GeneratedGroup` — `{ name: string; tests: SerializedTest[] }`
     - `SerializedTest` — `{ title: string; callType: string; actions: string[] }` (inspect `serializeTestCase` in the existing code for exact shape)
 
-  - [ ] 2.2 Create `src/ts/test-title-utils.ts` — extract these functions verbatim from `test-generation-core.js`, adding TypeScript parameter and return types:
+  - [x] 2.2 Create `src/ts/test-title-utils.ts` — extract these functions verbatim from `test-generation-core.js`, adding TypeScript parameter and return types:
     - `sanitizeTestTitle(text: string): string`
     - `quoteSingle(value: unknown): string`
     - `asLiteral(value: unknown): string`
@@ -99,12 +99,12 @@
     - `normalizeCategories(categories: unknown): CategoryKey[]`
     Export each function with `export`.
 
-  - [ ] 2.3 Create `src/ts/field-index.ts` — extract and type these functions from `test-generation-core.js`:
+  - [x] 2.3 Create `src/ts/field-index.ts` — extract and type these functions from `test-generation-core.js`:
     - `buildFieldIndex(source: unknown): Map<string, string[]>` — walks the form-description tree and maps `tag → [path, …]`.
     - `resolveRulePath(fieldIndex: Map<string, string[]>, identifier: string | null, explicitPath?: string | null): string | null` — resolves a rule's target path from the field index.
     Import `FieldEntry` from `./types` if you use it internally.
 
-  - [ ] 2.4 Create `src/ts/rule-extraction.ts` — extract and type these functions:
+  - [x] 2.4 Create `src/ts/rule-extraction.ts` — extract and type these functions:
     - `normalizeConditionValue(value: unknown): string`
     - `oppositeValue(value: string): string`
     - `extractConditionValue(statement: unknown): string | null`
@@ -115,13 +115,13 @@
     - `extractQuantityUnitRules(inputs: unknown[]): Array<{ unit: string; range: unknown }>`
     Import `RuleEntry` from `./types`.
 
-  - [ ] 2.5 Create `src/ts/code-generation.ts` — extract and type these functions:
+  - [x] 2.5 Create `src/ts/code-generation.ts` — extract and type these functions:
     - `wrapDescribeSection(name: string, body: string): string` — wraps test body in a `describe(…, () => { … })` block with proper indentation.
     - `serializeTestCase(test: SerializedTest): string` — serializes a single test case object to a `it(…, () => { … })` string.
     - `buildDependencySpec(parsedForm: ParsedForm, options?: Record<string, unknown>): string` — entry point that calls `buildGeneratedGroups` then assembles the full `describe(…)` spec string.
     Import `ParsedForm`, `GeneratedGroup`, `SerializedTest` from `./types`. Import `sanitizeTestTitle`, `quoteSingle` from `./test-title-utils`.
 
-  - [ ] 2.6 Run `npm run build:ts`. Fix any TypeScript type errors before proceeding. The compiled `.js` files (`src/ts/*.js`) must be produced without errors.
+  - [x] 2.6 Run `npm run build:ts`. Fix any TypeScript type errors before proceeding. The compiled `.js` files (`src/ts/*.js`) must be produced without errors.
 
   - [ ] 2.7 Update `src/test-generation-core.js` to delegate to the compiled TypeScript modules instead of re-implementing the functions inline. At the top of the factory function (after the opening `function() {`), add:
     ```javascript
