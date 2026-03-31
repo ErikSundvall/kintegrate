@@ -4,9 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Better Form Tester (Cypress)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.8.2/mocha.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="tree.min.css">
   <link rel="stylesheet" href="vendor/tabulator/tabulator.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.8.2/mocha.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.4.1/chai.min.js"></script>
+  <script src="ts/cy-emulator.js"></script>
   <style>
     :root { --primary:#1976d2; --ok:#2e7d32; --warn:#ed6c02; --danger:#d32f2f; --line:#d7dbe0; --bg:#f6f8fa; }
     * { box-sizing: border-box; }
@@ -372,6 +376,14 @@
 <script src="test-generation-core.browser.js"></script>
 <script>
 (() => {
+  const cyEmulatorModule = window.CyEmulatorModule;
+  if (!cyEmulatorModule?.createCyEmulator) {
+    throw new Error('cy-emulator failed to load.');
+  }
+  mocha.setup('bdd');
+  const cy = cyEmulatorModule.createCyEmulator();
+  window.cy = cy;
+
   const storageKey = 'kintegrate.cypressTester.targets';
   let loadedForm = null;
   let generatedCode = '';

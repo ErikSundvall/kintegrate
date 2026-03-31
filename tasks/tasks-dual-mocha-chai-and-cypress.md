@@ -257,28 +257,28 @@
     - An unsupported command (e.g. `cy.intercept`) sets a skip reason and does not throw.
     Run `npm run test:unit`.
 
-- [ ] 4.0 Load Mocha/Chai CDN dependencies and expose BDD globals in `cypress-form-tester.html`
+- [x] 4.0 Load Mocha/Chai CDN dependencies and expose BDD globals in `cypress-form-tester.html`
   > **Context:** Mocha and Chai are loaded only in `cypress-form-tester.html` (not `form-viewer.html`). Add the `<script>` tags in the `<head>` section, near the existing CDN scripts for CodeMirror and Tabulator.
 
-  - [ ] 4.1 In the `<head>` of `cypress-form-tester.html`, add the Mocha 10.x browser CSS link:
+  - [x] 4.1 In the `<head>` of `cypress-form-tester.html`, add the Mocha 10.x browser CSS link:
     ```html
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.8.2/mocha.min.css">
     ```
     (FR-1)
 
-  - [ ] 4.2 After the CSS link, add the Mocha 10.x browser JS script tag:
+  - [x] 4.2 After the CSS link, add the Mocha 10.x browser JS script tag:
     ```html
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.8.2/mocha.min.js"></script>
     ```
     (FR-1)
 
-  - [ ] 4.3 Add the Chai 4.x browser JS script tag immediately after Mocha:
+  - [x] 4.3 Add the Chai 4.x browser JS script tag immediately after Mocha:
     ```html
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.4.1/chai.min.js"></script>
     ```
     (FR-1)
 
-  - [ ] 4.4 Add the compiled cy-emulator script tag immediately after Chai:
+  - [x] 4.4 Add the compiled cy-emulator script tag immediately after Chai:
     ```html
     <script src="ts/cy-emulator.js"></script>
     ```
@@ -290,16 +290,16 @@
     }
     ```
 
-  - [ ] 4.5 In the inline `<script>` block at the bottom of `cypress-form-tester.html`, after the DOM is ready, call `mocha.setup('bdd')`. This exposes `describe`, `context`, `it`, `before`, `beforeEach`, `after`, `afterEach` as globals. Verify by opening `cypress-form-tester.html` in a browser, opening the DevTools console, and confirming `typeof describe === 'function'`. (FR-2)
+  - [x] 4.5 In the inline `<script>` block at the bottom of `cypress-form-tester.html`, after the DOM is ready, call `mocha.setup('bdd')`. This exposes `describe`, `context`, `it`, `before`, `beforeEach`, `after`, `afterEach` as globals. Verify by opening `cypress-form-tester.html` in a browser, opening the DevTools console, and confirming `typeof describe === 'function'`. (FR-2)
 
-  - [ ] 4.6 After `mocha.setup('bdd')`, create the global `cy` object:
+  - [x] 4.6 After `mocha.setup('bdd')`, create the global `cy` object:
     ```javascript
     const cy = window.CyEmulatorModule.createCyEmulator();
     window.cy = cy;
     ```
     This makes `cy` available to specs evaluated with `new Function(specText)()`. (FR-5)
 
-  - [ ] 4.7 Verify `it.skip`, `describe.skip`, `it.only`, and `describe.only` work by pasting a short spec snippet in the browser console:
+  - [x] 4.7 Verify `it.skip`, `describe.skip`, `it.only`, and `describe.only` work by pasting a short spec snippet in the browser console:
     ```javascript
     describe('smoke', () => {
       it.skip('skipped', () => {});
