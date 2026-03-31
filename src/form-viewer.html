@@ -1229,7 +1229,7 @@
           if (!win) return;
           const payload = { type: 'loadForm', formData: currentFormData, hideSelector: true };
           // Send after small delay to ensure the new window is ready to receive messages
-          setTimeout(() => win.postMessage(payload, '*'), 250);
+          setTimeout(() => win.postMessage(payload, '*'), 2500);
         });
       }
       

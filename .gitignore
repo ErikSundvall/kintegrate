@@ -36,3 +36,6 @@ example - genväg.lnk
 # Compiled TypeScript outputs for src/ts
 /src/ts/*.js
 /src/ts/*.d.ts
+# Browser bundle for test-generation-core
+src/test-generation-core.browser.js
+src/test-generation-core.browser.js.map
