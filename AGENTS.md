@@ -98,5 +98,16 @@ Agents must not execute `git push` automatically. Local modifications are allowe
   associated task lists, then ask user for disambiguation. Then follow
   instructions in
   https://raw.githubusercontent.com/snarktank/ai-dev-tasks/refs/heads/main/generate-tasks.md
-  using the PRD file as input. Refer to PRD in task list document. If the project contains one or more .pen files, then assume they are pencil.dev user interface mockups and for eavh "parent task" in the tasklist include a subtask to update the .pen file and get user feedback on suggested design before implementing UI changes.
+  using the PRD file as input. Refer to PRD in task list document. If the project contains 
+  one or more .pen files, then assume they are pencil.dev user interface mockups and for each
+ "parent task" in the `task list` that modifies user interface include a subtask to first 
+  update appropriate parts of the .pen file and get user feedback on suggested design before
+  implementing UI changes - using the confirmed/updated design
+  changes. Then u
 - Put PRDs and task lists in a /tasks subdirectory
+
+#MCP
+
+Do use suitable MCPs, help user cofigure them for you if not already available. Examples:
+- Deepwiki MCP (e.g. for openEHR questions)
+- Pencil.dev MCP (e.g. to query and modify. pen files)
