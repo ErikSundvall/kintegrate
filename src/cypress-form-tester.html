@@ -17,7 +17,7 @@
     body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:#1f2937; overflow-x:hidden; }
     header { background:#fff; border-bottom:1px solid var(--line); padding:0.75rem 1rem; display:flex; gap:0.75rem; align-items:center; }
     header h1 { margin:0; font-size:1.05rem; }
-    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas:"discovery suite" "builder editor"; gap:1rem; padding:1rem; align-items:start; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas:"discovery suite" "builder editor"; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap:1rem; padding:1rem; height:calc(100vh - 52px); }
     .panel { background:#fff; border:1px solid var(--line); border-radius:8px; min-width:0; overflow:hidden; }
     .panel h2 { margin:0; font-size:0.95rem; }
     .panel-header { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; border-bottom:1px solid var(--line); }
@@ -46,7 +46,7 @@
     .rules-toolbar { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; }
     .rules-grouping { display:flex; align-items:center; gap:0.45rem; }
     .rules-grouping label { font-size:0.72rem; color:#6b7280; }
-    #rule-table { min-height:320px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; }
+    #rule-table { border:1px solid var(--line); border-radius:6px; overflow:auto; background:#fff; }
     #rule-table .tabulator { border:none; background:#fff; font-size:0.78rem; }
     #rule-table .tabulator-header { border-bottom:1px solid var(--line); background:#f6f8fa; }
     #rule-table .tabulator-col { background:#f6f8fa; border-right:1px solid #e6ebf0; color:#374151; font-size:0.74rem; font-weight:600; }
@@ -123,13 +123,19 @@
     .runner-settings input[type="number"] { width:92px; }
     .editor-result-panel { margin-top:auto; }
     .storage-note { margin:0; }
-    #form-discovery-panel { grid-area:discovery; }
-    #custom-test-builder-panel { grid-area:builder; }
-    #code-editor-panel { grid-area:editor; }
-    #test-suite-panel { grid-area:suite; }
+    #form-discovery-panel { grid-area:discovery; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+    #form-discovery-panel > .panel-body { flex:1; display:flex; flex-direction:column; min-height:0; }
+    #discovery-scope-row { flex:1; min-height:0; }
+    #rules-card { flex:1; min-height:0; }
+    #rule-table { flex:1; min-height:0; }
+    #custom-test-builder-panel { grid-area:builder; min-height:0; overflow:auto; }
+    #code-editor-panel { grid-area:editor; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+    #code-editor-panel > .panel-body { flex:1; min-height:0; overflow:auto; }
+    #test-suite-panel { grid-area:suite; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+    #test-suite-panel > .panel-body { flex:1; min-height:0; overflow:auto; }
 
     @media (max-width: 980px) {
-      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "suite" "builder" "editor"; }
+      .grid { grid-template-columns:1fr; grid-template-areas:"discovery" "suite" "builder" "editor"; height:auto; grid-template-rows:auto; }
       .target-config { grid-template-columns:1fr; }
     }
     .CodeMirror .cm-line-target { background:#fff4e8; }
@@ -196,8 +202,8 @@
       <div class="row small">
         <span id="counts" class="mono">fields:0 dependencies:0 validations:0 calculations:0 required:0</span>
       </div>
-      <div class="discovery-scope-row">
-        <section class="rules-card">
+      <div id="discovery-scope-row" class="discovery-scope-row">
+        <section id="rules-card" class="rules-card">
           <div class="rules-toolbar">
           <div class="section-label">Discovered rules</div>
            <div class="rules-grouping">
@@ -211,7 +217,7 @@
           <div id="rule-table"></div>
           <div id="rule-table-status" class="small rule-table-status">No rules discovered yet.</div>
         </section>
-        <section class="scope-card">
+        <section id="scope-card" class="scope-card">
           <div class="section-label">Generation scope</div>
           <div id="scope-controls" class="scope-controls">
             <div class="scope-row" data-scope-key="logic">
