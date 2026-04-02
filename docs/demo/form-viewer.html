@@ -757,6 +757,14 @@
             formRenderer.getScriptApi?.()?.getFieldValue?.(tagOrPath, multiIndex, searchWithinContainerTag, containerMultiIndex, simpleValue),
           isHidden: (tagOrPath, searchWithinContainerTag, containerMultiIndex) =>
             formRenderer.getScriptApi?.()?.getFieldModel?.(tagOrPath, searchWithinContainerTag, containerMultiIndex)?.isHidden ?? null,
+          resetForm: () => {
+            const api = formRenderer.getScriptApi?.();
+            if (api?.clearValues) {
+              api.clearValues();
+              return;
+            }
+            formRenderer.composition = null;
+          },
           getFieldIndex: () => fieldIndex,
           resolveTagFromPath: (path) => fieldIndex.byPath?.[path]?.tag || fieldIndex.byPath?.[path]?.alias || null
         };
@@ -985,55 +993,6 @@
             updateSyncIndicator();
             break;
 
-          // Execute test actions sent from tester window
-          case 'TEST_ACTIONS':
-            (async () => {
-              const actions = event.data.payload?.actions || [];
-              const results = [];
-              try {
-                const api = formRenderer.getScriptApi?.();
-                for (const act of actions) {
-                  if (act.type === 'fill') {
-                    try {
-                      await api?.setFieldValue?.(act.target, act.value);
-                      results.push({ action: act, ok: true });
-                    } catch (e) {
-                      results.push({ action: act, ok: false, error: e?.message || String(e) });
-                    }
-                  } else if (act.type === 'expectVisible' || act.type === 'expectHidden') {
-                    try {
-                      const model = api?.getFieldModel?.(act.target);
-                      const hidden = model?.isHidden ?? null;
-                      const wantHidden = act.type === 'expectHidden';
-                      const ok = hidden === wantHidden || (hidden === null && model ? !wantHidden : false);
-                      results.push({ action: act, ok });
-                    } catch (e) {
-                      results.push({ action: act, ok: false, error: e?.message || String(e) });
-                    }
-                  } else if (act.type === 'expectValue') {
-                    try {
-                      const val = await api?.getFieldValue?.(act.target, undefined, undefined, undefined, true);
-                      const ok = String(val) === String(act.value);
-                      results.push({ action: act, ok, actual: val });
-                    } catch (e) {
-                      results.push({ action: act, ok: false, error: e?.message || String(e) });
-                    }
-                  } else {
-                    results.push({ action: act, ok: false, error: 'Unknown action type' });
-                  }
-                  // Small delay between actions to let UI update
-                  await new Promise((r) => setTimeout(r, 120));
-                }
-              } catch (err) {
-                console.error('[Popup] Error executing test actions:', err);
-              }
-              // Reply with results
-              try {
-                (event.source || window.opener)?.postMessage({ type: 'TEST_ACTIONS_RESULT', payload: { results } }, '*');
-              } catch (e) { /* ignore */ }
-            })();
-            break;
-            
           case 'REQUEST_COMPOSITION':
             // Parent is requesting composition data (manual pull)
             if (parentWindow) {
@@ -1143,16 +1102,8 @@
       clearBtn.addEventListener('click', () => {
         if (!formLoaded) return;
         try {
-          // Try to get ScriptApi for clearing
-          const api = formRenderer.getScriptApi?.();
-          if (api?.clearValues) {
-            api.clearValues();
-            setStatus('Form cleared', 'success');
-          } else {
-            // Fallback: reload the form
-            formRenderer.composition = null;
-            setStatus('Form reset', 'success');
-          }
+          window.formTestApi?.resetForm?.();
+          setStatus('Form cleared', 'success');
         } catch (error) {
           console.error('Error clearing form:', error);
         }
@@ -1204,7 +1155,7 @@
           if (!win) return;
           const payload = { type: 'loadForm', formData: currentFormData, hideSelector: true };
           // Send after small delay to ensure the new window is ready to receive messages
-          setTimeout(() => win.postMessage(payload, '*'), 250);
+          setTimeout(() => win.postMessage(payload, '*'), 2500);
         });
       }
       

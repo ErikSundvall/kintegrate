@@ -106,9 +106,12 @@ self.addEventListener('fetch', (event) => {
   // Log ALL requests for debugging
   console.log('[SW] Request:', event.request.method, url.pathname, url.search);
   
-  // Handle vendor file requests from cache
-  // Match both /vendor/ and /path/to/app/vendor/ patterns
-  if (url.pathname.includes('/vendor/')) {
+  // Handle vendor file requests from cache — only for proprietary vendor files
+  // (open-source vendor subdirs like codemirror/ and tabulator/ are served as
+  // real static files and must NOT be intercepted by the service worker)
+  if (url.pathname.includes('/vendor/') &&
+      !url.pathname.includes('/vendor/codemirror/') &&
+      !url.pathname.includes('/vendor/tabulator/')) {
     event.respondWith(handleVendorRequest(url, event.request));
     return;
   }

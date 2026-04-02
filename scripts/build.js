@@ -25,6 +25,16 @@ const config = {
     // Files within vendor that ARE allowed (open source)
     allowedVendorDirs: ['codemirror', 'tabulator'],
     excludeFiles: ['index2.html', 'index3.html'],
+    // Patterns for non-runtime files that should not be deployed
+    excludeFilePatterns: [
+        /\.ts$/,        // TypeScript source (but not .d.ts — caught separately)
+        /\.d\.ts$/,     // Type declaration files
+        /\.test\.js$/,  // Unit test files
+        /\.map$/,       // Source maps
+        /\.new$/,       // Temp/draft files
+    ],
+    // CommonJS modules that have browser IIFE bundles — only the .browser.js is needed
+    excludeExactFiles: ['test-generation-core.js'],
     topLevelFiles: ['LICENSE', 'README.md']
 };
 
@@ -74,6 +84,14 @@ function copyDirSync(src, dest) {
             // Check if this file should be excluded
             if (config.excludeFiles.includes(entry.name)) {
                 console.log(`  Skipping excluded file: ${entry.name}`);
+                continue;
+            }
+            if (config.excludeExactFiles && config.excludeExactFiles.includes(entry.name)) {
+                console.log(`  Skipping non-runtime file: ${entry.name}`);
+                continue;
+            }
+            if (config.excludeFilePatterns && config.excludeFilePatterns.some(re => re.test(entry.name))) {
+                console.log(`  Skipping non-runtime file: ${relativePath}`);
                 continue;
             }
 

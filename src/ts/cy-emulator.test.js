@@ -153,3 +153,19 @@ test('unsupported commands set a skip reason and do not throw', async () => {
 	assert.equal(cy.getSkipReason(), 'unsupported in emulator: intercept');
 	await assert.doesNotReject(cy.runQueue());
 });
+
+test('prefers an explicitly registered viewer window over opener for formTestApi', async () => {
+	const openerApi = createMockApi();
+	const viewerApi = createMockApi();
+	global.window = {
+		opener: { formTestApi: openerApi },
+		__kintegrateFormViewerWindow: { formTestApi: viewerApi, closed: false }
+	};
+	const cy = createCyEmulator();
+
+	cy.fillField('/pulse', 72);
+	await cy.runQueue();
+
+	assert.deepEqual(viewerApi.calls[0], ['setFieldValue', '/pulse', 72, undefined, undefined, undefined]);
+	assert.equal(openerApi.calls.length, 0);
+});

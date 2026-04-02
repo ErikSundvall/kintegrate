@@ -309,16 +309,16 @@
     ```
     Confirm: 1 passing, 1 pending. (FR-3, FR-4)
 
-- [ ] 5.0 Wire Mocha runner and implement reporter controls in `cypress-form-tester.html`
+- [x] 5.0 Wire Mocha runner and implement reporter controls in `cypress-form-tester.html`
   > **Context:** Replace the flat-action executor (the `extractLiveActionsFromTests` / `postMessage` flow starting around line 2229) with a call to the Mocha emulator. UI changes — confirm the Pencil mockup first.
 
-  - [ ] 5.1 Update `UI-design-refactoring-using-pencil.pen` to add a reporter-format button group (spec / dot / min / json / html) adjacent to the existing "Run active tests" button. **Get user feedback on the design before proceeding to 5.2.** (FR-14)
+  - [x] 5.1 Update `UI-design-refactoring-using-pencil.pen` to add a reporter-format button group (spec / dot / min / json / html) adjacent to the existing "Run active tests" button. **Get user feedback on the design before proceeding to 5.2.** (FR-14)
 
-  - [ ] 5.2 In the HTML of `cypress-form-tester.html`, add the reporter-format button group using the confirmed design from 5.1. Use `data-reporter` attributes on each button (e.g. `<button class="btn small reporter-btn" data-reporter="spec">spec</button>`). Mark the default (`spec`) button as active with a CSS class such as `active`. (FR-14)
+  - [x] 5.2 In the HTML of `cypress-form-tester.html`, add the reporter-format button group using the confirmed design from 5.1. Use `data-reporter` attributes on each button (e.g. `<button class="btn small reporter-btn" data-reporter="spec">spec</button>`). Mark the default (`spec`) button as active with a CSS class such as `active`. (FR-14)
 
-  - [ ] 5.3 In the JavaScript, declare `let activeReporter = 'spec';` near the top of the script. Add a `click` event listener (delegated or per-button) on the reporter buttons that sets `activeReporter` to the clicked button's `data-reporter` value and toggles the `active` class. (FR-15)
+  - [x] 5.3 In the JavaScript, declare `let activeReporter = 'spec';` near the top of the script. Add a `click` event listener (delegated or per-button) on the reporter buttons that sets `activeReporter` to the clicked button's `data-reporter` value and toggles the `active` class. (FR-15)
 
-  - [ ] 5.4 Implement an `async function runMochaSpec(specText)` function (inside the `<script>` block):
+  - [x] 5.4 Implement an `async function runMochaSpec(specText)` function (inside the `<script>` block):
     1. Clear the `#last-run` element: `document.getElementById('last-run').innerHTML = '';`.
     2. Call `mocha.setup({ ui: 'bdd', reporter: activeReporter })` to reset Mocha with the current reporter.
     3. Set `window.cy = window.CyEmulatorModule.createCyEmulator()` to get a fresh command queue for this run.
@@ -334,7 +334,7 @@
     5. Call `mocha.run()` and wait for the `end` event to log completion.
     (FR-13, Section 6.3)
 
-  - [ ] 5.5 Patch Mocha's `it` after `mocha.setup('bdd')` to automatically await the `cy` command queue. Replace the global `it` with a wrapper:
+  - [x] 5.5 Patch Mocha's `it` after `mocha.setup('bdd')` to automatically await the `cy` command queue. Replace the global `it` with a wrapper:
     ```javascript
     const _originalIt = window.it;
     window.it = function patchedIt(title, fn, ...rest) {
@@ -348,45 +348,45 @@
     ```
     This ensures spec authors do not need to add `return` or `await`. (FR-5, Section 7.3 decision 3)
 
-  - [ ] 5.6 Replace the existing "Run active tests" button click handler (which currently calls `extractLiveActionsFromTests` and sends `TEST_ACTIONS` via `postMessage`) with a call to `runMochaSpec(getEditorValue())`. `getEditorValue()` already exists and returns the CodeMirror editor contents. (FR-13)
+  - [x] 5.6 Replace the existing "Run active tests" button click handler (which currently calls `extractLiveActionsFromTests` and sends `TEST_ACTIONS` via `postMessage`) with a call to `runMochaSpec(getEditorValue())`. `getEditorValue()` already exists and returns the CodeMirror editor contents. (FR-13)
 
-  - [ ] 5.7 For the `json` reporter, the raw JSON is output to `process.stdout` in Node.js — it does not render in the browser. After `mocha.run()` emits `end`, if `activeReporter === 'json'` render the Mocha stats as a `<pre>` block in `#last-run`. (FR-14)
+  - [x] 5.7 For the `json` reporter, the raw JSON is output to `process.stdout` in Node.js — it does not render in the browser. After `mocha.run()` emits `end`, if `activeReporter === 'json'` render the Mocha stats as a `<pre>` block in `#last-run`. (FR-14)
 
-  - [ ] 5.8 Remove the homegrown HTML result-building code from `cypress-form-tester.html`: delete `renderRunResultsHTML`, `openFullReportWindow`, and the related CSS classes (`.run-groups`, `.run-group`, `.run-group-title`, `.result-item`, `.result-badge`). Confirm `#last-run` is now exclusively used as the Mocha reporter mount point. (FR-16)
+  - [x] 5.8 Remove the homegrown HTML result-building code from `cypress-form-tester.html`: delete `renderRunResultsHTML`, `openFullReportWindow`, and the related CSS classes (`.run-groups`, `.run-group`, `.run-group-title`, `.result-item`, `.result-badge`). Confirm `#last-run` is now exclusively used as the Mocha reporter mount point. (FR-16)
 
 - [ ] 6.0 Remove postMessage action-playback path
   > **Context:** The `TEST_ACTIONS` / `TEST_ACTIONS_ACK` / `TEST_ACTIONS_RESULT` mechanism is the old executor path. After Task 5, `cypress-form-tester.html` no longer sends `TEST_ACTIONS`; now remove all receiving/sending code from both files.
 
-  - [ ] 6.1 In `cypress-form-tester.html`, locate the `window.addEventListener('message', …)` handler that listens for `TEST_ACTIONS_ACK`, `TEST_ACTIONS_PROGRESS`, and `TEST_ACTIONS_RESULT` (around line 2277–2315). Remove the entire handler and the surrounding `postMessage` send call (around line 2316). (Section 7.5)
+  - [x] 6.1 In `cypress-form-tester.html`, locate the `window.addEventListener('message', …)` handler that listens for `TEST_ACTIONS_ACK`, `TEST_ACTIONS_PROGRESS`, and `TEST_ACTIONS_RESULT` (around line 2277–2315). Remove the entire handler and the surrounding `postMessage` send call (around line 2316). (Section 7.5)
 
-  - [ ] 6.2 In `cypress-form-tester.html`, also remove the `extractLiveActionsFromTests` function (around line 1181) and any other code that references it. Confirm by searching for `extractLiveActionsFromTests` — it must no longer appear in the file.
+  - [x] 6.2 In `cypress-form-tester.html`, also remove the `extractLiveActionsFromTests` function (around line 1181) and any other code that references it. Confirm by searching for `extractLiveActionsFromTests` — it must no longer appear in the file.
 
-  - [ ] 6.3 In `form-viewer.html`, locate the `case 'TEST_ACTIONS':` block inside the `window.addEventListener('message', …)` handler (around line 989–1057). Remove the entire `case` block including the `TEST_ACTIONS_ACK`, `TEST_ACTIONS_PROGRESS`, and `TEST_ACTIONS_RESULT` `postMessage` calls inside it. (Section 7.5)
+  - [x] 6.3 In `form-viewer.html`, locate the `case 'TEST_ACTIONS':` block inside the `window.addEventListener('message', …)` handler (around line 989–1057). Remove the entire `case` block including the `TEST_ACTIONS_ACK`, `TEST_ACTIONS_PROGRESS`, and `TEST_ACTIONS_RESULT` `postMessage` calls inside it. (Section 7.5)
 
   - [ ] 6.4 After removing both sides, open both `cypress-form-tester.html` and `form-viewer.html` in the browser (via `npm run dev`) and confirm there are no console errors about unknown message types.
 
-- [ ] 7.0 Update `test-generation-core.js` to emit proper BDD conventions
+- [x] 7.0 Update `test-generation-core.js` to emit proper BDD conventions
   > **Context:** The following changes affect the text that `buildDependencySpec` / `buildGeneratedGroups` outputs—the generated spec code. All changes are in `src/ts/code-generation.ts` (and potentially `rule-extraction.ts`). After each sub-task run `npm run test:unit` to confirm the existing tests still pass; update any snapshot-style assertions in `test-generator/parser-generator.test.js` that check exact spec output.
 
-  - [ ] 7.1 In `src/ts/code-generation.ts`, update `buildDependencySpec` / `wrapDescribeSection` to emit `cy.formViewerReady();` as the **first statement inside each top-level `describe` callback**, before any `beforeEach` or `it` blocks. This call appears once per suite, not per `it`. (FR-22)
+  - [x] 7.1 In `src/ts/code-generation.ts`, update `buildDependencySpec` / `wrapDescribeSection` to emit `cy.formViewerReady();` as the **first statement inside each top-level `describe` callback**, before any `beforeEach` or `it` blocks. This call appears once per suite, not per `it`. (FR-22)
 
-  - [ ] 7.2 In the code path that emits the `beforeEach` block inside `describe`, replace any call to `renderer.scriptApi.resetForm()` with `cy.resetForm();`. The emitted `beforeEach` block must look like:
+  - [x] 7.2 In the code path that emits the `beforeEach` block inside `describe`, replace any call to `renderer.scriptApi.resetForm()` with `cy.resetForm();`. The emitted `beforeEach` block must look like:
     ```javascript
     beforeEach(() => { cy.resetForm(); });
     ```
     (FR-19)
 
-  - [ ] 7.3 Audit all generated `it` block bodies: remove any remaining direct `renderer.scriptApi.*` calls. Each ScriptApi interaction must go through a `cy.*` command (`cy.fillField`, `cy.expectValue`, `cy.expectVisible`, `cy.expectHidden`, `cy.assertRangeSamples`). (FR-20)
+  - [x] 7.3 Audit all generated `it` block bodies: remove any remaining direct `renderer.scriptApi.*` calls. Each ScriptApi interaction must go through a `cy.*` command (`cy.fillField`, `cy.expectValue`, `cy.expectVisible`, `cy.expectHidden`, `cy.assertRangeSamples`). (FR-20)
 
-  - [ ] 7.4 Update the title generation logic in `src/ts/test-title-utils.ts` / `code-generation.ts` to produce sentence-style `it` titles:
+  - [x] 7.4 Update the title generation logic in `src/ts/test-title-utils.ts` / `code-generation.ts` to produce sentence-style `it` titles:
     - Replace titles like `"logic-001: pregnant → gestational_age shown"` with `"shows gestational-age when pregnant is true"`.
     - The pattern is: `"<shows|hides> <targetField> when <triggerField> is <value>"` for visibility rules; `"validates <field> is between <min> and <max>"` for range rules; `"requires <field>"` for required rules.
     (FR-21)
 
-  - [ ] 7.5 Run `npm run test:unit`. If any assertions in `test-generator/parser-generator.test.js` check exact generated spec text that has now changed (e.g. the `cy.visit` call or `cy.formViewerReady` position), update those assertions to match the new expected output. Do not weaken the tests — update the expected strings to match the new correct output.
+  - [x] 7.5 Run `npm run test:unit`. If any assertions in `test-generator/parser-generator.test.js` check exact generated spec text that has now changed (e.g. the `cy.visit` call or `cy.formViewerReady` position), update those assertions to match the new expected output. Do not weaken the tests — update the expected strings to match the new correct output.
 
 - [ ] 8.0 Verify Cypress compatibility and validate end-to-end
-  - [ ] 8.1 Run `npm run build:ts` and `npm run test:unit` — all tests must pass with zero failures before manual testing.
+  - [x] 8.1 Run `npm run build:ts` and `npm run test:unit` — all tests must pass with zero failures before manual testing.
 
   - [ ] 8.2 Open `cypress-form-tester.html` in a browser via `npm run dev`. Open a form package using the "Load Form" control. Open the form viewer via "Open Form Viewer". Click "Run active tests". Confirm:
     - The Mocha spec reporter renders inside `#last-run`.

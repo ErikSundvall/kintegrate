@@ -16,10 +16,10 @@ const bundles = [
     }
   },
   {
-    label: 'src/ts/cy-emulator.js',
+    label: 'src/ts/cy-emulator.browser.js',
     options: {
       entryPoints: ['src/ts/cy-emulator.ts'],
-      outfile: 'src/ts/cy-emulator.js',
+      outfile: 'src/ts/cy-emulator.browser.js',
       bundle: true,
       platform: 'browser',
       format: 'iife',

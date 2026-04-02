@@ -1,5 +1,5 @@
 {
-  "version": "2.9",
+  "version": "2.10",
   "children": [
     {
       "type": "frame",
@@ -6191,6 +6191,13 @@
                                   "fontFamily": "Inter",
                                   "fontSize": 12,
                                   "fontWeight": "600"
+                                },
+                                {
+                                  "type": "rectangle",
+                                  "id": "i2E5G",
+                                  "fill": "#CCCCCC",
+                                  "width": 4,
+                                  "height": 16
                                 }
                               ]
                             }

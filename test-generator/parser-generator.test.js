@@ -46,10 +46,11 @@ test('generator builds Cypress specs with expected command flow from parsed Bett
   const parsed = parseFormDefinition(formDescription);
   const spec = buildDependencySpec(parsed);
 
-  assert.match(spec, /cy\.visit\('\/form-viewer\.html\?testMode=1&autoLoad=0'\)/);
-  assert.match(spec, /cy\.formViewerReady\(\)/);
+  assert.match(spec, /before\(\(\) => \{ cy\.formViewerReady\(\); \}\);/);
+  assert.match(spec, /beforeEach\(\(\) => \{ cy\.resetForm\(\); \}\);/);
   assert.match(spec, /cy\.expectHidden\(/);
   assert.match(spec, /cy\.expectVisible\(/);
+  assert.doesNotMatch(spec, /cy\.visit\(/);
 });
 
 test('parser extracts every statement-action visibility pair from conditions payloads', () => {
@@ -163,10 +164,10 @@ test('generator includes selected categories in generated Cypress spec output', 
   assert.match(spec, /describe\('calc', \(\) => \{/);
   assert.match(spec, /describe\('validation', \(\) => \{/);
   assert.match(spec, /describe\('required', \(\) => \{/);
-  assert.match(spec, /it\('\[calc\] bmi metadata exists'/);
-  assert.match(spec, /it\('\[validation\] bmi #1'/);
+  assert.match(spec, /it\('captures calculation metadata for bmi'/);
+  assert.match(spec, /it\('validates bmi is between 10 and 80'/);
   assert.doesNotMatch(spec, /it\.skip\(/);
-  assert.match(spec, /it\('\[required\] bmi min 1'/);
+  assert.match(spec, /it\('requires bmi'/);
   assert.match(spec, /cy\.assertRangeSamples\(/);
   assert.match(spec, /"validSamples":\[/);
   assert.match(spec, /"invalidSamples":\[/);

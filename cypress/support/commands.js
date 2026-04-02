@@ -15,6 +15,12 @@ Cypress.Commands.add('formViewerReady', () => {
   });
 });
 
+Cypress.Commands.add('resetForm', () => {
+  cy.window().then((win) => {
+    win.formTestApi.resetForm();
+  });
+});
+
 Cypress.Commands.add('fillField', (tagOrPath, value, options = {}) => {
   cy.window().then((win) => {
     win.formTestApi.setFieldValue(

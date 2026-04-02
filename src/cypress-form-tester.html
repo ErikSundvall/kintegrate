@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="vendor/tabulator/tabulator.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.8.2/mocha.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.4.1/chai.min.js"></script>
-  <script src="ts/cy-emulator.js"></script>
+  <script src="ts/cy-emulator.browser.js"></script>
   <style>
     :root { --primary:#1976d2; --ok:#2e7d32; --warn:#ed6c02; --danger:#d32f2f; --line:#d7dbe0; --bg:#f6f8fa; }
     * { box-sizing: border-box; }
@@ -30,6 +30,9 @@
     .btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; }
     .btn:disabled { opacity:0.55; cursor:not-allowed; }
     .btn.small { padding:0.25rem 0.4rem; font-size:0.75rem; }
+    .reporter-group { display:inline-flex; align-items:center; gap:2px; padding:2px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .reporter-btn { border:none; background:transparent; color:#475569; border-radius:6px; padding:0.3rem 0.55rem; font-size:0.75rem; cursor:pointer; }
+    .reporter-btn.active { background:var(--primary); color:#fff; }
     input[type="text"], input[type="password"], select { border:1px solid var(--line); border-radius:6px; padding:0.4rem 0.55rem; font-size:0.85rem; }
     .sliders { display:grid; grid-template-columns: repeat(2,minmax(180px,1fr)); gap:0.5rem 1rem; }
     .slider-row { border:1px solid var(--line); border-radius:6px; padding:0.5rem; }
@@ -89,7 +92,12 @@
     #test-suite-grid .tabulator-row.group-row:hover { background:#f8fafc; }
     #test-suite-grid .tabulator-row.group-row .tabulator-cell:first-child { border-left:none; }
     #test-suite-grid .tabulator-row.group-row .drag-handle-cell { color:#9aa4b2; }
+    #test-suite-grid .tabulator-row.group-row.is-collapsed { background:#f3f6fb; }
     .group-name-cell { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; }
+    .group-cell { display:flex; align-items:center; gap:0.45rem; min-width:0; }
+    .group-toggle-btn { width:22px; height:22px; border:1px solid var(--line); border-radius:6px; background:#fff; color:#475569; cursor:pointer; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; }
+    .group-toggle-btn:focus-visible { outline:2px solid #93c5fd; outline-offset:1px; }
+    .group-toggle-icon { font-size:0.78rem; line-height:1; }
     .group-summary { color:#6b7280; font-weight:400; margin-left:0.4rem; }
     .drag-handle-cell { color:#9aa4b2; text-align:center; }
     .test-state-control { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
@@ -125,19 +133,28 @@
       .target-config { grid-template-columns:1fr; }
     }
     .CodeMirror .cm-line-target { background:#fff4e8; }
-    .run-summary { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.45rem; }
-    .run-summary-title { font-weight:700; }
-    .run-groups { display:flex; flex-direction:column; gap:0.5rem; }
-    .run-group { border-top:1px solid #e6eef6; padding-top:0.45rem; }
-    .run-group:first-child { border-top:none; padding-top:0; }
-    .run-group-title { font-weight:600; margin-bottom:0.25rem; }
-    .results-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.35rem; }
-    .result-item { display:grid; grid-template-columns:auto 1fr; gap:0.5rem; align-items:start; }
-    .result-badge { min-width:48px; text-align:center; border-radius:999px; padding:2px 8px; font-size:0.68rem; font-weight:700; }
-    .result-ok { background:#eef7ee; color:#2e7d32; }
-    .result-fail { background:#fff4e8; color:#ed6c02; }
-    .result-action { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .result-msg { color:#6b7280; margin-top:0.15rem; }
+    #last-run { min-height:140px; overflow:auto; }
+    #last-run #mocha { margin:0; }
+    #last-run #mocha-stats { position:static; }
+    #last-run #mocha-report { margin-top:12px; }
+    .reporter-output { display:flex; flex-direction:column; gap:0.75rem; }
+    .reporter-summary { display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.78rem; font-weight:600; }
+    .reporter-summary .pass { color:var(--ok); }
+    .reporter-summary .fail { color:var(--danger); }
+    .reporter-summary .pending { color:var(--warn); }
+    .reporter-suites { display:flex; flex-direction:column; gap:0.65rem; }
+    .reporter-suite { border-top:1px solid #e6eef6; padding-top:0.5rem; }
+    .reporter-suite:first-child { border-top:none; padding-top:0; }
+    .reporter-suite-title { font-weight:600; margin-bottom:0.25rem; }
+    .reporter-tests { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.3rem; }
+    .reporter-test { display:flex; gap:0.5rem; align-items:flex-start; }
+    .reporter-test-status { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.72rem; min-width:64px; }
+    .reporter-test.pass .reporter-test-status { color:var(--ok); }
+    .reporter-test.fail .reporter-test-status { color:var(--danger); }
+    .reporter-test.pending .reporter-test-status { color:var(--warn); }
+    .reporter-test-meta { color:#6b7280; font-size:0.74rem; }
+    .reporter-dots { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:1rem; line-height:1.4; white-space:pre-wrap; }
+    .reporter-json, .reporter-min { margin:0; padding:0.75rem; border:1px solid #e6eef6; border-radius:6px; background:#fff; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.76rem; white-space:pre-wrap; }
     .cell-chip { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px; font-size:0.68rem; line-height:1.2; white-space:nowrap; }
     .cell-chip.logic, .cell-chip.recorded { background:#e8f1fd; color:#1976d2; }
     .cell-chip.calc { background:#eef7ee; color:#2e7d32; }
@@ -279,6 +296,8 @@
           <div class="target-buttons">
             <button class="btn" id="save-target">Save target</button>
             <button class="btn" id="load-target">Load latest</button>
+            <button class="btn" id="export-btn">Export .cy.js</button>
+            <button class="btn" id="open-editor">Open in separate window</button>
           </div>
         </div>
         <p class="small storage-note">Saved targets are stored in browser localStorage (last 10).</p>
@@ -309,7 +328,7 @@
         <button class="btn" id="add-range-case">+ Add range case</button>
       </div>
       <div id="manual-range-list"></div>
-      <p class="small">Steps are appended as editable comments in the generated code preview.</p>
+      <p class="small">Steps are compiled into a runnable custom test group in the shared Cypress suite.</p>
     </div>
   </section>
 
@@ -321,11 +340,13 @@
       <div class="row table-actions">
         <div class="runner-buttons">
           <button class="btn" id="run-btn">Run active tests</button>
-          <button class="btn" id="export-btn">Export .cy.js</button>
-          <button class="btn" id="open-editor">Open in separate window</button>
-          <label for="runner-delay-ms">Delay (ms)</label>
-          <input type="number" id="runner-delay-ms" min="0" max="5000" step="100" value="400">
-          <span class="small">pause after each action so easier to see.</span>
+          <div class="reporter-group" id="reporter-group" aria-label="Reporter format selector">
+            <button class="reporter-btn active" type="button" data-reporter="spec" aria-pressed="true">spec</button>
+            <button class="reporter-btn" type="button" data-reporter="dot" aria-pressed="false">dot</button>
+            <button class="reporter-btn" type="button" data-reporter="min" aria-pressed="false">min</button>
+            <button class="reporter-btn" type="button" data-reporter="json" aria-pressed="false">json</button>
+            <button class="reporter-btn" type="button" data-reporter="html" aria-pressed="false">html</button>
+          </div>
         </div>
       </div>
       <div class="results editor-result-panel" id="last-run">Last run: not executed.</div>
@@ -398,11 +419,18 @@
   let suppressEditorSync = false;
   let suppressTableMoveSync = false;
   let lastParsedSuiteModel = null;
+  let allTestSuiteRows = [];
   let editorHighlightedLine = null;
   let editorHighlightTimer = null;
   let overflowTooltipEl = null;
   let tooltipLongPressTimer = null;
   let activeTooltipTarget = null;
+  let activeReporter = 'spec';
+  let runInProgress = false;
+  let formViewerWindow = null;
+
+  const customBuilderGroupName = 'Custom builder scenarios';
+  const collapsedGroupSyncKeys = new Set();
 
   const $ = (id) => document.getElementById(id);
   const ruleList = $('rule-list');
@@ -809,6 +837,82 @@
     return sanitizeTestTitle(`[${category}] ${cleaned}`);
   }
 
+  function parseStepLiteral(rawValue) {
+    const value = String(rawValue ?? '').trim();
+    if (!value) {
+      return '';
+    }
+
+    try {
+      return JSON.parse(value);
+    } catch (_error) {
+      const asNumber = Number(value);
+      if (Number.isFinite(asNumber)) {
+        return asNumber;
+      }
+      return value;
+    }
+  }
+
+  function serializeLiteralForCode(value) {
+    if (value === undefined) {
+      return 'undefined';
+    }
+    return JSON.stringify(value);
+  }
+
+  function buildCustomStepCommand(step, index) {
+    const field = String(step?.field || '').trim();
+    if (!field) {
+      return null;
+    }
+
+    const action = String(step?.action || '').trim();
+    const literalValue = parseStepLiteral(step?.value);
+
+    switch (action) {
+      case 'Fill Field':
+        return `cy.fillField(${serializeLiteralForCode(field)}, ${serializeLiteralForCode(literalValue)});`;
+      case 'Expect Visible':
+        return `cy.expectVisible(${serializeLiteralForCode(field)});`;
+      case 'Expect Hidden':
+        return `cy.expectHidden(${serializeLiteralForCode(field)});`;
+      case 'Expect Value':
+        return `cy.expectValue(${serializeLiteralForCode(field)}, ${serializeLiteralForCode(literalValue)});`;
+      default:
+        return `throw new Error(${serializeLiteralForCode(`Unsupported custom builder action on step ${index + 1}: ${action}`)});`;
+    }
+  }
+
+  function collectCustomStepDefinitions() {
+    return [...document.querySelectorAll('#step-list .step')].map((step) => ({
+      action: step.querySelector('.step-action')?.value || '',
+      field: step.querySelector('.step-field')?.value || '',
+      value: step.querySelector('.step-value')?.value || ''
+    }));
+  }
+
+  function buildCustomStepGroup() {
+    const stepCommands = collectCustomStepDefinitions()
+      .map((step, index) => buildCustomStepCommand(step, index))
+      .filter(Boolean);
+
+    if (!stepCommands.length) {
+      return null;
+    }
+
+    return {
+      name: customBuilderGroupName,
+      callType: 'describe',
+      tests: [{
+        title: prefixCategoryTitle('custom', `runs ${stepCommands.length} custom builder step${stepCommands.length === 1 ? '' : 's'}`),
+        callType: 'it',
+        body: stepCommands.join('\n')
+      }],
+      extrasText: ''
+    };
+  }
+
   function indentText(text, spaces) {
     const pad = ' '.repeat(spaces);
     return String(text || '')
@@ -1024,19 +1128,7 @@
   }
 
   function getTableRows() {
-    if (!testSuiteTable) {
-      return [];
-    }
-
-    if (typeof testSuiteTable.getData === 'function') {
-      return testSuiteTable.getData();
-    }
-
-    if (typeof testSuiteTable.getRows === 'function') {
-      return testSuiteTable.getRows().map((row) => row.getData());
-    }
-
-    return [];
+    return Array.isArray(allTestSuiteRows) ? allTestSuiteRows : [];
   }
 
   function getRunnableTestsFromRows(rows) {
@@ -1190,49 +1282,6 @@
     return onlyTests.length ? onlyTests : runnableTests;
   }
 
-  function extractLiveActionsFromTests(tests) {
-    const allActions = [];
-    const testsWithActions = new Set();
-
-    (tests || []).forEach((test, testIndex) => {
-      const testKey = `${test.groupName || ''}::${test.title || test.displayName || testIndex}`;
-      const body = test.body || '';
-      const lines = body.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-
-      lines.forEach((line) => {
-        let match;
-        if ((match = line.match(/cy\.fillField\(([^,]+),\s*([^\)]+)\)/))) {
-          try {
-            const target = JSON.parse(match[1]);
-            const value = JSON.parse(match[2]);
-            allActions.push({ type: 'fill', target, value, meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
-            testsWithActions.add(testKey);
-          } catch (_error) { /* ignore parse errors */ }
-        } else if ((match = line.match(/cy\.expectVisible\(([^\)]+)\)/))) {
-          try {
-            allActions.push({ type: 'expectVisible', target: JSON.parse(match[1]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
-            testsWithActions.add(testKey);
-          } catch (_error) { /* ignore parse errors */ }
-        } else if ((match = line.match(/cy\.expectHidden\(([^\)]+)\)/))) {
-          try {
-            allActions.push({ type: 'expectHidden', target: JSON.parse(match[1]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
-            testsWithActions.add(testKey);
-          } catch (_error) { /* ignore parse errors */ }
-        } else if ((match = line.match(/cy\.expectValue\(([^,]+),\s*([^\)]+)\)/))) {
-          try {
-            allActions.push({ type: 'expectValue', target: JSON.parse(match[1]), value: JSON.parse(match[2]), meta: { testTitle: test.title || test.displayName, groupName: test.groupName || '' } });
-            testsWithActions.add(testKey);
-          } catch (_error) { /* ignore parse errors */ }
-        }
-      });
-    });
-
-    return {
-      allActions,
-      liveTestCount: testsWithActions.size
-    };
-  }
-
   function findRowIndex(rows, targetRow) {
     const exactIndex = rows.findIndex((row) => row === targetRow);
     if (exactIndex !== -1) {
@@ -1364,95 +1413,277 @@
     setTableSyncStatus(`Jumped to ${row.rowKind === 'group' ? 'section' : 'test'} '${row.title || row.groupName || row.displayName}'.`, 'ok');
   }
 
-  function formatActionTarget(target) {
-    if (typeof target === 'string') {
-      return target;
-    }
-    try {
-      return JSON.stringify(target);
-    } catch (_error) {
-      return String(target);
-    }
+  function setActiveReporter(reporter) {
+    activeReporter = reporter;
+    document.querySelectorAll('.reporter-btn').forEach((button) => {
+      const isActive = button.dataset.reporter === reporter;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
   }
 
-  function renderRunResultsHTML(results, runId) {
-    const okCount = results.filter((result) => result.ok).length;
-    const failCount = results.length - okCount;
-    const groups = new Map();
+  function getActiveFormViewerWindow() {
+    if (formViewerWindow && !formViewerWindow.closed) {
+      return formViewerWindow;
+    }
+    return null;
+  }
 
-    results.forEach((result) => {
-      const groupName = result.action?.meta?.groupName || '';
-      const testTitle = result.action?.meta?.testTitle || 'ungrouped';
-      const groupKey = `${groupName}::${testTitle}`;
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, { groupName, testTitle, items: [] });
-      }
-      groups.get(groupKey).items.push(result);
+  function registerFormViewerWindow(nextWindow) {
+    formViewerWindow = nextWindow && !nextWindow.closed ? nextWindow : null;
+    window.__kintegrateFormViewerWindow = formViewerWindow;
+  }
+
+  function postLoadedFormToViewer(targetWindow = getActiveFormViewerWindow()) {
+    if (!targetWindow || !formRawData) {
+      return false;
+    }
+
+    const formName = loadedForm?.name || formRawData?.name || 'Unnamed form';
+    targetWindow.postMessage({
+      type: 'loadForm',
+      formData: formRawData,
+      formName,
+      hideSelector: true
+    }, window.location.origin);
+    return true;
+  }
+
+  function summarizeMochaState(state) {
+    const stats = state.stats || { passes: 0, failures: 0, pending: 0, duration: 0 };
+    return `<div class="reporter-summary"><span class="pass">${stats.passes} passing</span><span class="fail">${stats.failures} failing</span><span class="pending">${stats.pending} pending</span><span>${stats.duration || 0} ms</span></div>`;
+  }
+
+  function captureMochaRunnerState(runner) {
+    const state = {
+      passes: [],
+      failures: [],
+      pending: [],
+      stats: null
+    };
+
+    const toEntry = (test, error) => ({
+      suite: test?.parent?.title || 'suite',
+      title: test?.title || 'unnamed test',
+      fullTitle: typeof test?.fullTitle === 'function' ? test.fullTitle() : [test?.parent?.title, test?.title].filter(Boolean).join(' '),
+      duration: Number(test?.duration || 0),
+      message: error?.message || ''
     });
 
-    const groupHtml = Array.from(groups.values()).map((group) => {
-      const title = `${group.groupName ? `${escapeHtml(group.groupName)} / ` : ''}${escapeHtml(group.testTitle)}`;
-      const items = group.items.map((result) => {
-        const badgeClass = result.ok ? 'result-ok' : 'result-fail';
-        const actionText = escapeHtml(`${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`);
-        const details = result.message ? `<div class="result-msg">${escapeHtml(String(result.message))}</div>` : '';
-        return `<li class="result-item"><div class="result-badge ${badgeClass}">${result.ok ? 'OK' : 'FAIL'}</div><div><div class="result-action">${actionText}</div>${details}</div></li>`;
-      }).join('');
-      return `<div class="run-group"><div class="run-group-title">${title}</div><ul class="results-list">${items}</ul></div>`;
-    }).join('');
+    runner.on('pass', (test) => state.passes.push(toEntry(test)));
+    runner.on('fail', (test, error) => state.failures.push(toEntry(test, error)));
+    runner.on('pending', (test) => state.pending.push(toEntry(test)));
+    runner.once('end', () => {
+      state.stats = {
+        passes: Number(runner.stats?.passes || 0),
+        failures: Number(runner.stats?.failures || 0),
+        pending: Number(runner.stats?.pending || 0),
+        duration: Number(runner.stats?.duration || 0),
+        tests: Number(runner.stats?.tests || 0)
+      };
+    });
 
-    return `<div class="run-summary"><div class="run-summary-title">Run ${escapeHtml(String(runId))} complete: <span class="ok">${okCount} OK</span> / <span class="warn">${failCount} FAIL</span> (${results.length} actions)</div><button class="btn small" id="open-report-${runId}" type="button">Open full report</button></div><div class="run-groups">${groupHtml}</div>`;
+    return state;
   }
 
-  function openFullReportWindow(results, runId) {
+  function renderTextReporter(state, reporter) {
+    const suites = new Map();
+    const pushEntry = (status, entry) => {
+      const suiteName = entry.suite || 'suite';
+      if (!suites.has(suiteName)) {
+        suites.set(suiteName, []);
+      }
+      suites.get(suiteName).push({ status, entry });
+    };
+
+    state.passes.forEach((entry) => pushEntry('pass', entry));
+    state.failures.forEach((entry) => pushEntry('fail', entry));
+    state.pending.forEach((entry) => pushEntry('pending', entry));
+
+    const suiteHtml = Array.from(suites.entries()).map(([suiteName, entries]) => {
+      const tests = entries.map(({ status, entry }) => {
+        const meta = entry.message ? `<div class="reporter-test-meta">${escapeHtml(entry.message)}</div>` : '';
+        return `<li class="reporter-test ${status}"><span class="reporter-test-status">${status.toUpperCase()}</span><div><div>${escapeHtml(entry.title)}</div>${meta}</div></li>`;
+      }).join('');
+      return `<section class="reporter-suite"><div class="reporter-suite-title">${escapeHtml(suiteName)}</div><ul class="reporter-tests">${tests}</ul></section>`;
+    }).join('');
+
+    if (reporter === 'dot') {
+      const dots = [
+        ...state.passes.map(() => '.'),
+        ...state.failures.map(() => 'F'),
+        ...state.pending.map(() => '-')
+      ].join('') || '(no test events)';
+      return `<div class="reporter-output">${summarizeMochaState(state)}<pre class="reporter-dots">${escapeHtml(dots)}</pre></div>`;
+    }
+
+    if (reporter === 'min') {
+      const lines = [
+        `${state.stats?.passes || 0} passing`,
+        `${state.stats?.failures || 0} failing`,
+        `${state.stats?.pending || 0} pending`,
+        `${state.stats?.duration || 0} ms`
+      ];
+      return `<div class="reporter-output">${summarizeMochaState(state)}<pre class="reporter-min">${escapeHtml(lines.join('\n'))}</pre></div>`;
+    }
+
+    return `<div class="reporter-output reporter-output-spec">${summarizeMochaState(state)}<div class="reporter-suites">${suiteHtml}</div></div>`;
+  }
+
+  function renderJsonReporter(state) {
+    return `<div class="reporter-output">${summarizeMochaState(state)}<pre class="reporter-json">${escapeHtml(JSON.stringify({
+      stats: state.stats,
+      passes: state.passes,
+      failures: state.failures,
+      pending: state.pending
+    }, null, 2))}</pre></div>`;
+  }
+
+  function installPatchedIt() {
+    const originalIt = window.it;
+    if (typeof originalIt !== 'function') {
+      throw new Error('Mocha BDD globals are not available.');
+    }
+
+    const wrapRegistration = (register) => (title, fn, ...rest) => {
+      if (typeof fn !== 'function') {
+        return register(title, fn, ...rest);
+      }
+
+      return register(title, async function patchedIt() {
+        window.cy.resetState();
+        try {
+          await fn.call(this);
+          await window.cy.runQueue();
+          const skipReason = window.cy.getSkipReason();
+          if (skipReason) {
+            window.cy.clearSkipReason();
+            if (this?.test && !this.test.title.includes(skipReason)) {
+              this.test.title = `${this.test.title} [${skipReason}]`;
+            }
+            this.skip();
+          }
+        } finally {
+          window.cy.clearSkipReason();
+        }
+      }, ...rest);
+    };
+
+    const patchedIt = wrapRegistration(originalIt.bind(window));
+    patchedIt.skip = typeof originalIt.skip === 'function' ? originalIt.skip.bind(originalIt) : undefined;
+    patchedIt.only = typeof originalIt.only === 'function' ? wrapRegistration(originalIt.only.bind(originalIt)) : undefined;
+
+    const wrapHookRegistration = (register, { resetState = false } = {}) => (arg1, arg2, ...rest) => {
+      const hasTitle = typeof arg1 === 'string';
+      const fn = hasTitle ? arg2 : arg1;
+      if (typeof fn !== 'function') {
+        return hasTitle ? register(arg1, arg2, ...rest) : register(arg1, arg2, ...rest);
+      }
+
+      const wrapped = async function patchedHook() {
+        if (resetState) {
+          window.cy.resetState();
+        }
+        try {
+          await fn.call(this);
+          await window.cy.runQueue();
+          const skipReason = window.cy.getSkipReason();
+          if (skipReason && typeof this?.skip === 'function') {
+            window.cy.clearSkipReason();
+            this.skip();
+            return;
+          }
+        } finally {
+          window.cy.clearSkipReason();
+        }
+      };
+
+      return hasTitle ? register(arg1, wrapped, ...rest) : register(wrapped, arg2, ...rest);
+    };
+
+    window.it = patchedIt;
+    if (typeof window.specify === 'function') {
+      window.specify = patchedIt;
+      window.specify.skip = patchedIt.skip;
+      window.specify.only = patchedIt.only;
+    }
+
+    if (typeof window.before === 'function') {
+      window.before = wrapHookRegistration(window.before.bind(window), { resetState: true });
+    }
+    if (typeof window.beforeEach === 'function') {
+      window.beforeEach = wrapHookRegistration(window.beforeEach.bind(window), { resetState: true });
+    }
+  }
+
+  function normalizeSpecTextForRunner(specText) {
+    return String(specText || '').replace(
+      /^(\s*)cy\.formViewerReady\(\);\s*$/gm,
+      '$1before(() => { cy.formViewerReady(); });'
+    );
+  }
+
+  function createMochaInstance(reporter) {
+    if (typeof Mocha !== 'function') {
+      throw new Error('Mocha failed to load.');
+    }
+
+    const mochaInstance = new Mocha({ ui: 'bdd', reporter });
+    mochaInstance.suite.emit('pre-require', window, 'inline-spec', mochaInstance);
+    mochaInstance.suite.emit('require', window, 'inline-spec', mochaInstance);
+    mochaInstance.suite.emit('post-require', window, 'inline-spec', mochaInstance);
+    return mochaInstance;
+  }
+
+  async function runMochaSpec(specText) {
+    const lastRunEl = $('last-run');
+    const runButton = $('run-btn');
+
+    if (runInProgress) {
+      return;
+    }
+
+    runInProgress = true;
+    runButton.disabled = true;
+    lastRunEl.innerHTML = '';
+
+    const mochaMount = document.createElement('div');
+    mochaMount.id = 'mocha';
+    if (activeReporter !== 'html') {
+      mochaMount.hidden = true;
+    }
+    lastRunEl.appendChild(mochaMount);
+
     try {
-      const reportWindow = window.open('', '_blank', 'width=900,height=700');
-      if (!reportWindow) {
+      const mochaInstance = createMochaInstance(activeReporter);
+      installPatchedIt();
+      window.cy = window.CyEmulatorModule.createCyEmulator();
+
+      try {
+        new Function('cy', 'expect', 'chai', normalizeSpecTextForRunner(specText))(window.cy, chai.expect, chai);
+      } catch (err) {
+        lastRunEl.textContent = 'Spec evaluation error: ' + err.message;
         return;
       }
 
-      const doc = reportWindow.document;
-      const okCount = results.filter((result) => result.ok).length;
-      const failCount = results.length - okCount;
-      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Test Report</title><style>body{font-family:Arial,Helvetica,sans-serif;margin:16px;background:#f7fafc;color:#111827}pre{background:#fff;border:1px solid #e6eef6;padding:12px;border-radius:6px;overflow:auto}h1{font-size:1.1rem;margin:0 0 8px}.summary{margin-bottom:12px}.entry{padding:8px 0;border-bottom:1px solid #e6eef6}.entry-title{font-weight:600}.entry-action{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:6px}.entry-message{color:#6b7280;margin-top:6px}</style></head><body><h1>Test Report ${escapeHtml(String(runId))}</h1><div class="summary">Actions: ${results.length} | OK: ${okCount} | FAIL: ${failCount}</div><h2>Formatted results</h2><div id="formatted"></div><h2>Raw JSON</h2><pre id="raw"></pre></body></html>`;
-      doc.open();
-      doc.write(html);
-      doc.close();
+      const runner = mochaInstance.run();
+      const runnerState = captureMochaRunnerState(runner);
 
-      const formatted = doc.getElementById('formatted');
-      const raw = doc.getElementById('raw');
-      if (raw) {
-        raw.textContent = JSON.stringify(results, null, 2);
+      await new Promise((resolve) => {
+        runner.once('end', resolve);
+      });
+
+      if (activeReporter === 'json') {
+        lastRunEl.innerHTML = renderJsonReporter(runnerState);
+        return;
       }
-      if (formatted) {
-        results.forEach((result) => {
-          const entry = doc.createElement('div');
-          entry.className = 'entry';
 
-          const title = doc.createElement('div');
-          title.className = 'entry-title';
-          title.textContent = `${result.action?.meta?.groupName ? `${result.action.meta.groupName} / ` : ''}${result.action?.meta?.testTitle || 'ungrouped'}`;
-
-          const action = doc.createElement('div');
-          action.className = 'entry-action';
-          action.textContent = `${result.ok ? 'OK' : 'FAIL'}: ${result.action?.type || 'action'} ${formatActionTarget(result.action?.target)}`;
-
-          entry.appendChild(title);
-          entry.appendChild(action);
-
-          if (result.message) {
-            const message = doc.createElement('div');
-            message.className = 'entry-message';
-            message.textContent = String(result.message);
-            entry.appendChild(message);
-          }
-
-          formatted.appendChild(entry);
-        });
+      if (activeReporter !== 'html') {
+        lastRunEl.innerHTML = renderTextReporter(runnerState, activeReporter);
       }
-    } catch (error) {
-      console.error('openFullReportWindow error', error);
-      alert('Failed to open report window');
+    } finally {
+      runInProgress = false;
+      runButton.disabled = false;
     }
   }
 
@@ -1560,6 +1791,39 @@
     summaryEl.textContent = `${sectionLabel}, together containing ${testLabel}`;
   }
 
+  function getVisibleTestSuiteRows(rows = []) {
+    const visibleRows = [];
+    let currentGroupCollapsed = false;
+
+    rows.forEach((row) => {
+      if (row.rowKind === 'group') {
+        currentGroupCollapsed = collapsedGroupSyncKeys.has(row.syncKey);
+        visibleRows.push(row);
+        return;
+      }
+
+      if (!currentGroupCollapsed) {
+        visibleRows.push(row);
+      }
+    });
+
+    return visibleRows;
+  }
+
+  function toggleGroupCollapsed(syncKey) {
+    if (!syncKey) {
+      return;
+    }
+
+    if (collapsedGroupSyncKeys.has(syncKey)) {
+      collapsedGroupSyncKeys.delete(syncKey);
+    } else {
+      collapsedGroupSyncKeys.add(syncKey);
+    }
+
+    renderTestSuiteTable(getTableRows());
+  }
+
   function renderTestSuiteTable(rows = []) {
     const container = $('test-suite-grid');
     if (!container || typeof Tabulator === 'undefined') {
@@ -1573,8 +1837,11 @@
       container.innerHTML = '';
     }
 
+    allTestSuiteRows = Array.isArray(rows) ? rows : [];
+    const visibleRows = getVisibleTestSuiteRows(allTestSuiteRows);
+
     testSuiteTable = new Tabulator(container, {
-      data: rows,
+      data: visibleRows,
       layout: 'fitColumns',
       height: '320px',
       movableRows: true,
@@ -1631,11 +1898,20 @@
           formatter(cell) {
             const row = cell.getData();
             if (row.rowKind === 'group') {
-              return `${renderOverflowText(`${row.callType || 'describe'}(${quoteSingle(row.groupName)})`, { className: 'group-name-cell jump-to-code', mono: true, showTail: true })}<span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span>`;
+              const isCollapsed = collapsedGroupSyncKeys.has(row.syncKey);
+              const toggleLabel = isCollapsed ? 'Expand describe section' : 'Collapse describe section';
+              const toggleIcon = isCollapsed ? '▸' : '▾';
+              return `<div class="group-cell"><button class="group-toggle-btn" type="button" data-toggle-group="${escapeHtml(row.syncKey)}" aria-label="${toggleLabel}" aria-expanded="${isCollapsed ? 'false' : 'true'}"><span class="group-toggle-icon">${toggleIcon}</span></button>${renderOverflowText(`${row.callType || 'describe'}(${quoteSingle(row.groupName)})`, { className: 'group-name-cell jump-to-code', mono: true, showTail: true })}<span class="group-summary">${row.testsCount} test${row.testsCount === 1 ? '' : 's'}</span></div>`;
             }
             return renderOverflowText(row.displayName, { className: 'jump-to-code', showTail: true });
           },
           cellClick(event, cell) {
+            const toggle = event.target.closest('[data-toggle-group]');
+            if (toggle) {
+              toggleGroupCollapsed(cell.getData().syncKey);
+              event.stopPropagation();
+              return;
+            }
             if (!event.target.closest('.jump-to-code')) {
               return;
             }
@@ -1685,6 +1961,7 @@
         const data = row.getData();
         if (data.rowKind === 'group') {
           row.getElement().classList.add('group-row');
+          row.getElement().classList.toggle('is-collapsed', collapsedGroupSyncKeys.has(data.syncKey));
         }
       }
     });
@@ -1693,7 +1970,7 @@
       testSuiteTable.on('rowMoved', handleRowMoved);
     }
 
-    updateTestSuiteSummary(rows);
+    updateTestSuiteSummary(allTestSuiteRows);
     updateActionButtons();
   }
 
@@ -1895,15 +2172,11 @@
   }
 
   function buildCode(parsed) {
-    const stepComments = [...document.querySelectorAll('#step-list .step')].map((step, index) => {
-      const action = step.querySelector('.step-action').value;
-      const field = step.querySelector('.step-field').value;
-      const value = step.querySelector('.step-value').value;
-      return `  // Custom step ${index + 1}: ${action} ${field}${value ? ` => ${value}` : ''}`;
-    }).join('\n');
-
     const existingModel = parseSuiteModelFromCode(getEditorValue());
-    const preservedCustomGroups = (existingModel?.groups || []).filter((group) => !generatedSectionNames.includes(normalizeCategoryKey(group.name)));
+    const preservedCustomGroups = (existingModel?.groups || []).filter((group) => {
+      const normalizedName = normalizeCategoryKey(group.name);
+      return !generatedSectionNames.includes(normalizedName) && normalizedName !== normalizeCategoryKey(customBuilderGroupName);
+    });
     const groups = generationCore.buildGeneratedGroups(parsed, {
       logicLevel: getScopeValue('logic'),
       calcLevel: getScopeValue('calc'),
@@ -1916,10 +2189,15 @@
 
     preservedCustomGroups.forEach((group) => groups.push(group));
 
+    const customStepGroup = buildCustomStepGroup();
+    if (customStepGroup) {
+      groups.push(customStepGroup);
+    }
+
     return serializeSuiteModel({
       suiteName: `${sanitizeTestTitle(parsed.name)} - autogenerated form tests`,
       groups,
-      trailingText: stepComments
+      trailingText: ''
     });
   }
 
@@ -2224,112 +2502,8 @@
   $('generate-btn').addEventListener('click', regenerateCode);
   ruleGroupModeEl?.addEventListener('change', () => renderDiscoveredRuleTable(discoveredRuleRows));
 
-  $('run-btn').addEventListener('click', () => {
-    const parsedSuiteModel = parseSuiteModelFromCode(getEditorValue());
-    const suiteSummary = summarizeSuiteModel(parsedSuiteModel);
-    const runnableTests = collectRunnableTestsFromCode(getEditorValue());
-    const fallbackRunnableTests = runnableTests.length ? runnableTests : getRunnableTestsFromRows(getTableRows());
-    const activeRunnableTests = fallbackRunnableTests;
-    if (!activeRunnableTests.length) {
-      $('last-run').textContent = `No active tests found. Parsed ${suiteSummary.sectionCount} sections containing ${suiteSummary.testCount} tests.`;
-      return;
-    }
-
-    const delayInput = $('runner-delay-ms');
-    const delayMs = Math.max(0, Number(delayInput?.value || 0) || 0);
-
-    const { allActions, liveTestCount } = extractLiveActionsFromTests(activeRunnableTests);
-    const runMeta = {
-      sectionCount: suiteSummary.sectionCount,
-      testCount: suiteSummary.testCount,
-      activeTestCount: activeRunnableTests.length,
-      liveTestCount,
-      ignoredActiveTestCount: Math.max(activeRunnableTests.length - liveTestCount, 0),
-      actionCount: allActions.length
-    };
-
-    if (!allActions.length) {
-      $('last-run').textContent = `Parsed ${suiteSummary.sectionCount} sections containing ${suiteSummary.testCount} tests, but none of the active tests contain live viewer actions. This runner only executes cy.fillField, cy.expectVisible, cy.expectHidden, and cy.expectValue.`;
-      return;
-    }
-
-    // Send actions to opener (form viewer) for live execution
-    try {
-      const targetWindow = window.opener;
-      if (!targetWindow) {
-        $('last-run').textContent = 'Form viewer window not available.';
-        return;
-      }
-
-      const runId = Date.now();
-  $('last-run').textContent = `Sending ${allActions.length} actions from ${liveTestCount} live tests (${suiteSummary.testCount} tests across ${suiteSummary.sectionCount} sections) to form viewer...`;
-
-      let timeoutId = null;
-      const clearRunListeners = () => {
-        window.removeEventListener('message', resultHandler);
-        window.removeEventListener('message', progressHandler);
-        window.removeEventListener('message', ackHandler);
-        if (timeoutId) {
-          window.clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-      };
-
-      const armRunTimeout = () => {
-        if (timeoutId) {
-          window.clearTimeout(timeoutId);
-        }
-        timeoutId = window.setTimeout(() => {
-          clearRunListeners();
-          $('last-run').textContent = 'Run timed out waiting for the form viewer response.';
-        }, Math.max(15000, 5000 + (allActions.length * Math.max(delayMs, 150))));
-      };
-
-      const ackHandler = (event) => {
-        if (!event.data || event.data.type !== 'TEST_ACTIONS_ACK') return;
-        if (event.data.payload?.runId !== runId) return;
-        armRunTimeout();
-        const meta = event.data.payload?.meta || runMeta;
-        $('last-run').textContent = `Viewer acknowledged run ${runId}: ${meta.actionCount || allActions.length} actions from ${meta.liveTestCount || liveTestCount} live tests (${meta.testCount || suiteSummary.testCount} tests across ${meta.sectionCount || suiteSummary.sectionCount} sections).`;
-      };
-
-      const progressHandler = (event) => {
-        if (!event.data || event.data.type !== 'TEST_ACTIONS_PROGRESS') return;
-        if (event.data.payload?.runId !== runId) return;
-        armRunTimeout();
-        const index = Number(event.data.payload?.index || 0);
-        const total = Number(event.data.payload?.total || allActions.length);
-        const actionType = event.data.payload?.action?.type || 'action';
-        $('last-run').textContent = `Running ${index}/${total}: ${actionType}`;
-      };
-
-      const resultHandler = (event) => {
-        if (!event.data || event.data.type !== 'TEST_ACTIONS_RESULT') return;
-        if (event.data.payload?.runId !== runId) return;
-        clearRunListeners();
-        const results = event.data.payload?.results || [];
-        const completedRunId = event.data.payload?.runId || runId;
-        try {
-          $('last-run').innerHTML = renderRunResultsHTML(results, completedRunId);
-          const reportButton = document.getElementById(`open-report-${completedRunId}`);
-          if (reportButton) {
-            reportButton.addEventListener('click', () => openFullReportWindow(results, completedRunId));
-          }
-        } catch (error) {
-          $('last-run').textContent = `Run complete: ${results.length} actions (see console for details).`;
-          console.error('[Tester] Error rendering run results', error, results);
-        }
-      };
-
-      window.addEventListener('message', ackHandler);
-      window.addEventListener('message', progressHandler);
-      window.addEventListener('message', resultHandler);
-      armRunTimeout();
-      targetWindow.postMessage({ type: 'TEST_ACTIONS', payload: { actions: allActions, runId, delayMs, meta: runMeta } }, '*');
-    } catch (err) {
-      console.error('[Tester] Failed to send TEST_ACTIONS:', err);
-      $('last-run').textContent = 'Run failed: see console.';
-    }
+  $('run-btn').addEventListener('click', async () => {
+    await runMochaSpec(getEditorValue());
   });
 
   $('export-btn').addEventListener('click', () => {
@@ -2357,6 +2531,11 @@
   $('save-target').addEventListener('click', saveTarget);
   $('load-target').addEventListener('click', loadTarget);
   $('add-group-btn').addEventListener('click', openGroupModal);
+  document.querySelectorAll('.reporter-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      setActiveReporter(button.dataset.reporter || 'spec');
+    });
+  });
 
   $('open-editor').addEventListener('click', () => {
     const win = window.open('', '_blank', 'width=900,height=700');
@@ -2366,7 +2545,21 @@
   });
 
   $('open-viewer-btn').addEventListener('click', () => {
-    window.open(new URL('form-viewer.html?testMode=1&autoLoad=0', window.location.href), '_blank');
+    const existingWindow = getActiveFormViewerWindow();
+    if (existingWindow) {
+      existingWindow.focus();
+      postLoadedFormToViewer(existingWindow);
+      return;
+    }
+
+    const nextWindow = window.open(new URL('form-viewer.html?testMode=1&autoLoad=0', window.location.href), '_blank');
+    if (!nextWindow) {
+      statusEl.className = 'status warn';
+      statusEl.textContent = 'Could not open form viewer window.';
+      return;
+    }
+
+    registerFormViewerWindow(nextWindow);
   });
 
   // Modal event listeners
@@ -2415,6 +2608,29 @@
   window.addEventListener('message', (event) => {
     if (!event.data || !event.data.type) return;
     try {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data.type === 'FORM_VIEWER_READY') {
+        registerFormViewerWindow(event.source);
+        postLoadedFormToViewer();
+        return;
+      }
+
+      if (event.data.type === 'REQUEST_PING') {
+        registerFormViewerWindow(event.source);
+        event.source?.postMessage?.({ type: 'PONG', payload: { timestamp: Date.now() } }, window.location.origin);
+        return;
+      }
+
+      if (event.data.type === 'FORM_VIEWER_CLOSED') {
+        if (event.source === getActiveFormViewerWindow()) {
+          registerFormViewerWindow(null);
+        }
+        return;
+      }
+
       if (event.data.type === 'loadForm') {
         const payload = event.data.formData || event.data.form || null;
         if (payload) {
@@ -2426,6 +2642,8 @@
           if (fileEl) fileEl.style.display = 'none';
           if (sampleBtn) sampleBtn.style.display = 'none';
         }
+        registerFormViewerWindow(event.source);
+        postLoadedFormToViewer();
       }
     } catch (err) {
       console.error('Error handling incoming message:', err);
@@ -2436,6 +2654,7 @@
   createEditor();
   syncTableFromEditor('Table synced from code editor.');
   updateSliderLabels();
+  setActiveReporter(activeReporter);
   addStep('Fill Field', 'sample_triage_logic/pregnant', 'true');
   addStep('Expect Visible', 'sample_triage_logic/gestational_age', '');
 })();

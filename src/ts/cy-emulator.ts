@@ -58,10 +58,14 @@ export interface CyEmulator {
 	resetState(): void;
 }
 
+type FormTestApiHost = {
+	formTestApi?: FormTestApi;
+	closed?: boolean;
+};
+
 type BrowserWindowLike = {
-	opener?: {
-		formTestApi?: FormTestApi;
-	};
+	opener?: FormTestApiHost;
+	__kintegrateFormViewerWindow?: FormTestApiHost;
 	CyEmulatorModule?: {
 		createCyEmulator: typeof createCyEmulator;
 		getFormTestApi: typeof getFormTestApi;
@@ -70,10 +74,24 @@ type BrowserWindowLike = {
 	cy?: CyEmulator;
 };
 
+function getBrowserWindow(): BrowserWindowLike | undefined {
+	return (globalThis as { window?: BrowserWindowLike }).window;
+}
+
+function resolveFormTestApiHost(): FormTestApi | null {
+	const browserWindow = getBrowserWindow();
+	const explicitViewerWindow = browserWindow?.__kintegrateFormViewerWindow;
+	if (explicitViewerWindow && explicitViewerWindow.closed !== true && explicitViewerWindow.formTestApi) {
+		return explicitViewerWindow.formTestApi;
+	}
+
+	const opener = browserWindow?.opener
+		?? (globalThis as { opener?: FormTestApiHost }).opener;
+	return opener?.formTestApi || null;
+}
+
 let formTestApiResolver = (): FormTestApi => {
-	const opener = (globalThis as { window?: BrowserWindowLike; opener?: BrowserWindowLike['opener'] }).window?.opener
-		?? (globalThis as { opener?: BrowserWindowLike['opener'] }).opener;
-	const api = opener?.formTestApi;
+	const api = resolveFormTestApiHost();
 	if (!api) {
 		throw new Error('Form viewer not open or formTestApi not available');
 	}
@@ -309,11 +327,7 @@ export function createCyEmulator(): CyEmulator {
 		waitForFormTestApi(timeoutMs = FORM_READY_TIMEOUT_MS): CyEmulator {
 			return enqueue(async () => {
 				await waitFor(
-					() => {
-						const opener = (globalThis as { window?: BrowserWindowLike; opener?: BrowserWindowLike['opener'] }).window?.opener
-							?? (globalThis as { opener?: BrowserWindowLike['opener'] }).opener;
-						return Boolean(opener?.formTestApi);
-					},
+					() => Boolean(resolveFormTestApiHost()),
 					timeoutMs,
 					`Form viewer not open or formTestApi not available after ${timeoutMs}ms`
 				);

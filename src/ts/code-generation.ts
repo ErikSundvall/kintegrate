@@ -47,6 +47,45 @@ function pickIdentifier(rule: RuleEntry, type: 'trigger' | 'target'): string | n
   return rule[pathKey] || rule[tagKey] || null;
 }
 
+function humanizeFieldName(value: unknown): string {
+  const raw = String(value || 'field').trim();
+  const segments = raw.split('/').filter(Boolean);
+  const leaf = segments[segments.length - 1] || raw;
+  return sanitizeTestTitle(leaf.replace(/_/g, '-')) || 'field';
+}
+
+function humanizeValue(value: unknown): string {
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+  if (value === null || value === undefined) {
+    return 'empty';
+  }
+  return sanitizeTestTitle(String(value)) || 'value';
+}
+
+function buildVisibilityTitle(rule: RuleEntry, trigger: string, target: string): string {
+  const verb = rule.actionName === 'hide' ? 'hides' : 'shows';
+  const triggerValue = rule.triggerValue ?? rule.showValue;
+  return `${verb} ${humanizeFieldName(target)} when ${humanizeFieldName(trigger)} is ${humanizeValue(triggerValue)}`;
+}
+
+function buildRangeTitle(rule: RuleEntry): string {
+  const fieldName = humanizeFieldName(rule.field || rule.fieldPath || 'field');
+  const min = toFiniteNumber(rule.min);
+  const max = toFiniteNumber(rule.max);
+  if (min !== null && max !== null) {
+    return `validates ${fieldName} is between ${min} and ${max}`;
+  }
+  if (min !== null) {
+    return `validates ${fieldName} is ${normalizeOperator(rule.minOp, 'min')} ${min}`;
+  }
+  if (max !== null) {
+    return `validates ${fieldName} is ${normalizeOperator(rule.maxOp, 'max')} ${max}`;
+  }
+  return `validates ${fieldName}`;
+}
+
 function normalizeOperator(op: unknown, bound: 'min' | 'max'): string {
   if (!op) {
     return bound === 'min' ? '>=' : '<=';
@@ -179,18 +218,15 @@ function buildDependencyTests(parsedForm: ParsedForm, level: number): Serialized
         const missing = [!trigger ? 'trigger' : null, !target ? 'target' : null].filter(Boolean).join(' and ');
         const body = `throw new Error('Generator could not resolve ${missing} identifier for dependency rule ${index + 1}.');`;
         return {
-          title: prefixCategoryTitle('logic', `dependency rule ${index + 1} has unresolved field identifiers`),
+          title: `dependency rule ${index + 1} has unresolved field identifiers`,
           callType: 'it',
           actions: [body],
           body
         };
       }
 
-      const baseName = sanitizeTestTitle(rule.description || '') || `${target} visibility toggles from ${trigger}`;
+      const baseName = buildVisibilityTitle(rule, trigger, target);
       const actions = [
-        `cy.visit('/form-viewer.html?testMode=1&autoLoad=0');`,
-        'cy.formViewerReady();',
-        '',
         `cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.hideValue)});`,
         `cy.expectHidden(${asLiteral(target)});`,
         `cy.fillField(${asLiteral(trigger)}, ${asLiteral(rule.showValue)});`,
@@ -198,7 +234,7 @@ function buildDependencyTests(parsedForm: ParsedForm, level: number): Serialized
       ];
 
       return {
-        title: prefixCategoryTitle('logic', baseName),
+        title: baseName,
         callType: 'it',
         actions,
         body: actions.join('\n')
@@ -222,7 +258,7 @@ function buildCalculationTests(parsedForm: ParsedForm, level: number): Serialize
     ];
 
     return {
-      title: prefixCategoryTitle('calc', rule.field ? `${rule.field} metadata exists` : `rule ${index + 1} metadata exists`),
+      title: rule.field ? `captures calculation metadata for ${humanizeFieldName(rule.field)}` : `captures calculation metadata for rule ${index + 1}`,
       callType: 'it',
       actions,
       body: actions.join('\n')
@@ -251,7 +287,7 @@ function buildRangeValidationTests(parsedForm: ParsedForm, level: number): Seria
     })});`;
 
     return {
-      title: prefixCategoryTitle('validation', `${rule.field || 'field'} #${index + 1}`),
+      title: buildRangeTitle(rule),
       callType: 'it',
       actions: [action],
       body: action
@@ -271,22 +307,21 @@ function buildValueRangeMetadataTests(parsedForm: ParsedForm, levels: CategoryLe
   }
 
   return (parsedForm.valueRanges || []).map((rule, index) => {
-    const minOp = normalizeOperator(rule.minOp, 'min');
-    const maxOp = normalizeOperator(rule.maxOp, 'max');
-    const suffixPart = rule.suffix ? ` (${rule.suffix})` : '';
+    const samples = buildRangeSamples(rule, 'rich');
+    const assertionPayload = buildRangeAssertionPayload(rule, samples);
     const action = `cy.assertRangeSamples(${asLiteral({
       label: `value range ${rule.field || 'field'} #${index + 1}`,
-      min: toFiniteNumber(rule.min),
-      max: toFiniteNumber(rule.max),
-      minOp,
-      maxOp,
-      validSamples: [],
-      invalidSamples: [],
-      expectedUnit: rule.rmType === 'DV_QUANTITY' ? rule.unit || null : null
+      min: assertionPayload.min,
+      max: assertionPayload.max,
+      minOp: assertionPayload.minOp,
+      maxOp: assertionPayload.maxOp,
+      validSamples: assertionPayload.validSamples,
+      invalidSamples: assertionPayload.invalidSamples,
+      expectedUnit: assertionPayload.expectedUnit
     })});`;
 
     return {
-      title: prefixCategoryTitle('ranges', `${rule.field || 'field'}${suffixPart} #${index + 1}`),
+      title: buildRangeTitle(rule),
       callType: 'it',
       actions: [action],
       body: action
@@ -357,7 +392,7 @@ function buildRequiredFieldTests(parsedForm: ParsedForm, level: number): Seriali
     }
 
     return {
-      title: prefixCategoryTitle('required', `${rule.field || 'field'} min ${min}`) || `required field rule ${index + 1}`,
+      title: `requires ${humanizeFieldName(rule.field || rule.fieldPath || `field ${index + 1}`)}`,
       callType: 'it',
       actions,
       body: actions.join('\n')
@@ -446,10 +481,16 @@ export function buildGeneratedGroups(parsedForm: ParsedForm, options: CodeGenera
 }
 
 export function wrapDescribeSection(name: string, body: string): string {
+  const setupLines = [
+    '    before(() => { cy.formViewerReady(); });',
+    '',
+    '    beforeEach(() => { cy.resetForm(); });'
+  ].join('\n');
+
   if (!body) {
-    return `  describe(${quoteSingle(name)}, () => {\n  });`;
+    return `  describe(${quoteSingle(name)}, () => {\n${setupLines}\n  });`;
   }
-  return `  describe(${quoteSingle(name)}, () => {\n${body}\n  });`;
+  return `  describe(${quoteSingle(name)}, () => {\n${setupLines}\n\n${body}\n  });`;
 }
 
 export function serializeTestCase(test: SerializedTest): string {
