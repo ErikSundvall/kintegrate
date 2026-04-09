@@ -24,11 +24,12 @@
           "width": "fill_container",
           "height": "fill_container",
           "fill": "#FFFFFF",
+          "gap": 8,
           "children": [
             {
               "type": "frame",
               "id": "Tcp4W",
-              "name": "Input Column",
+              "name": "Input Container",
               "width": 470,
               "height": "fill_container",
               "fill": "#EEF2F3",
@@ -619,7 +620,7 @@
             {
               "type": "frame",
               "id": "SHQwB",
-              "name": "Resizer",
+              "name": "Vertical Resizer",
               "width": 8,
               "height": "fill_container",
               "fill": "#E0E0E0"
@@ -627,7 +628,7 @@
             {
               "type": "frame",
               "id": "fcdX0",
-              "name": "Template Column",
+              "name": "Template Editor Container",
               "width": 492,
               "height": "fill_container",
               "fill": "#F6F7F8",
@@ -1166,7 +1167,7 @@
             {
               "type": "frame",
               "id": "mn4Ws",
-              "name": "Resizer",
+              "name": "Vertical Resizer",
               "width": 8,
               "height": "fill_container",
               "fill": "#E0E0E0"
@@ -1174,7 +1175,7 @@
             {
               "type": "frame",
               "id": "3LgMQ",
-              "name": "Output Column",
+              "name": "Output Container",
               "width": "fill_container",
               "height": "fill_container",
               "fill": "#EEF2F3",
@@ -1274,7 +1275,7 @@
               "type": "text",
               "id": "QNhBf",
               "fill": "#222222",
-              "content": "K!ntegrate v0.4",
+              "content": "Kintegrate v0.4",
               "fontFamily": "Inter",
               "fontSize": 13,
               "fontWeight": "600"
@@ -1360,7 +1361,7 @@
           "id": "eAIQ2",
           "name": "Header",
           "width": "fill_container",
-          "height": 52,
+          "height": 56,
           "fill": "#F5F5F5",
           "stroke": {
             "thickness": {
@@ -1396,7 +1397,7 @@
             {
               "type": "frame",
               "id": "HMCsv",
-              "name": "Sync Badge",
+              "name": "Sync Indicator",
               "height": 24,
               "fill": "#F5F5F5",
               "cornerRadius": 4,
@@ -1441,7 +1442,7 @@
             {
               "type": "frame",
               "id": "Epj0S",
-              "name": "Local Load",
+              "name": "Open Tester Button",
               "height": 38,
               "fill": "#FFFFFF",
               "cornerRadius": 8,
@@ -2067,7 +2068,7 @@
             {
               "type": "frame",
               "id": "ZHrNd",
-              "name": "Error State",
+              "name": "Error Message Panel",
               "width": "fill_container",
               "height": 78,
               "fill": "#FFEEEE",
@@ -2092,7 +2093,7 @@
             {
               "type": "frame",
               "id": "s0EjT",
-              "name": "Renderer Area",
+              "name": "Form Container",
               "width": "fill_container",
               "height": "fill_container",
               "fill": "#FFFFFF",
@@ -2150,7 +2151,7 @@
           "id": "2jRaV",
           "name": "Header",
           "width": "fill_container",
-          "height": 56,
+          "height": 52,
           "fill": "#FFFFFF",
           "stroke": {
             "thickness": {
@@ -2178,7 +2179,7 @@
               "type": "text",
               "id": "kSIi2",
               "fill": "#1F2937",
-              "content": "Better Form Tester (Cypress)",
+              "content": "🧪 Better Form Tester (Cypress)",
               "fontFamily": "Inter",
               "fontSize": 17,
               "fontWeight": "600"
@@ -2240,14 +2241,15 @@
           "height": "fill_container",
           "fill": "#F6F8FA",
           "layout": "vertical",
-          "padding": 12,
+          "gap": 16,
+          "padding": 16,
           "children": [
             {
               "type": "frame",
               "id": "MDwQo",
               "name": "Top Row",
               "width": "fill_container",
-              "height": 560,
+              "height": "fill_container",
               "children": [
                 {
                   "type": "frame",
@@ -6063,7 +6065,7 @@
               "id": "srCIA",
               "name": "Horizontal Splitter",
               "width": "fill_container",
-              "height": 6,
+              "height": 0,
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -6083,7 +6085,7 @@
               "id": "Lq9Qi",
               "name": "Bottom Row",
               "width": "fill_container",
-              "height": 310,
+              "height": "fill_container",
               "children": [
                 {
                   "type": "frame",
@@ -7119,7 +7121,7 @@
       "type": "frame",
       "id": "tCNBz",
       "x": 4010,
-      "y": 80,
+      "y": 64,
       "name": "Cypress Tester Popup Note",
       "width": 620,
       "height": 46,
@@ -7150,7 +7152,6 @@
     {
       "type": "frame",
       "id": "Prba8",
-      "layoutPosition": "absolute",
       "x": 4010,
       "y": 140,
       "name": "Cypress Tester Popup - Browse Form Fields",
@@ -7877,169 +7878,6 @@
               ]
             }
           ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "gVhvk",
-      "x": 4700,
-      "y": 1010,
-      "name": "Baseline Sync Note",
-      "width": 980,
-      "height": 96,
-      "fill": "#FFF7E6",
-      "cornerRadius": 8,
-      "stroke": {
-        "thickness": 1,
-        "fill": "#E6C98A"
-      },
-      "layout": "vertical",
-      "gap": 6,
-      "padding": [
-        12,
-        16
-      ],
-      "children": [
-        {
-          "type": "text",
-          "id": "ou5ng",
-          "fill": "#6B4E16",
-          "content": "Baseline sync point",
-          "fontFamily": "Inter",
-          "fontSize": 15,
-          "fontWeight": "600"
-        },
-        {
-          "type": "text",
-          "id": "Cj6ii",
-          "fill": "#6B4E16",
-          "textGrowth": "fixed-width",
-          "width": 930,
-          "content": "This .pen file is aligned to the current committed Kintegrate codebase as of 2026-03-24 and is intended as the pre-refactor UI baseline.",
-          "fontFamily": "Inter",
-          "fontSize": 12,
-          "fontWeight": "normal"
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "n57q7",
-      "x": 4700,
-      "y": 1130,
-      "name": "Scope Slider Component",
-      "reusable": true,
-      "width": 300,
-      "height": 52,
-      "fill": "#FFFFFF",
-      "cornerRadius": 6,
-      "stroke": {
-        "thickness": 1,
-        "fill": "#D7DBE0"
-      },
-      "layout": "vertical",
-      "gap": 6,
-      "padding": [
-        8,
-        10
-      ],
-      "children": [
-        {
-          "type": "frame",
-          "id": "2Dyks",
-          "name": "Header Row",
-          "width": "fill_container",
-          "height": 18,
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "text",
-              "id": "pPzdi",
-              "name": "Label Text",
-              "fill": "#1F2937",
-              "content": "Form logic",
-              "fontFamily": "Inter",
-              "fontSize": 12,
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "xsAE0",
-              "name": "Value Chip",
-              "height": 18,
-              "fill": "#F3F4F6",
-              "cornerRadius": 9,
-              "padding": [
-                2,
-                6
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "Rwu7S",
-                  "name": "Value Text",
-                  "fill": "#1F2937",
-                  "content": "1",
-                  "fontFamily": "Inter",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "jUgIz",
-          "name": "Track",
-          "width": "fill_container",
-          "height": 8,
-          "fill": "#D7DBE0",
-          "cornerRadius": 99,
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "QsqAy",
-              "layoutPosition": "absolute",
-              "x": 120,
-              "y": -4,
-              "name": "Thumb",
-              "width": 16,
-              "height": 16,
-              "fill": "#1976D2",
-              "cornerRadius": 99
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "Ixy7Y",
-      "x": 5020,
-      "y": 1130,
-      "name": "Scope Slider Stack",
-      "reusable": true,
-      "width": 340,
-      "height": 300,
-      "fill": "#FFFFFF",
-      "layout": "vertical",
-      "gap": 8,
-      "children": [
-        {
-          "type": "frame",
-          "id": "fj9mE",
-          "name": "Items Slot",
-          "slot": [
-            "#scopeSlider"
-          ],
-          "width": "fill_container",
-          "height": "fill_container",
-          "layout": "vertical",
-          "gap": 8
         }
       ]
     },
