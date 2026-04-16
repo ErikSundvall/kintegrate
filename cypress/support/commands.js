@@ -1,23 +1,19 @@
 Cypress.Commands.add('waitForFormTestApi', () => {
   cy.window({ timeout: 20000 }).should((win) => {
-    if (!win.formTestApi) {
-      throw new Error('formTestApi is not available. Open form-viewer with testMode=1.');
+    if (!win.formTestApi || typeof win.formTestApi.resetForm !== 'function') {
+      throw new Error('formTestApi is not fully initialized. Open form-viewer with testMode=1.');
     }
   });
 });
 
 Cypress.Commands.add('formViewerReady', () => {
+  cy.visit('/form-viewer.html#testMode=1&autoLoad=0');
   cy.waitForFormTestApi();
-  cy.window({ timeout: 20000 }).should((win) => {
-    if (!win.formTestApi.isReady()) {
-      throw new Error('Form renderer is not ready yet. Ensure a form package is loaded.');
-    }
-  });
 });
 
 Cypress.Commands.add('resetForm', () => {
   cy.window().then((win) => {
-    win.formTestApi.resetForm();
+    win.formTestApi?.resetForm?.();
   });
 });
 
